@@ -2,95 +2,119 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Definition of the design system. All colors, gradients, fonts, etc should be defined here. 
-All colors MUST be HSL.
-*/
+/* WorldMe Design System - Party & Social Vibes */
 
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 222.2 84% 4.9%;
+    /* Base colors */
+    --background: 240 10% 3.9%;
+    --foreground: 0 0% 98%;
 
-    --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
+    /* Card colors */
+    --card: 240 10% 3.9%;
+    --card-foreground: 0 0% 98%;
 
-    --popover: 0 0% 100%;
-    --popover-foreground: 222.2 84% 4.9%;
+    /* Popover colors */
+    --popover: 240 10% 3.9%;
+    --popover-foreground: 0 0% 98%;
 
-    --primary: 222.2 47.4% 11.2%;
-    --primary-foreground: 210 40% 98%;
+    /* Brand colors - Electric Purple Theme */
+    --primary: 270 95% 65%;
+    --primary-foreground: 0 0% 98%;
+    --primary-glow: 280 100% 70%;
 
-    --secondary: 210 40% 96.1%;
-    --secondary-foreground: 222.2 47.4% 11.2%;
+    /* Secondary - Neon Blue */
+    --secondary: 220 90% 60%;
+    --secondary-foreground: 0 0% 98%;
 
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 46.9%;
+    /* Party colors */
+    --party-pink: 320 90% 70%;
+    --party-orange: 25 95% 65%;
+    --event-purple: 250 85% 60%;
+    --friend-green: 150 80% 55%;
 
-    --accent: 210 40% 96.1%;
-    --accent-foreground: 222.2 47.4% 11.2%;
+    /* Muted colors */
+    --muted: 240 15% 15%;
+    --muted-foreground: 240 10% 70%;
+
+    /* Accent - Party Pink */
+    --accent: 320 90% 70%;
+    --accent-foreground: 0 0% 98%;
 
     --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
+    --destructive-foreground: 0 0% 98%;
 
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 222.2 84% 4.9%;
+    --border: 240 15% 20%;
+    --input: 240 15% 20%;
+    --ring: 270 95% 65%;
+
+    /* Party Gradients */
+    --gradient-party: linear-gradient(135deg, hsl(var(--primary)), hsl(var(--party-pink)), hsl(var(--party-orange)));
+    --gradient-event: linear-gradient(135deg, hsl(var(--event-purple)), hsl(var(--secondary)));
+    --gradient-social: linear-gradient(135deg, hsl(var(--friend-green)), hsl(var(--secondary)));
+    --gradient-glow: radial-gradient(circle, hsl(var(--primary-glow)) 0%, transparent 70%);
+
+    /* Shadows & Glows */
+    --shadow-party: 0 20px 40px -10px hsl(var(--primary) / 0.4);
+    --shadow-event: 0 10px 30px -5px hsl(var(--event-purple) / 0.3);
+    --glow-avatar: 0 0 30px hsl(var(--primary-glow) / 0.6);
 
     --radius: 0.5rem;
 
-    --sidebar-background: 0 0% 98%;
-
-    --sidebar-foreground: 240 5.3% 26.1%;
-
-    --sidebar-primary: 240 5.9% 10%;
-
-    --sidebar-primary-foreground: 0 0% 98%;
-
-    --sidebar-accent: 240 4.8% 95.9%;
-
-    --sidebar-accent-foreground: 240 5.9% 10%;
-
-    --sidebar-border: 220 13% 91%;
-
-    --sidebar-ring: 217.2 91.2% 59.8%;
+    /* Animation timings */
+    --transition-party: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    --transition-bounce: all 0.6s cubic-bezier(0.68, -0.55, 0.265, 1.55);
   }
+}
 
-  .dark {
-    --background: 222.2 84% 4.9%;
-    --foreground: 210 40% 98%;
-
-    --card: 222.2 84% 4.9%;
-    --card-foreground: 210 40% 98%;
-
-    --popover: 222.2 84% 4.9%;
-    --popover-foreground: 210 40% 98%;
-
-    --primary: 210 40% 98%;
-    --primary-foreground: 222.2 47.4% 11.2%;
-
-    --secondary: 217.2 32.6% 17.5%;
-    --secondary-foreground: 210 40% 98%;
-
-    --muted: 217.2 32.6% 17.5%;
-    --muted-foreground: 215 20.2% 65.1%;
-
-    --accent: 217.2 32.6% 17.5%;
-    --accent-foreground: 210 40% 98%;
-
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 210 40% 98%;
-
-    --border: 217.2 32.6% 17.5%;
-    --input: 217.2 32.6% 17.5%;
-    --ring: 212.7 26.8% 83.9%;
-    --sidebar-background: 240 5.9% 10%;
-    --sidebar-foreground: 240 4.8% 95.9%;
-    --sidebar-primary: 224.3 76.3% 48%;
-    --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 240 3.7% 15.9%;
-    --sidebar-accent-foreground: 240 4.8% 95.9%;
-    --sidebar-border: 240 3.7% 15.9%;
-    --sidebar-ring: 217.2 91.2% 59.8%;
+/* Custom Party Animations & Utilities */
+@layer components {
+  .gradient-party {
+    background: var(--gradient-party);
+  }
+  
+  .gradient-event {
+    background: var(--gradient-event);
+  }
+  
+  .gradient-social {
+    background: var(--gradient-social);
+  }
+  
+  .glow-party {
+    box-shadow: var(--glow-avatar);
+  }
+  
+  .shadow-party {
+    box-shadow: var(--shadow-party);
+  }
+  
+  .shadow-event {
+    box-shadow: var(--shadow-event);
+  }
+  
+  /* Avatar animations */
+  .avatar-bounce {
+    animation: avatar-bounce 2s ease-in-out infinite;
+  }
+  
+  .party-pulse {
+    animation: party-pulse 1.5s ease-in-out infinite alternate;
+  }
+  
+  .event-glow {
+    animation: event-glow 2s ease-in-out infinite alternate;
+  }
+  
+  /* Interactive elements */
+  .party-button {
+    transition: var(--transition-party);
+    @apply hover:scale-105 hover:shadow-party active:scale-95;
+  }
+  
+  .social-card {
+    transition: var(--transition-bounce);
+    @apply hover:scale-105 hover:shadow-event;
   }
 }
 

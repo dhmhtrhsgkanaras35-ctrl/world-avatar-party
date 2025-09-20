@@ -22,10 +22,21 @@ export default {
         primary: {
           DEFAULT: "hsl(var(--primary))",
           foreground: "hsl(var(--primary-foreground))",
+          glow: "hsl(var(--primary-glow))",
         },
         secondary: {
           DEFAULT: "hsl(var(--secondary))",
           foreground: "hsl(var(--secondary-foreground))",
+        },
+        party: {
+          pink: "hsl(var(--party-pink))",
+          orange: "hsl(var(--party-orange))",
+        },
+        event: {
+          purple: "hsl(var(--event-purple))",
+        },
+        friend: {
+          green: "hsl(var(--friend-green))",
         },
         destructive: {
           DEFAULT: "hsl(var(--destructive))",
@@ -80,10 +91,47 @@ export default {
             height: "0",
           },
         },
+        "avatar-bounce": {
+          "0%, 100%": {
+            transform: "translateY(0)",
+            animationTimingFunction: "cubic-bezier(0.8, 0, 1, 1)",
+          },
+          "50%": {
+            transform: "translateY(-10px)",
+            animationTimingFunction: "cubic-bezier(0, 0, 0.2, 1)",
+          },
+        },
+        "party-pulse": {
+          "0%": {
+            boxShadow: "0 0 0 0 hsl(var(--primary) / 0.7)",
+          },
+          "70%": {
+            boxShadow: "0 0 0 20px hsl(var(--primary) / 0)",
+          },
+          "100%": {
+            boxShadow: "0 0 0 0 hsl(var(--primary) / 0)",
+          },
+        },
+        "event-glow": {
+          "0%": {
+            boxShadow: "0 0 20px hsl(var(--event-purple) / 0.5)",
+          },
+          "100%": {
+            boxShadow: "0 0 40px hsl(var(--event-purple) / 0.8)",
+          },
+        },
+        "float": {
+          "0%, 100%": { transform: "translateY(0px)" },
+          "50%": { transform: "translateY(-20px)" },
+        },
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
         "accordion-up": "accordion-up 0.2s ease-out",
+        "avatar-bounce": "avatar-bounce 2s ease-in-out infinite",
+        "party-pulse": "party-pulse 1.5s ease-in-out infinite",
+        "event-glow": "event-glow 2s ease-in-out infinite alternate",
+        "float": "float 3s ease-in-out infinite",
       },
     },
   },

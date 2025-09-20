@@ -1,9 +1,7 @@
 import { HeroSection } from "@/components/HeroSection";
 import { FeatureCard } from "@/components/FeatureCard";
-import { Avatar } from "@/components/Avatar";
-import { EventMarker } from "@/components/EventMarker";
+import { MapComponent } from "@/components/MapComponent";
 import { Button } from "@/components/ui/button";
-import avatarsMapImage from "@/assets/avatars-map.jpg";
 
 const Index = () => {
   return (
@@ -11,13 +9,29 @@ const Index = () => {
       {/* Hero Section */}
       <HeroSection />
       
+      {/* Interactive Map Section */}
+      <section className="py-24 px-6 bg-muted/10">
+        <div className="max-w-7xl mx-auto text-center">
+          <h2 className="text-4xl md:text-5xl font-bold text-foreground mb-6">
+            Explore Your 
+            <span className="gradient-party bg-clip-text text-transparent"> World</span>
+          </h2>
+          <p className="text-xl text-muted-foreground mb-12 max-w-2xl mx-auto">
+            See friends and events around you in real-time. Navigate with directional controls 
+            and discover what's happening nearby.
+          </p>
+          
+          <MapComponent />
+        </div>
+      </section>
+      
       {/* Features Section */}
       <section className="py-24 px-6">
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-16">
             <h2 className="text-4xl md:text-5xl font-bold text-foreground mb-6">
               Everything You Need to 
-              <span className="gradient-party bg-clip-text text-transparent"> Party</span>
+              <span className="gradient-party bg-clip-text text-transparent"> Connect</span>
             </h2>
             <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
               From customizable avatars to epic event discovery, WorldMe has all the features 
@@ -50,90 +64,35 @@ const Index = () => {
         </div>
       </section>
       
-      {/* Map Preview Section */}
-      <section className="py-24 px-6 bg-muted/20">
-        <div className="max-w-7xl mx-auto">
-          <div className="grid lg:grid-cols-2 gap-12 items-center">
-            <div>
-              <h2 className="text-4xl md:text-5xl font-bold text-foreground mb-6">
-                See Your World 
-                <span className="gradient-event bg-clip-text text-transparent">Come Alive</span>
-              </h2>
-              <p className="text-xl text-muted-foreground mb-8 leading-relaxed">
-                Watch as your neighborhood transforms into a vibrant social playground. 
-                Animated avatars dance across the map, party markers pulse with energy, 
-                and new connections spark everywhere you look.
-              </p>
-              
-              {/* Live demo elements */}
-              <div className="flex items-center gap-4 mb-6">
-                <Avatar name="You" status="online" size="lg" />
-                <div className="text-left">
-                  <div className="font-semibold text-foreground">That's You! 🌟</div>
-                  <div className="text-muted-foreground">Ready to explore your world</div>
-                </div>
-              </div>
-              
-              <div className="grid grid-cols-2 gap-4 mb-8">
-                <div className="flex items-center gap-3">
-                  <EventMarker type="house-party" title="Pool Party" attendees={8} />
-                  <div className="text-sm">
-                    <div className="font-medium">Pool Party</div>
-                    <div className="text-muted-foreground">0.3km away</div>
-                  </div>
-                </div>
-                <div className="flex items-center gap-3">
-                  <EventMarker type="concert" title="Live Music" attendees={45} />
-                  <div className="text-sm">
-                    <div className="font-medium">Live Music</div>
-                    <div className="text-muted-foreground">1.2km away</div>
-                  </div>
-                </div>
-              </div>
-              
-              <Button 
-                size="lg" 
-                className="gradient-social party-button border-0 shadow-event"
-              >
-                🗺️ Explore the Map
-              </Button>
-            </div>
-            
-            <div className="relative">
-              <img
-                src={avatarsMapImage}
-                alt="WorldMe Map Interface"
-                className="w-full rounded-2xl shadow-party border border-border"
-              />
-              <div className="absolute inset-0 gradient-party opacity-20 rounded-2xl" />
-            </div>
-          </div>
-        </div>
-      </section>
-      
       {/* CTA Section */}
       <section className="py-24 px-6">
         <div className="max-w-4xl mx-auto text-center">
           <h2 className="text-4xl md:text-6xl font-bold text-foreground mb-6">
             Ready to Join the 
-            <span className="gradient-party bg-clip-text text-transparent"> Party</span>?
+            <span className="gradient-party bg-clip-text text-transparent"> Network</span>?
           </h2>
           <p className="text-xl text-muted-foreground mb-12 max-w-2xl mx-auto">
-            Download WorldMe and start connecting with your world like never before. 
-            Your next adventure is just a tap away.
+            Connect to Supabase to enable real-time location, friend requests, 
+            messaging, and live event creation.
           </p>
           
           <div className="flex flex-col sm:flex-row gap-6 justify-center items-center mb-12">
             <Button 
               size="lg" 
               className="text-lg px-12 py-6 gradient-party party-button border-0 shadow-party"
+              onClick={() => {
+                alert("🔗 Connect Supabase first to enable all features!");
+              }}
             >
-              📱 Download Now
+              📱 Enable Real-Time
             </Button>
             <Button 
               variant="outline" 
               size="lg" 
               className="text-lg px-12 py-6 party-button"
+              onClick={() => {
+                alert("🗺️ Map demo active! Full features need Supabase integration.");
+              }}
             >
               🎮 View Demo
             </Button>

@@ -65,6 +65,9 @@ export const HeroSection = () => {
           <Button 
             size="lg" 
             className="text-lg px-8 py-4 party-button gradient-party border-0 shadow-party"
+            onClick={() => {
+              alert("🚀 Welcome to WorldMe! Connect to Supabase to enable full features.");
+            }}
           >
             🚀 Start Exploring
           </Button>
@@ -73,6 +76,9 @@ export const HeroSection = () => {
             variant="outline" 
             size="lg" 
             className="text-lg px-8 py-4 party-button border-primary/30 hover:bg-primary/10"
+            onClick={() => {
+              alert("🎉 Party Mode! Connect to Supabase to create real events.");
+            }}
           >
             🎉 Create Party
           </Button>

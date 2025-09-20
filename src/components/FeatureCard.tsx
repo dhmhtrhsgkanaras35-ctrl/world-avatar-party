@@ -56,6 +56,9 @@ export const FeatureCard = ({
             variant="outline"
             size="sm"
             className="party-button group-hover:border-primary group-hover:text-primary"
+            onClick={() => {
+              alert(`Learn more about ${title}`);
+            }}
           >
             Learn More
           </Button>

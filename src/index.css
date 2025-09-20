@@ -18,27 +18,27 @@
     --popover: 240 10% 3.9%;
     --popover-foreground: 0 0% 98%;
 
-    /* Brand colors - Electric Purple Theme */
-    --primary: 270 95% 65%;
+    /* Brand colors - Ocean Blue Theme */
+    --primary: 220 90% 60%;
     --primary-foreground: 0 0% 98%;
-    --primary-glow: 280 100% 70%;
+    --primary-glow: 210 100% 70%;
 
-    /* Secondary - Neon Blue */
-    --secondary: 220 90% 60%;
+    /* Secondary - Deep Blue */
+    --secondary: 240 80% 55%;
     --secondary-foreground: 0 0% 98%;
 
-    /* Party colors */
-    --party-pink: 320 90% 70%;
-    --party-orange: 25 95% 65%;
-    --event-purple: 250 85% 60%;
-    --friend-green: 150 80% 55%;
+    /* Party colors - Blue Spectrum */
+    --party-pink: 260 80% 65%;
+    --party-orange: 200 85% 60%;
+    --event-purple: 230 85% 60%;
+    --friend-green: 190 80% 55%;
 
     /* Muted colors */
     --muted: 240 15% 15%;
     --muted-foreground: 240 10% 70%;
 
-    /* Accent - Party Pink */
-    --accent: 320 90% 70%;
+    /* Accent - Ocean Blue */
+    --accent: 200 85% 60%;
     --accent-foreground: 0 0% 98%;
 
     --destructive: 0 84.2% 60.2%;

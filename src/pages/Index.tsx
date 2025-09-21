@@ -1,12 +1,14 @@
 import { HeroSection } from "@/components/HeroSection";
 import { FeatureCard } from "@/components/FeatureCard";
-import { MapComponent } from "@/components/MapComponent";
+import { RealMapComponent } from "@/components/RealMapComponent";
 import { LocationToggle } from "@/components/LocationToggle";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/components/AuthProvider";
+import { useNavigate } from "react-router-dom";
 
 const Index = () => {
   const { user, signOut } = useAuth();
+  const navigate = useNavigate();
 
   return (
     <div className="min-h-screen bg-background relative">
@@ -25,7 +27,7 @@ const Index = () => {
             and discover what's happening nearby.
           </p>
           
-          <MapComponent />
+          <RealMapComponent />
         </div>
       </section>
       
@@ -130,6 +132,13 @@ const Index = () => {
             <span className="text-sm text-muted-foreground">
               Welcome, {user.user_metadata?.display_name || user.email}!
             </span>
+            <Button 
+              variant="outline" 
+              size="sm"
+              onClick={() => navigate('/profile')}
+            >
+              👤 Profile
+            </Button>
             <Button 
               variant="outline" 
               size="sm"

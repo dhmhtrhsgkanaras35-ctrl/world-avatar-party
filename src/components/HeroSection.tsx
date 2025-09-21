@@ -1,9 +1,14 @@
 import { Button } from "@/components/ui/button";
 import { Avatar } from "./Avatar";
 import { EventMarker } from "./EventMarker";
+import { useAuth } from "./AuthProvider";
+import { useNavigate } from "react-router-dom";
 import heroPartyImage from "@/assets/hero-party.jpg";
 
 export const HeroSection = () => {
+  const { user } = useAuth();
+  const navigate = useNavigate();
+
   return (
     <section className="relative min-h-screen flex items-center justify-center overflow-hidden">
       {/* Background with gradient overlay */}
@@ -66,10 +71,16 @@ export const HeroSection = () => {
             size="lg" 
             className="text-lg px-8 py-4 party-button gradient-party border-0 shadow-party"
             onClick={() => {
-              alert("🚀 Welcome to WorldMe! Connect to Supabase to enable full features.");
+              if (user) {
+                // User is already signed in, scroll to map or show features
+                document.querySelector('#map-section')?.scrollIntoView({ behavior: 'smooth' });
+              } else {
+                // Redirect to auth page
+                navigate('/auth');
+              }
             }}
           >
-            🚀 Start Exploring
+            {user ? '🗺️ Explore Map' : '🚀 Start Exploring'}
           </Button>
           
           <Button 
@@ -77,7 +88,12 @@ export const HeroSection = () => {
             size="lg" 
             className="text-lg px-8 py-4 party-button border-primary/30 hover:bg-primary/10"
             onClick={() => {
-              alert("🎉 Party Mode! Connect to Supabase to create real events.");
+              if (user) {
+                // TODO: Navigate to create event page when implemented
+                alert("🎉 Event creation coming soon!");
+              } else {
+                navigate('/auth');
+              }
             }}
           >
             🎉 Create Party

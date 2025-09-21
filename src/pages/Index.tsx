@@ -1,16 +1,20 @@
 import { HeroSection } from "@/components/HeroSection";
 import { FeatureCard } from "@/components/FeatureCard";
 import { MapComponent } from "@/components/MapComponent";
+import { LocationToggle } from "@/components/LocationToggle";
 import { Button } from "@/components/ui/button";
+import { useAuth } from "@/components/AuthProvider";
 
 const Index = () => {
+  const { user, signOut } = useAuth();
+
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background relative">
       {/* Hero Section */}
       <HeroSection />
       
       {/* Interactive Map Section */}
-      <section className="py-24 px-6 bg-muted/10">
+      <section id="map-section" className="py-24 px-6 bg-muted/10">
         <div className="max-w-7xl mx-auto text-center">
           <h2 className="text-4xl md:text-5xl font-bold text-foreground mb-6">
             Explore Your 
@@ -115,6 +119,27 @@ const Index = () => {
           </div>
         </div>
       </section>
+
+      {/* Location Toggle Component */}
+      <LocationToggle user={user} />
+
+      {/* User Menu */}
+      {user && (
+        <div className="fixed top-6 right-6 z-50">
+          <div className="flex items-center gap-3 bg-card p-3 rounded-lg shadow-lg border">
+            <span className="text-sm text-muted-foreground">
+              Welcome, {user.user_metadata?.display_name || user.email}!
+            </span>
+            <Button 
+              variant="outline" 
+              size="sm"
+              onClick={() => signOut()}
+            >
+              Sign Out
+            </Button>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

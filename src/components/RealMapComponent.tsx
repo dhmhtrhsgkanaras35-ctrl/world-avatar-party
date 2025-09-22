@@ -8,6 +8,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "./AuthProvider";
 import { RealisticAvatar } from "./RealisticAvatar";
 import { AvatarConfig } from "./AvatarCustomizer";
+import { AvatarDisplay } from "./AvatarDisplay";
 import { useToast } from "@/hooks/use-toast";
 
 interface UserLocation {
@@ -30,6 +31,7 @@ export const RealMapComponent = () => {
   
   const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
   const [nearbyUsers, setNearbyUsers] = useState<UserLocation[]>([]);
+  const [userProfiles, setUserProfiles] = useState<{[key: string]: any}>({});
   const [mapLoaded, setMapLoaded] = useState(false);
   const [mapboxToken, setMapboxToken] = useState<string | null>(null);
   const markersRef = useRef<{ [key: string]: mapboxgl.Marker }>({});
@@ -61,6 +63,25 @@ export const RealMapComponent = () => {
     fetchMapboxToken();
   }, [toast]);
 
+  // Load user profiles with Ready Player Me avatars
+  const loadUserProfiles = async () => {
+    try {
+      const { data: profiles, error } = await supabase
+        .from('profiles')
+        .select('user_id, display_name, username, avatar_url');
+
+      if (error) throw error;
+
+      const profileMap: {[key: string]: any} = {};
+      profiles?.forEach(profile => {
+        profileMap[profile.user_id] = profile;
+      });
+      setUserProfiles(profileMap);
+    } catch (error) {
+      console.error('Error loading user profiles:', error);
+    }
+  };
+
   // Initialize map when token is available
   useEffect(() => {
     if (!mapContainer.current || !mapboxToken) return;
@@ -83,6 +104,7 @@ export const RealMapComponent = () => {
 
     map.current.on('load', () => {
       setMapLoaded(true);
+      loadUserProfiles();
       getUserLocation();
     });
 
@@ -119,7 +141,9 @@ export const RealMapComponent = () => {
           });
 
           // Add user marker
-          addUserMarker(longitude, latitude, 'You', true);
+          if (user) {
+            addUserMarker(longitude, latitude, user.id, 'You', true);
+          }
         }
       },
       (error) => {
@@ -138,32 +162,76 @@ export const RealMapComponent = () => {
     );
   };
 
-  // Add user marker to map
-  const addUserMarker = (lng: number, lat: number, name: string, isCurrentUser = false) => {
+  // Add user marker with Ready Player Me avatar
+  const addUserMarker = (lng: number, lat: number, userId: string, name: string, isCurrentUser = false) => {
     if (!map.current) return;
 
     // Remove existing marker for this user
-    if (markersRef.current[name]) {
-      markersRef.current[name].remove();
+    const markerId = isCurrentUser ? 'current-user' : userId;
+    if (markersRef.current[markerId]) {
+      markersRef.current[markerId].remove();
     }
+
+    const userProfile = userProfiles[userId];
+    const avatarUrl = userProfile?.avatar_url;
 
     // Create marker element
     const el = document.createElement('div');
-    el.className = 'marker';
-    el.style.width = '40px';
-    el.style.height = '40px';
-    el.style.borderRadius = '50%';
-    el.style.border = isCurrentUser ? '3px solid #3b82f6' : '2px solid #e5e7eb';
-    el.style.background = isCurrentUser ? '#3b82f6' : '#10b981';
-    el.style.display = 'flex';
-    el.style.alignItems = 'center';
-    el.style.justifyContent = 'center';
-    el.style.color = 'white';
-    el.style.fontWeight = 'bold';
-    el.style.fontSize = '12px';
-    el.style.cursor = 'pointer';
-    el.style.boxShadow = '0 2px 8px rgba(0,0,0,0.3)';
-    el.textContent = isCurrentUser ? '📍' : '👋';
+    el.style.cssText = `
+      width: 50px;
+      height: 50px;
+      cursor: pointer;
+      position: relative;
+    `;
+
+    // Check if avatar URL is Ready Player Me format
+    const isReadyPlayerMe = avatarUrl && avatarUrl.startsWith('https://models.readyplayer.me/');
+    
+    if (isReadyPlayerMe) {
+      // Use Ready Player Me avatar
+      const avatarImg = document.createElement('img');
+      avatarImg.src = avatarUrl;
+      avatarImg.style.cssText = `
+        width: 50px;
+        height: 50px;
+        border-radius: 50%;
+        border: 3px solid ${isCurrentUser ? '#3b82f6' : '#10b981'};
+        object-fit: cover;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+      `;
+      el.appendChild(avatarImg);
+    } else {
+      // Fallback to simple avatar
+      el.style.cssText += `
+        background: ${isCurrentUser ? '#3b82f6' : '#10b981'};
+        border: 3px solid white;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 20px;
+        color: white;
+        font-weight: bold;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+      `;
+      el.textContent = isCurrentUser ? '📍' : name.charAt(0);
+    }
+
+    // Add status indicator
+    if (!isCurrentUser) {
+      const statusDot = document.createElement('div');
+      statusDot.style.cssText = `
+        position: absolute;
+        bottom: 2px;
+        right: 2px;
+        width: 12px;
+        height: 12px;
+        background: #10b981;
+        border: 2px solid white;
+        border-radius: 50%;
+      `;
+      el.appendChild(statusDot);
+    }
 
     // Create popup
     const popup = new mapboxgl.Popup({ offset: 25 }).setHTML(
@@ -179,7 +247,7 @@ export const RealMapComponent = () => {
       .setPopup(popup)
       .addTo(map.current);
 
-    markersRef.current[name] = marker;
+    markersRef.current[markerId] = marker;
   };
 
   // Load nearby users (mock data for now)
@@ -237,6 +305,7 @@ export const RealMapComponent = () => {
       addUserMarker(
         userLoc.longitude,
         userLoc.latitude,
+        userLoc.user_id,
         userLoc.profile?.display_name || 'Unknown',
         false
       );
@@ -316,14 +385,26 @@ export const RealMapComponent = () => {
                   };
                 }
 
+                const userProfile = userProfiles[userLoc.user_id];
+                const isReadyPlayerMe = userProfile?.avatar_url && userProfile.avatar_url.startsWith('https://models.readyplayer.me/');
+
                 return (
                   <div key={userLoc.user_id} className="text-center p-3 bg-muted/30 rounded-lg">
                     <div className="w-12 h-12 mx-auto mb-2">
-                      <RealisticAvatar 
-                        config={avatarConfig as AvatarConfig}
-                        size="medium"
-                        status="online"
-                      />
+                      {isReadyPlayerMe ? (
+                        <AvatarDisplay 
+                          avatarUrl={userProfile.avatar_url}
+                          size="medium"
+                          showStatus={true}
+                          status="online"
+                        />
+                      ) : (
+                        <RealisticAvatar 
+                          config={avatarConfig as AvatarConfig}
+                          size="medium"
+                          status="online"
+                        />
+                      )}
                     </div>
                     <p className="text-sm font-medium">{userLoc.profile?.display_name}</p>
                     <p className="text-xs text-muted-foreground">

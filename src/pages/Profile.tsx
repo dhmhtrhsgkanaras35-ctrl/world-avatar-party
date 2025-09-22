@@ -4,6 +4,8 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { AvatarCustomizer, AvatarConfig } from "@/components/AvatarCustomizer";
 import { RealisticAvatar } from "@/components/RealisticAvatar";
+import { ReadyPlayerMeCreator } from "@/components/ReadyPlayerMeCreator";
+import { AvatarDisplay } from "@/components/AvatarDisplay";
 import { useAuth } from "@/components/AuthProvider";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -13,6 +15,8 @@ const Profile = () => {
   const { user, signOut } = useAuth();
   const { toast } = useToast();
   const [avatarConfig, setAvatarConfig] = useState<AvatarConfig | null>(null);
+  const [readyPlayerMeUrl, setReadyPlayerMeUrl] = useState<string | null>(null);
+  const [showRPMCreator, setShowRPMCreator] = useState(false);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -41,10 +45,16 @@ const Profile = () => {
 
       if (data?.avatar_url) {
         try {
-          const config = JSON.parse(data.avatar_url);
-          setAvatarConfig(config);
+          // Check if it's a Ready Player Me URL or legacy config
+          if (data.avatar_url.startsWith('https://models.readyplayer.me/')) {
+            setReadyPlayerMeUrl(data.avatar_url);
+          } else {
+            const config = JSON.parse(data.avatar_url);
+            setAvatarConfig(config);
+          }
         } catch (e) {
-          console.error('Error parsing avatar config:', e);
+          // If parsing fails, assume it's a Ready Player Me URL
+          setReadyPlayerMeUrl(data.avatar_url);
         }
       }
     } catch (error) {
@@ -104,20 +114,13 @@ const Profile = () => {
             <CardTitle>Account Information</CardTitle>
           </CardHeader>
           <CardContent className="flex items-center gap-6">
-            <div className="w-20 h-20">
-              {avatarConfig ? (
-                <RealisticAvatar 
-                  config={avatarConfig}
-                  size="large"
-                  animated
-                  status="online"
-                />
-              ) : (
-                <div className="w-full h-full bg-muted rounded-full flex items-center justify-center">
-                  <span className="text-2xl">👤</span>
-                </div>
-              )}
-            </div>
+            <AvatarDisplay
+              avatarUrl={readyPlayerMeUrl}
+              size="large"
+              showStatus={true}
+              status="online"
+              onClick={() => setShowRPMCreator(true)}
+            />
             <div>
               <h3 className="text-xl font-semibold">
                 {user.user_metadata?.display_name || 'No name set'}
@@ -132,12 +135,50 @@ const Profile = () => {
           </CardContent>
         </Card>
 
-        {/* Avatar Customizer */}
-        <AvatarCustomizer
-          userId={user.id}
-          initialConfig={avatarConfig || undefined}
-          onConfigChange={setAvatarConfig}
-        />
+        {/* Avatar Management */}
+        <div className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle>Avatar Options</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <Button 
+                onClick={() => setShowRPMCreator(true)}
+                className="w-full gradient-party border-0"
+                size="lg"
+              >
+                🎭 {readyPlayerMeUrl ? 'Update' : 'Create'} Ready Player Me Avatar
+              </Button>
+            </CardContent>
+          </Card>
+
+          {/* Legacy Avatar Customizer */}
+          {!readyPlayerMeUrl && (
+            <AvatarCustomizer
+              userId={user.id}
+              initialConfig={avatarConfig || undefined}
+              onConfigChange={setAvatarConfig}
+            />
+          )}
+        </div>
+
+        {/* Ready Player Me Creator Modal */}
+        {showRPMCreator && (
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+            <div className="bg-background rounded-lg p-6">
+              <ReadyPlayerMeCreator
+                userId={user.id}
+                onAvatarCreated={(url) => {
+                  setReadyPlayerMeUrl(url);
+                  setShowRPMCreator(false);
+                  setAvatarConfig(null); // Clear legacy config
+                }}
+                onSkip={() => setShowRPMCreator(false)}
+                showSkipOption={true}
+              />
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

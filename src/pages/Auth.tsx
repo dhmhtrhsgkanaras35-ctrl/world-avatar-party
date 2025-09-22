@@ -6,6 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Avatar } from "@/components/Avatar";
+import { ReadyPlayerMeCreator } from "@/components/ReadyPlayerMeCreator";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { User, Session } from '@supabase/supabase-js';
@@ -16,6 +17,8 @@ const Auth = () => {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(false);
+  const [showAvatarCreator, setShowAvatarCreator] = useState(false);
+  const [newUserId, setNewUserId] = useState<string | null>(null);
   const [formData, setFormData] = useState({
     email: '',
     password: '',
@@ -59,7 +62,7 @@ const Auth = () => {
     try {
       const redirectUrl = `${window.location.origin}/`;
       
-      const { error } = await supabase.auth.signUp({
+      const { data, error } = await supabase.auth.signUp({
         email: formData.email,
         password: formData.password,
         options: {
@@ -82,9 +85,13 @@ const Auth = () => {
           throw error;
         }
       } else {
+        if (data.user) {
+          setNewUserId(data.user.id);
+          setShowAvatarCreator(true);
+        }
         toast({
           title: "Account created!",
-          description: "Check your email to confirm your account.",
+          description: "Now create your avatar to complete setup.",
         });
       }
     } catch (error: any) {
@@ -141,6 +148,31 @@ const Auth = () => {
       [e.target.name]: e.target.value
     });
   };
+
+  const handleAvatarCreated = () => {
+    toast({
+      title: "Setup Complete!",
+      description: "Your avatar has been created. Welcome to WorldMe!",
+    });
+    navigate('/');
+  };
+
+  const handleSkipAvatar = () => {
+    navigate('/');
+  };
+
+  if (showAvatarCreator && newUserId) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center p-6">
+        <ReadyPlayerMeCreator
+          userId={newUserId}
+          onAvatarCreated={handleAvatarCreated}
+          onSkip={handleSkipAvatar}
+          showSkipOption={true}
+        />
+      </div>
+    );
+  }
 
   if (user) {
     return (

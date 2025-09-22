@@ -2,8 +2,6 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { AvatarCustomizer, AvatarConfig } from "@/components/AvatarCustomizer";
-import { RealisticAvatar } from "@/components/RealisticAvatar";
 import { ReadyPlayerMeCreator } from "@/components/ReadyPlayerMeCreator";
 import { AvatarDisplay } from "@/components/AvatarDisplay";
 import { useAuth } from "@/components/AuthProvider";
@@ -14,7 +12,7 @@ const Profile = () => {
   const navigate = useNavigate();
   const { user, signOut } = useAuth();
   const { toast } = useToast();
-  const [avatarConfig, setAvatarConfig] = useState<AvatarConfig | null>(null);
+  
   const [readyPlayerMeUrl, setReadyPlayerMeUrl] = useState<string | null>(null);
   const [showRPMCreator, setShowRPMCreator] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -44,18 +42,7 @@ const Profile = () => {
       }
 
       if (data?.avatar_url) {
-        try {
-          // Check if it's a Ready Player Me URL or legacy config
-          if (data.avatar_url.startsWith('https://models.readyplayer.me/')) {
-            setReadyPlayerMeUrl(data.avatar_url);
-          } else {
-            const config = JSON.parse(data.avatar_url);
-            setAvatarConfig(config);
-          }
-        } catch (e) {
-          // If parsing fails, assume it's a Ready Player Me URL
-          setReadyPlayerMeUrl(data.avatar_url);
-        }
+        setReadyPlayerMeUrl(data.avatar_url);
       }
     } catch (error) {
       console.error('Error loading profile:', error);
@@ -152,14 +139,6 @@ const Profile = () => {
             </CardContent>
           </Card>
 
-          {/* Legacy Avatar Customizer */}
-          {!readyPlayerMeUrl && (
-            <AvatarCustomizer
-              userId={user.id}
-              initialConfig={avatarConfig || undefined}
-              onConfigChange={setAvatarConfig}
-            />
-          )}
         </div>
 
         {/* Ready Player Me Creator Modal */}
@@ -171,7 +150,6 @@ const Profile = () => {
                 onAvatarCreated={(url) => {
                   setReadyPlayerMeUrl(url);
                   setShowRPMCreator(false);
-                  setAvatarConfig(null); // Clear legacy config
                 }}
                 onSkip={() => setShowRPMCreator(false)}
                 showSkipOption={true}

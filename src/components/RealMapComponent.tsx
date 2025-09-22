@@ -6,8 +6,6 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "./AuthProvider";
-import { RealisticAvatar } from "./RealisticAvatar";
-import { AvatarConfig } from "./AvatarCustomizer";
 import { AvatarDisplay } from "./AvatarDisplay";
 import { useToast } from "@/hooks/use-toast";
 
@@ -264,16 +262,7 @@ export const RealMapComponent = () => {
         profile: {
           username: 'alex_party',
           display_name: 'Alex',
-          avatar_url: JSON.stringify({
-            skinTone: 1,
-            hairStyle: 2,
-            hairColor: '#8B4513',
-            eyeColor: '#4A90E2',
-            faceShape: 1,
-            clothing: 1,
-            accessory: 1,
-            gender: 'male'
-          })
+          avatar_url: 'https://models.readyplayer.me/67054f9cfd50cc4cc0e4de18.glb'
         }
       },
       {
@@ -284,16 +273,7 @@ export const RealMapComponent = () => {
         profile: {
           username: 'sam_explorer',
           display_name: 'Sam',
-          avatar_url: JSON.stringify({
-            skinTone: 3,
-            hairStyle: 3,
-            hairColor: '#FFD700',
-            eyeColor: '#228B22',
-            faceShape: 2,
-            clothing: 2,
-            accessory: 0,
-            gender: 'female'
-          })
+          avatar_url: 'https://models.readyplayer.me/67054f9cfd50cc4cc0e4de19.glb'
         }
       }
     ];
@@ -369,42 +349,18 @@ export const RealMapComponent = () => {
             </h3>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               {nearbyUsers.map((userLoc) => {
-                let avatarConfig;
-                try {
-                  avatarConfig = JSON.parse(userLoc.profile?.avatar_url || '{}');
-                } catch {
-                  avatarConfig = {
-                    skinTone: 2,
-                    hairStyle: 1,
-                    hairColor: '#8B4513',
-                    eyeColor: '#4A90E2',
-                    faceShape: 1,
-                    clothing: 1,
-                    accessory: 0,
-                    gender: 'male'
-                  };
-                }
-
                 const userProfile = userProfiles[userLoc.user_id];
                 const isReadyPlayerMe = userProfile?.avatar_url && userProfile.avatar_url.startsWith('https://models.readyplayer.me/');
 
                 return (
                   <div key={userLoc.user_id} className="text-center p-3 bg-muted/30 rounded-lg">
                     <div className="w-12 h-12 mx-auto mb-2">
-                      {isReadyPlayerMe ? (
-                        <AvatarDisplay 
-                          avatarUrl={userProfile.avatar_url}
-                          size="medium"
-                          showStatus={true}
-                          status="online"
-                        />
-                      ) : (
-                        <RealisticAvatar 
-                          config={avatarConfig as AvatarConfig}
-                          size="medium"
-                          status="online"
-                        />
-                      )}
+                      <AvatarDisplay 
+                        avatarUrl={isReadyPlayerMe ? userProfile.avatar_url : null}
+                        size="medium"
+                        showStatus={true}
+                        status="online"
+                      />
                     </div>
                     <p className="text-sm font-medium">{userLoc.profile?.display_name}</p>
                     <p className="text-xs text-muted-foreground">

@@ -3,8 +3,7 @@ import { Avatar } from "./Avatar";
 import { EventMarker } from "./EventMarker";
 import { useAuth } from "./AuthProvider";
 import { useNavigate } from "react-router-dom";
-import { RealisticAvatar } from "./RealisticAvatar";
-import { AvatarConfig } from "./AvatarCustomizer";
+import { AvatarDisplay } from "./AvatarDisplay";
 import heroPartyImage from "@/assets/hero-party.jpg";
 
 export const HeroSection = () => {
@@ -28,57 +27,27 @@ export const HeroSection = () => {
       <div className="absolute inset-0 z-10 pointer-events-none">
         {/* Floating avatars */}
         <div className="absolute top-20 left-10 animate-float">
-          <RealisticAvatar 
-            config={{
-              skinTone: 1,
-              hairStyle: 2,
-              hairColor: '#8B4513',
-              eyeColor: '#4A90E2',
-              faceShape: 1,
-              clothing: 1,
-              accessory: 1,
-              gender: 'male'
-            }}
+          <AvatarDisplay 
+            avatarUrl="https://models.readyplayer.me/67054f9cfd50cc4cc0e4de18.glb"
             size="medium"
-            name="Alex"
+            showStatus={true}
             status="online"
-            animated
           />
         </div>
         <div className="absolute top-40 right-20 animate-float" style={{ animationDelay: "0.5s" }}>
-          <RealisticAvatar 
-            config={{
-              skinTone: 3,
-              hairStyle: 3,
-              hairColor: '#FFD700',
-              eyeColor: '#228B22',
-              faceShape: 2,
-              clothing: 2,
-              accessory: 0,
-              gender: 'female'
-            }}
+          <AvatarDisplay 
+            avatarUrl="https://models.readyplayer.me/67054f9cfd50cc4cc0e4de19.glb"
             size="medium"
-            name="Sam"
-            status="party"
-            animated
+            showStatus={true}
+            status="online"
           />
         </div>
         <div className="absolute bottom-40 left-20 animate-float" style={{ animationDelay: "1s" }}>
-          <RealisticAvatar 
-            config={{
-              skinTone: 4,
-              hairStyle: 4,
-              hairColor: '#654321',
-              eyeColor: '#9370DB',
-              faceShape: 3,
-              clothing: 3,
-              accessory: 2,
-              gender: 'non-binary'
-            }}
+          <AvatarDisplay 
+            avatarUrl={null}
             size="medium"
-            name="Jordan"
+            showStatus={true}
             status="online"
-            animated
           />
         </div>
         

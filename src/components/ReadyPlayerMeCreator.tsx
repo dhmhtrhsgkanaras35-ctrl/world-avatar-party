@@ -105,23 +105,65 @@ export const ReadyPlayerMeCreator = ({
   const saveAvatarUrl = async (avatarUrl: string) => {
     setIsSaving(true);
     try {
-      console.log('Saving avatar URL:', avatarUrl, 'for user:', userId);
+      console.log('=== AVATAR SAVE DEBUG ===');
+      console.log('Avatar URL:', avatarUrl);
+      console.log('User ID:', userId);
       
-      const { error } = await supabase
+      // Check if user is authenticated
+      const { data: { user }, error: authError } = await supabase.auth.getUser();
+      console.log('Current authenticated user:', user);
+      console.log('Auth error:', authError);
+      
+      if (!user) {
+        throw new Error('User not authenticated');
+      }
+      
+      if (user.id !== userId) {
+        console.warn('User ID mismatch:', { authenticated: user.id, provided: userId });
+      }
+      
+      // First, try to get existing profile
+      const { data: existingProfile, error: fetchError } = await supabase
         .from('profiles')
-        .upsert({
-          user_id: userId,
-          avatar_url: avatarUrl
-        }, {
+        .select('*')
+        .eq('user_id', userId)
+        .maybeSingle();
+        
+      console.log('Existing profile:', existingProfile);
+      console.log('Fetch error:', fetchError);
+      
+      // Prepare the profile data
+      let profileData: any = {
+        user_id: userId,
+        avatar_url: avatarUrl,
+        updated_at: new Date().toISOString()
+      };
+      
+      // If no existing profile, add required fields
+      if (!existingProfile) {
+        profileData.display_name = user.user_metadata?.display_name || user.email?.split('@')[0] || 'User';
+        profileData.username = user.user_metadata?.username || user.email?.split('@')[0] || 'user';
+        console.log('Creating new profile with data:', profileData);
+      } else {
+        console.log('Updating existing profile with data:', profileData);
+      }
+      
+      const { data, error } = await supabase
+        .from('profiles')
+        .upsert(profileData, {
           onConflict: 'user_id'
-        });
+        })
+        .select();
+
+      console.log('Upsert result:', data);
+      console.log('Upsert error:', error);
 
       if (error) {
-        console.error('Supabase error:', error);
+        console.error('Supabase upsert error:', error);
         throw error;
       }
 
-      console.log('Avatar saved successfully');
+      console.log('Avatar saved successfully:', data);
       
       toast({
         title: "Avatar Created!",
@@ -130,14 +172,19 @@ export const ReadyPlayerMeCreator = ({
 
       onAvatarCreated?.(avatarUrl);
     } catch (error: any) {
-      console.error('Save avatar error:', error);
+      console.error('=== SAVE AVATAR ERROR ===');
+      console.error('Error details:', error);
+      console.error('Error message:', error.message);
+      console.error('Error code:', error.code);
+      
       toast({
         title: "Save Failed",
-        description: error.message || "Failed to save avatar",
+        description: `Failed to save avatar: ${error.message}`,
         variant: "destructive"
       });
     } finally {
       setIsSaving(false);
+      console.log('=== AVATAR SAVE DEBUG END ===');
     }
   };
 

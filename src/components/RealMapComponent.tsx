@@ -310,7 +310,7 @@ export const RealMapComponent = () => {
     <div className="space-y-6">
       {/* Map Container */}
       <div className="relative">
-        <div ref={mapContainer} className="w-full h-96 rounded-lg shadow-lg" />
+        <div ref={mapContainer} className="w-full h-full rounded-lg shadow-lg" />
         
         {/* Map Controls */}
         <div className="absolute top-4 left-4 space-y-2">

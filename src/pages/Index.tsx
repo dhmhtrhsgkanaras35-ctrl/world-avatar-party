@@ -5,10 +5,18 @@ import { LocationToggle } from "@/components/LocationToggle";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/components/AuthProvider";
 import { useNavigate } from "react-router-dom";
+import { useEffect } from "react";
 
 const Index = () => {
-  const { user, signOut } = useAuth();
+  const { user, signOut, loading } = useAuth();
   const navigate = useNavigate();
+
+  // Redirect authenticated users to the main app
+  useEffect(() => {
+    if (!loading && user) {
+      navigate('/app');
+    }
+  }, [user, loading, navigate]);
 
   return (
     <div className="min-h-screen bg-background relative">
@@ -86,11 +94,9 @@ const Index = () => {
             <Button 
               size="lg" 
               className="text-lg px-12 py-6 gradient-party party-button border-0 shadow-party"
-              onClick={() => {
-                alert("🔗 Connect Supabase first to enable all features!");
-              }}
+              onClick={() => navigate('/auth')}
             >
-              📱 Enable Real-Time
+              📱 Get Started
             </Button>
             <Button 
               variant="outline" 

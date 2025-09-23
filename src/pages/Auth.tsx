@@ -34,9 +34,9 @@ const Auth = () => {
         setUser(session?.user ?? null);
         
         if (session?.user) {
-          // User is signed in, redirect to main page
+          // User is signed in, redirect to main app
           setTimeout(() => {
-            navigate('/');
+            navigate('/app');
           }, 1000);
         }
       }
@@ -48,7 +48,7 @@ const Auth = () => {
       setUser(session?.user ?? null);
       
       if (session?.user) {
-        navigate('/');
+        navigate('/app');
       }
     });
 
@@ -154,11 +154,11 @@ const Auth = () => {
       title: "Setup Complete!",
       description: "Your avatar has been created. Welcome to WorldMe!",
     });
-    navigate('/');
+    navigate('/app');
   };
 
   const handleSkipAvatar = () => {
-    navigate('/');
+    navigate('/app');
   };
 
   if (showAvatarCreator && newUserId) {

@@ -75,6 +75,7 @@ export const RealMapComponent = () => {
         profileMap[profile.user_id] = profile;
       });
       setUserProfiles(profileMap);
+      console.log('Loaded user profiles:', profileMap);
     } catch (error) {
       console.error('Error loading user profiles:', error);
     }

@@ -105,15 +105,24 @@ export const ReadyPlayerMeCreator = ({
   const saveAvatarUrl = async (avatarUrl: string) => {
     setIsSaving(true);
     try {
+      console.log('Saving avatar URL:', avatarUrl, 'for user:', userId);
+      
       const { error } = await supabase
         .from('profiles')
         .upsert({
           user_id: userId,
           avatar_url: avatarUrl
+        }, {
+          onConflict: 'user_id'
         });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Supabase error:', error);
+        throw error;
+      }
 
+      console.log('Avatar saved successfully');
+      
       toast({
         title: "Avatar Created!",
         description: "Your Ready Player Me avatar has been saved successfully.",
@@ -121,6 +130,7 @@ export const ReadyPlayerMeCreator = ({
 
       onAvatarCreated?.(avatarUrl);
     } catch (error: any) {
+      console.error('Save avatar error:', error);
       toast({
         title: "Save Failed",
         description: error.message || "Failed to save avatar",

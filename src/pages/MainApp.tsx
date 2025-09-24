@@ -47,30 +47,21 @@ const MainApp = () => {
   }
 
   return (
-    <div className="min-h-screen bg-background flex flex-col">
-      {/* Header */}
-      <div className="bg-card border-b p-4 flex justify-between items-center">
-        <h1 className="text-2xl font-bold gradient-party bg-clip-text text-transparent">
-          WorldMe
-        </h1>
-        <div className="flex items-center gap-2">
-          <span className="text-sm text-muted-foreground">
-            {userProfile?.display_name || user.user_metadata?.display_name || 'User'}
-          </span>
-          <Button 
-            variant="ghost" 
-            size="sm"
-            onClick={() => navigate('/profile')}
-          >
-            <User className="h-4 w-4" />
-          </Button>
+      <div className="flex flex-col h-screen">
+        {/* Map - takes full screen */}
+        <div className="flex-1 relative">
+          <RealMapComponent />
+          
+          {/* Floating header */}
+          <header className="absolute top-4 left-4 right-4 bg-background/80 backdrop-blur-sm rounded-lg border p-3 flex items-center justify-between z-10">
+            <h1 className="text-lg font-bold gradient-party bg-clip-text text-transparent">
+              WorldMe
+            </h1>
+            <div className="text-sm text-muted-foreground">
+              {userProfile?.display_name || user?.user_metadata?.display_name || 'User'}
+            </div>
+          </header>
         </div>
-      </div>
-
-      {/* Full Map */}
-      <div className="flex-1 relative">
-        <RealMapComponent />
-      </div>
 
       {/* Bottom Navigation */}
       <div className="bg-card border-t p-3 shadow-lg">

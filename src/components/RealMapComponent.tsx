@@ -28,7 +28,6 @@ export const RealMapComponent = () => {
   const { toast } = useToast();
   
   const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
-  const [nearbyUsers, setNearbyUsers] = useState<UserLocation[]>([]);
   const [userProfiles, setUserProfiles] = useState<{[key: string]: any}>({});
   const [mapLoaded, setMapLoaded] = useState(false);
   const [mapboxToken, setMapboxToken] = useState<string | null>(null);
@@ -61,23 +60,60 @@ export const RealMapComponent = () => {
     fetchMapboxToken();
   }, [toast]);
 
-  // Load user profiles with Ready Player Me avatars
-  const loadUserProfiles = async () => {
+  // Load real users from Supabase with avatars
+  const loadRealUsers = async () => {
     try {
-      const { data: profiles, error } = await supabase
-        .from('profiles')
-        .select('user_id, display_name, username, avatar_url');
+      console.log('Loading real users from Supabase...');
+      
+      const { data: locations, error: locationError } = await supabase
+        .from('user_locations')
+        .select('*')
+        .eq('is_sharing', true);
 
-      if (error) throw error;
+      if (locationError) {
+        console.error('Error loading locations:', locationError);
+        return;
+      }
 
-      const profileMap: {[key: string]: any} = {};
-      profiles?.forEach(profile => {
-        profileMap[profile.user_id] = profile;
-      });
-      setUserProfiles(profileMap);
-      console.log('Loaded user profiles:', profileMap);
+      console.log('Loaded locations:', locations);
+
+      if (locations && locations.length > 0) {
+        const userIds = locations.map(loc => loc.user_id);
+        
+        const { data: profiles, error: profileError } = await supabase
+          .from('profiles')
+          .select('user_id, username, display_name, avatar_url')
+          .in('user_id', userIds);
+
+        if (profileError) {
+          console.error('Error loading profiles:', profileError);
+          return;
+        }
+
+        console.log('Loaded profiles:', profiles);
+
+        const profilesMap: {[key: string]: any} = {};
+        profiles?.forEach(profile => {
+          profilesMap[profile.user_id] = profile;
+        });
+        setUserProfiles(profilesMap);
+
+        // Add markers for each user with avatar
+        locations.forEach(location => {
+          const profile = profilesMap[location.user_id];
+          const displayName = profile?.display_name || 'Unknown User';
+          addUserMarker(
+            parseFloat(location.longitude.toString()),
+            parseFloat(location.latitude.toString()),
+            location.user_id,
+            displayName,
+            false,
+            profile?.avatar_url
+          );
+        });
+      }
     } catch (error) {
-      console.error('Error loading user profiles:', error);
+      console.error('Error loading real users:', error);
     }
   };
 
@@ -103,7 +139,6 @@ export const RealMapComponent = () => {
 
     map.current.on('load', () => {
       setMapLoaded(true);
-      loadUserProfiles();
       getUserLocation();
     });
 
@@ -162,7 +197,7 @@ export const RealMapComponent = () => {
   };
 
   // Add user marker with Ready Player Me avatar
-  const addUserMarker = (lng: number, lat: number, userId: string, name: string, isCurrentUser = false) => {
+  const addUserMarker = (lng: number, lat: number, userId: string, name: string, isCurrentUser = false, avatarUrl?: string) => {
     if (!map.current) return;
 
     // Remove existing marker for this user
@@ -170,9 +205,6 @@ export const RealMapComponent = () => {
     if (markersRef.current[markerId]) {
       markersRef.current[markerId].remove();
     }
-
-    const userProfile = userProfiles[userId];
-    const avatarUrl = userProfile?.avatar_url;
 
     // Create marker element
     const el = document.createElement('div');
@@ -183,11 +215,14 @@ export const RealMapComponent = () => {
       position: relative;
     `;
 
-    // Check if avatar URL is Ready Player Me format
-    const isReadyPlayerMe = avatarUrl && avatarUrl.startsWith('https://models.readyplayer.me/');
+    // Check if avatar URL is a Ready Player Me URL or any valid URL
+    const hasValidAvatar = avatarUrl && 
+      (avatarUrl.includes('readyplayer.me') || avatarUrl.startsWith('http'));
     
-    if (isReadyPlayerMe) {
-      // Use Ready Player Me avatar
+    console.log('Adding marker for:', name, 'with avatar:', avatarUrl, 'valid:', hasValidAvatar);
+    
+    if (hasValidAvatar) {
+      // Use Ready Player Me avatar or other valid image
       const avatarImg = document.createElement('img');
       avatarImg.src = avatarUrl;
       avatarImg.style.cssText = `
@@ -198,6 +233,30 @@ export const RealMapComponent = () => {
         object-fit: cover;
         box-shadow: 0 4px 12px rgba(0,0,0,0.3);
       `;
+      
+      avatarImg.onload = () => {
+        console.log('Avatar loaded successfully for:', name);
+      };
+      
+      avatarImg.onerror = () => {
+        console.error('Failed to load avatar for:', name);
+        // Fallback to simple avatar
+        el.innerHTML = '';
+        el.style.cssText += `
+          background: ${isCurrentUser ? '#3b82f6' : '#10b981'};
+          border: 3px solid white;
+          border-radius: 50%;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-size: 20px;
+          color: white;
+          font-weight: bold;
+          box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+        `;
+        el.textContent = isCurrentUser ? '📍' : name.charAt(0);
+      };
+      
       el.appendChild(avatarImg);
     } else {
       // Fallback to simple avatar
@@ -216,7 +275,7 @@ export const RealMapComponent = () => {
       el.textContent = isCurrentUser ? '📍' : name.charAt(0);
     }
 
-    // Add status indicator
+    // Add status indicator for other users
     if (!isCurrentUser) {
       const statusDot = document.createElement('div');
       statusDot.style.cssText = `
@@ -237,6 +296,7 @@ export const RealMapComponent = () => {
       `<div class="p-2">
         <h3 class="font-semibold">${name}</h3>
         <p class="text-sm text-gray-600">${isCurrentUser ? 'Your location' : 'Friend nearby'}</p>
+        <p class="text-xs text-gray-500">Avatar: ${hasValidAvatar ? 'Custom' : 'Default'}</p>
       </div>`
     );
 
@@ -249,48 +309,12 @@ export const RealMapComponent = () => {
     markersRef.current[markerId] = marker;
   };
 
-  // Load nearby users (mock data for now)
+  // Load nearby users when map is ready
   useEffect(() => {
-    if (!mapLoaded || !userLocation) return;
-
-    // Mock nearby users for demonstration
-    const mockUsers: UserLocation[] = [
-      {
-        user_id: 'user-1',
-        latitude: userLocation.lat + 0.001,
-        longitude: userLocation.lng + 0.001,
-        is_sharing: true,
-        profile: {
-          username: 'alex_party',
-          display_name: 'Alex',
-          avatar_url: 'https://models.readyplayer.me/67054f9cfd50cc4cc0e4de18.glb'
-        }
-      },
-      {
-        user_id: 'user-2', 
-        latitude: userLocation.lat - 0.0015,
-        longitude: userLocation.lng + 0.0008,
-        is_sharing: true,
-        profile: {
-          username: 'sam_explorer',
-          display_name: 'Sam',
-          avatar_url: 'https://models.readyplayer.me/67054f9cfd50cc4cc0e4de19.glb'
-        }
-      }
-    ];
-
-    setNearbyUsers(mockUsers);
-
-    // Add markers for nearby users
-    mockUsers.forEach((userLoc) => {
-      addUserMarker(
-        userLoc.longitude,
-        userLoc.latitude,
-        userLoc.user_id,
-        userLoc.profile?.display_name || 'Unknown',
-        false
-      );
-    });
+    if (mapLoaded && userLocation) {
+      console.log('Map loaded, loading real users from Supabase...');
+      loadRealUsers();
+    }
   }, [mapLoaded, userLocation]);
 
   if (!mapboxToken) {
@@ -307,80 +331,58 @@ export const RealMapComponent = () => {
   }
 
   return (
-    <div className="space-y-6">
-      {/* Map Container */}
-      <div className="relative">
-        <div ref={mapContainer} className="w-full h-full rounded-lg shadow-lg" />
-        
-        {/* Map Controls */}
-        <div className="absolute top-4 left-4 space-y-2">
-          <Button
-            size="sm"
-            onClick={getUserLocation}
-            className="bg-white text-black hover:bg-gray-100 shadow-lg"
-          >
-            📍 My Location
-          </Button>
-        </div>
-
-        {/* Legend */}
-        <Card className="absolute bottom-4 left-4 shadow-lg">
-          <CardContent className="p-3">
-            <div className="space-y-2 text-sm">
-              <div className="flex items-center gap-2">
-                <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
-                <span>You</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <div className="w-3 h-3 bg-green-500 rounded-full"></div>
-                <span>Friends</span>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+    <div className="w-full h-full">
+      {/* Map Container - Full screen */}
+      <div ref={mapContainer} className="w-full h-full" />
+      
+      {/* Map Controls */}
+      <div className="absolute top-20 left-4 space-y-2 z-20">
+        <Button
+          size="sm"
+          onClick={getUserLocation}
+          className="bg-white text-black hover:bg-gray-100 shadow-lg"
+        >
+          📍 My Location
+        </Button>
       </div>
 
-      {/* Nearby Users */}
-      {nearbyUsers.length > 0 && (
-        <Card>
-          <CardContent className="p-4">
-            <h3 className="font-semibold mb-3 flex items-center gap-2">
+      {/* Nearby Users Info - Floating */}
+      {Object.keys(userProfiles).length > 0 && (
+        <Card className="absolute bottom-20 right-4 max-w-xs shadow-lg z-20">
+          <CardContent className="p-3">
+            <h3 className="font-semibold mb-2 flex items-center gap-2 text-sm">
               👥 People Nearby
-              <Badge variant="secondary">{nearbyUsers.length}</Badge>
+              <Badge variant="secondary">{Object.keys(userProfiles).length}</Badge>
             </h3>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              {nearbyUsers.map((userLoc) => {
-                const userProfile = userProfiles[userLoc.user_id];
-                const isReadyPlayerMe = userProfile?.avatar_url && userProfile.avatar_url.startsWith('https://models.readyplayer.me/');
-
-                return (
-                  <div key={userLoc.user_id} className="text-center p-3 bg-muted/30 rounded-lg">
-                    <div className="w-12 h-12 mx-auto mb-2">
-                      <AvatarDisplay 
-                        avatarUrl={isReadyPlayerMe ? userProfile.avatar_url : null}
-                        size="medium"
-                        showStatus={true}
-                        status="online"
-                      />
-                    </div>
-                    <p className="text-sm font-medium">{userLoc.profile?.display_name}</p>
-                    <p className="text-xs text-muted-foreground">
-                      @{userLoc.profile?.username}
+            <div className="space-y-2 max-h-32 overflow-y-auto">
+              {Object.values(userProfiles).slice(0, 3).map((userProfile: any) => (
+                <div key={userProfile.user_id} className="flex items-center gap-2">
+                  <div className="w-6 h-6">
+                    <AvatarDisplay 
+                      avatarUrl={userProfile?.avatar_url}
+                      size="small"
+                      showStatus={true}
+                      status="online"
+                    />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-xs font-medium truncate">
+                      {userProfile?.display_name || 'Unknown'}
                     </p>
                   </div>
-                );
-              })}
+                </div>
+              ))}
             </div>
           </CardContent>
         </Card>
       )}
 
+      {/* Location Info */}
       {userLocation && (
-        <Card>
-          <CardContent className="p-4">
-            <h3 className="font-semibold mb-2">📍 Your Location</h3>
-            <p className="text-sm text-muted-foreground">
-              Lat: {userLocation.lat.toFixed(6)}, Lng: {userLocation.lng.toFixed(6)}
+        <Card className="absolute bottom-4 left-4 shadow-lg z-20">
+          <CardContent className="p-2">
+            <p className="text-xs text-muted-foreground">
+              {userLocation.lat.toFixed(4)}, {userLocation.lng.toFixed(4)}
             </p>
           </CardContent>
         </Card>

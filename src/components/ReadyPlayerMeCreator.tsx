@@ -74,10 +74,16 @@ export const ReadyPlayerMeCreator = ({
 
     // Event listener for Ready Player Me messages
     const handleMessage = async (event: MessageEvent) => {
+      console.log('=== RPM MESSAGE EVENT ===');
+      console.log('Event origin:', event.origin);
+      console.log('Event data:', event.data);
+      
       if (event.origin !== 'https://demo.readyplayer.me') return;
 
       if (event.data?.eventName === 'v1.avatar.exported') {
+        console.log('Avatar exported event received');
         const avatarUrl = event.data.data.url;
+        console.log('Captured avatar URL:', avatarUrl);
         await saveAvatarUrl(avatarUrl);
         cleanup();
       }

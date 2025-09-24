@@ -22,7 +22,6 @@ interface UserLocation {
 }
 
 export const RealMapComponent = () => {
-  console.log('RealMapComponent rendering - v2'); // Force refresh
   const mapContainer = useRef<HTMLDivElement>(null);
   const map = useRef<mapboxgl.Map | null>(null);
   const { user } = useAuth();
@@ -33,14 +32,6 @@ export const RealMapComponent = () => {
   const [mapLoaded, setMapLoaded] = useState(false);
   const [mapboxToken, setMapboxToken] = useState<string | null>(null);
   const markersRef = useRef<{ [key: string]: mapboxgl.Marker }>({});
-
-  // Debug log to ensure component is properly initialized
-  console.log('Component state:', { 
-    userProfilesCount: Object.keys(userProfiles).length, 
-    mapLoaded, 
-    hasMapboxToken: !!mapboxToken,
-    hasUserLocation: !!userLocation
-  });
 
   // Get Mapbox token from Supabase Edge Function
   useEffect(() => {
@@ -171,22 +162,48 @@ export const RealMapComponent = () => {
     }
 
     navigator.geolocation.getCurrentPosition(
-      (position) => {
+      async (position) => {
         const { latitude, longitude } = position.coords;
         const location = { lat: latitude, lng: longitude };
         setUserLocation(location);
 
-        if (map.current) {
+        if (map.current && user) {
+          // Update location in Supabase
+          const { error } = await supabase
+            .from('user_locations')
+            .upsert({
+              user_id: user.id,
+              latitude: latitude,
+              longitude: longitude,
+              is_sharing: true,
+              last_updated: new Date().toISOString()
+            });
+
+          if (error) {
+            console.error('Error updating location:', error);
+          }
+
           map.current.flyTo({
             center: [longitude, latitude],
             zoom: 15,
             duration: 2000
           });
 
-          // Add user marker
-          if (user) {
-            addUserMarker(longitude, latitude, user.id, 'You', true);
-          }
+          // Get user's avatar from profile and add marker
+          const { data: userProfile } = await supabase
+            .from('profiles')
+            .select('avatar_url, display_name')
+            .eq('user_id', user.id)
+            .single();
+
+          addUserMarker(
+            longitude, 
+            latitude, 
+            user.id, 
+            userProfile?.display_name || 'You', 
+            true, 
+            userProfile?.avatar_url
+          );
         }
       },
       (error) => {

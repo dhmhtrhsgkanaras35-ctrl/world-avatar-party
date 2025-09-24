@@ -80,10 +80,19 @@ export const ReadyPlayerMeCreator = ({
       
       if (event.origin !== 'https://demo.readyplayer.me') return;
 
-      if (event.data?.eventName === 'v1.avatar.exported') {
-        console.log('Avatar exported event received');
-        const avatarUrl = event.data.data.url;
-        console.log('Captured avatar URL:', avatarUrl);
+      let avatarUrl: string | null = null;
+
+      // Check if event data is the avatar URL string directly
+      if (typeof event.data === 'string' && (event.data.endsWith('.glb') || event.data.endsWith('.vrm'))) {
+        avatarUrl = event.data;
+      }
+      // Check if it's the structured event format
+      else if (event.data?.eventName === 'v1.avatar.exported' && event.data?.data?.url) {
+        avatarUrl = event.data.data.url;
+      }
+
+      if (avatarUrl) {
+        console.log('Avatar URL captured:', avatarUrl);
         await saveAvatarUrl(avatarUrl);
         cleanup();
       }

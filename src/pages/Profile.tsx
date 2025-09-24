@@ -145,15 +145,17 @@ const Profile = () => {
         {showRPMCreator && (
           <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
             <div className="bg-background rounded-lg p-6">
-              <ReadyPlayerMeCreator
-                userId={user.id}
-                onAvatarCreated={(url) => {
-                  setReadyPlayerMeUrl(url);
-                  setShowRPMCreator(false);
-                }}
-                onSkip={() => setShowRPMCreator(false)}
-                showSkipOption={true}
-              />
+          <ReadyPlayerMeCreator
+            userId={user.id}
+            onAvatarCreated={(url) => {
+              setReadyPlayerMeUrl(url);
+              setShowRPMCreator(false);
+              // Reload profile to sync with database
+              loadProfile();
+            }}
+            onSkip={() => setShowRPMCreator(false)}
+            showSkipOption={true}
+          />
             </div>
           </div>
         )}

@@ -22,6 +22,7 @@ interface UserLocation {
 }
 
 export const RealMapComponent = () => {
+  console.log('RealMapComponent rendering - v2'); // Force refresh
   const mapContainer = useRef<HTMLDivElement>(null);
   const map = useRef<mapboxgl.Map | null>(null);
   const { user } = useAuth();
@@ -32,6 +33,14 @@ export const RealMapComponent = () => {
   const [mapLoaded, setMapLoaded] = useState(false);
   const [mapboxToken, setMapboxToken] = useState<string | null>(null);
   const markersRef = useRef<{ [key: string]: mapboxgl.Marker }>({});
+
+  // Debug log to ensure component is properly initialized
+  console.log('Component state:', { 
+    userProfilesCount: Object.keys(userProfiles).length, 
+    mapLoaded, 
+    hasMapboxToken: !!mapboxToken,
+    hasUserLocation: !!userLocation
+  });
 
   // Get Mapbox token from Supabase Edge Function
   useEffect(() => {

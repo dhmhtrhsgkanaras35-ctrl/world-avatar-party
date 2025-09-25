@@ -38,12 +38,13 @@ export const AvatarDisplay = ({
     </div>
   );
 
-  // Convert Ready Player Me .glb URL to headshot image URL
+  // Convert Ready Player Me .glb URL to headshot image URL  
   let displayAvatarUrl = avatarUrl;
   if (avatarUrl && avatarUrl.includes('readyplayer.me') && avatarUrl.endsWith('.glb')) {
     const modelId = avatarUrl.match(/([a-f0-9-]+)\.glb$/)?.[1];
     if (modelId) {
-      displayAvatarUrl = `https://models.readyplayer.me/${modelId}.png?scene=headshot&blend_shapes=[]&width=512&height=512`;
+      // Try the headshot format first, fallback to original .glb if it fails
+      displayAvatarUrl = `https://models.readyplayer.me/${modelId}.png?scene=fullbody-portrait-v1&width=512&height=512`;
     }
   }
 

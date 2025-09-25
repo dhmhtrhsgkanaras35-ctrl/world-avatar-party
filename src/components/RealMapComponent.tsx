@@ -250,7 +250,7 @@ export const RealMapComponent = () => {
       // Convert .glb to headshot URL using Ready Player Me's API
       const modelId = avatarUrl.match(/([a-f0-9-]+)\.glb$/)?.[1];
       if (modelId) {
-        avatarImageUrl = `https://models.readyplayer.me/${modelId}.png?scene=headshot&blend_shapes=[]&width=256&height=256`;
+        avatarImageUrl = `https://models.readyplayer.me/${modelId}.png?scene=fullbody-portrait-v1&width=256&height=256`;
       }
     } else if (avatarUrl && avatarUrl.startsWith('http')) {
       avatarImageUrl = avatarUrl;

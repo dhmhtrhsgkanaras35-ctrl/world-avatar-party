@@ -8,6 +8,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "./AuthProvider";
 import { AvatarDisplay } from "./AvatarDisplay";
 import { useToast } from "@/hooks/use-toast";
+import { createMapAvatar3DMarker } from "./MapAvatar3D";
 
 interface UserLocation {
   user_id: string;
@@ -225,7 +226,7 @@ export const RealMapComponent = () => {
     );
   };
 
-  // Add user marker with Ready Player Me avatar
+  // Add user marker with 3D avatar
   const addUserMarker = (lng: number, lat: number, userId: string, name: string, isCurrentUser = false, avatarUrl?: string) => {
     if (!map.current) return;
 
@@ -235,105 +236,17 @@ export const RealMapComponent = () => {
       markersRef.current[markerId].remove();
     }
 
-    // Create marker element
-    const el = document.createElement('div');
-    el.style.cssText = `
-      width: 50px;
-      height: 50px;
-      cursor: pointer;
-      position: relative;
-    `;
-
-    // Convert Ready Player Me .glb URL to headshot image URL
-    let avatarImageUrl = null;
-    if (avatarUrl && avatarUrl.includes('readyplayer.me') && avatarUrl.endsWith('.glb')) {
-      // Convert .glb to headshot URL using Ready Player Me's API
-      const modelId = avatarUrl.match(/([a-f0-9-]+)\.glb$/)?.[1];
-      if (modelId) {
-        avatarImageUrl = `https://models.readyplayer.me/${modelId}.png?scene=fullbody-portrait-v1&width=256&height=256`;
-      }
-    } else if (avatarUrl && avatarUrl.startsWith('http')) {
-      avatarImageUrl = avatarUrl;
-    }
+    // Create 3D avatar marker
+    const el = createMapAvatar3DMarker(avatarUrl, name, isCurrentUser);
     
-    console.log('Adding marker for:', name, 'with avatar URL:', avatarImageUrl);
-    
-    if (avatarImageUrl) {
-      // Use avatar headshot image
-      const avatarImg = document.createElement('img');
-      avatarImg.src = avatarImageUrl;
-      avatarImg.style.cssText = `
-        width: 50px;
-        height: 50px;
-        border-radius: 50%;
-        border: 3px solid ${isCurrentUser ? '#3b82f6' : '#10b981'};
-        object-fit: cover;
-        box-shadow: 0 4px 12px rgba(0,0,0,0.3);
-      `;
-      
-      avatarImg.onload = () => {
-        console.log('Avatar loaded successfully for:', name);
-      };
-      
-      avatarImg.onerror = () => {
-        console.error('Failed to load avatar for:', name, 'URL:', avatarImageUrl);
-        // Fallback to simple avatar
-        el.innerHTML = '';
-        el.style.cssText += `
-          background: ${isCurrentUser ? '#3b82f6' : '#10b981'};
-          border: 3px solid white;
-          border-radius: 50%;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          font-size: 20px;
-          color: white;
-          font-weight: bold;
-          box-shadow: 0 4px 12px rgba(0,0,0,0.3);
-        `;
-        el.textContent = isCurrentUser ? '📍' : name.charAt(0);
-      };
-      
-      el.appendChild(avatarImg);
-    } else {
-      // Fallback to simple avatar
-      el.style.cssText += `
-        background: ${isCurrentUser ? '#3b82f6' : '#10b981'};
-        border: 3px solid white;
-        border-radius: 50%;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 20px;
-        color: white;
-        font-weight: bold;
-        box-shadow: 0 4px 12px rgba(0,0,0,0.3);
-      `;
-      el.textContent = isCurrentUser ? '📍' : name.charAt(0);
-    }
-
-    // Add status indicator for other users
-    if (!isCurrentUser) {
-      const statusDot = document.createElement('div');
-      statusDot.style.cssText = `
-        position: absolute;
-        bottom: 2px;
-        right: 2px;
-        width: 12px;
-        height: 12px;
-        background: #10b981;
-        border: 2px solid white;
-        border-radius: 50%;
-      `;
-      el.appendChild(statusDot);
-    }
+    console.log('Adding 3D avatar marker for:', name, 'with avatar:', avatarUrl);
 
     // Create popup
     const popup = new mapboxgl.Popup({ offset: 25 }).setHTML(
       `<div class="p-2">
         <h3 class="font-semibold">${name}</h3>
         <p class="text-sm text-gray-600">${isCurrentUser ? 'Your location' : 'Friend nearby'}</p>
-        <p class="text-xs text-gray-500">Avatar: ${avatarImageUrl ? 'Custom' : 'Default'}</p>
+        <p class="text-xs text-gray-500">Avatar: ${avatarUrl ? '3D Model' : 'Default'}</p>
       </div>`
     );
 

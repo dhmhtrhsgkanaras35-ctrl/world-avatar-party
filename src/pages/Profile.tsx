@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ReadyPlayerMeCreator } from "@/components/ReadyPlayerMeCreator";
 import { AvatarDisplay } from "@/components/AvatarDisplay";
+import { Avatar3D } from "@/components/Avatar3D";
 import { useAuth } from "@/components/AuthProvider";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -123,12 +124,39 @@ const Profile = () => {
         </Card>
 
         {/* Avatar Management */}
-        <div className="space-y-6">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* 3D Avatar Preview */}
+          <Card>
+            <CardHeader>
+              <CardTitle>3D Avatar Preview</CardTitle>
+            </CardHeader>
+            <CardContent className="flex justify-center">
+              <Avatar3D 
+                avatarUrl={readyPlayerMeUrl}
+                width={350}
+                height={450}
+                animate={true}
+                showControls={true}
+              />
+            </CardContent>
+          </Card>
+
+          {/* Avatar Controls */}
           <Card>
             <CardHeader>
               <CardTitle>Avatar Options</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
+              <div className="text-center mb-4">
+                <AvatarDisplay
+                  avatarUrl={readyPlayerMeUrl}
+                  size="large"
+                  showStatus={true}
+                  status="online"
+                  onClick={() => setShowRPMCreator(true)}
+                />
+              </div>
+              
               <Button 
                 onClick={() => setShowRPMCreator(true)}
                 className="w-full gradient-party border-0"
@@ -136,9 +164,14 @@ const Profile = () => {
               >
                 🎭 {readyPlayerMeUrl ? 'Update' : 'Create'} Ready Player Me Avatar
               </Button>
+              
+              {readyPlayerMeUrl && (
+                <div className="text-sm text-muted-foreground text-center">
+                  Click and drag to rotate your 3D avatar
+                </div>
+              )}
             </CardContent>
           </Card>
-
         </div>
 
         {/* Ready Player Me Creator Modal */}

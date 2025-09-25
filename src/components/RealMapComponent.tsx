@@ -194,7 +194,7 @@ export const RealMapComponent = () => {
             .from('profiles')
             .select('avatar_url, display_name')
             .eq('user_id', user.id)
-            .single();
+            .maybeSingle();
 
           addUserMarker(
             longitude, 
@@ -204,6 +204,9 @@ export const RealMapComponent = () => {
             true, 
             userProfile?.avatar_url
           );
+
+          // Load other users after adding current user
+          loadRealUsers();
         }
       },
       (error) => {
@@ -241,16 +244,24 @@ export const RealMapComponent = () => {
       position: relative;
     `;
 
-    // Check if avatar URL is a Ready Player Me URL or any valid URL
-    const hasValidAvatar = avatarUrl && 
-      (avatarUrl.includes('readyplayer.me') || avatarUrl.startsWith('http'));
+    // Convert Ready Player Me .glb URL to headshot image URL
+    let avatarImageUrl = null;
+    if (avatarUrl && avatarUrl.includes('readyplayer.me') && avatarUrl.endsWith('.glb')) {
+      // Convert .glb to headshot URL using Ready Player Me's API
+      const modelId = avatarUrl.match(/([a-f0-9-]+)\.glb$/)?.[1];
+      if (modelId) {
+        avatarImageUrl = `https://models.readyplayer.me/${modelId}.png?scene=headshot&blend_shapes=[]&width=256&height=256`;
+      }
+    } else if (avatarUrl && avatarUrl.startsWith('http')) {
+      avatarImageUrl = avatarUrl;
+    }
     
-    console.log('Adding marker for:', name, 'with avatar:', avatarUrl, 'valid:', hasValidAvatar);
+    console.log('Adding marker for:', name, 'with avatar URL:', avatarImageUrl);
     
-    if (hasValidAvatar) {
-      // Use Ready Player Me avatar or other valid image
+    if (avatarImageUrl) {
+      // Use avatar headshot image
       const avatarImg = document.createElement('img');
-      avatarImg.src = avatarUrl;
+      avatarImg.src = avatarImageUrl;
       avatarImg.style.cssText = `
         width: 50px;
         height: 50px;
@@ -265,7 +276,7 @@ export const RealMapComponent = () => {
       };
       
       avatarImg.onerror = () => {
-        console.error('Failed to load avatar for:', name);
+        console.error('Failed to load avatar for:', name, 'URL:', avatarImageUrl);
         // Fallback to simple avatar
         el.innerHTML = '';
         el.style.cssText += `
@@ -322,7 +333,7 @@ export const RealMapComponent = () => {
       `<div class="p-2">
         <h3 class="font-semibold">${name}</h3>
         <p class="text-sm text-gray-600">${isCurrentUser ? 'Your location' : 'Friend nearby'}</p>
-        <p class="text-xs text-gray-500">Avatar: ${hasValidAvatar ? 'Custom' : 'Default'}</p>
+        <p class="text-xs text-gray-500">Avatar: ${avatarImageUrl ? 'Custom' : 'Default'}</p>
       </div>`
     );
 

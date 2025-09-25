@@ -38,7 +38,16 @@ export const AvatarDisplay = ({
     </div>
   );
 
-  if (!avatarUrl || imageError) {
+  // Convert Ready Player Me .glb URL to headshot image URL
+  let displayAvatarUrl = avatarUrl;
+  if (avatarUrl && avatarUrl.includes('readyplayer.me') && avatarUrl.endsWith('.glb')) {
+    const modelId = avatarUrl.match(/([a-f0-9-]+)\.glb$/)?.[1];
+    if (modelId) {
+      displayAvatarUrl = `https://models.readyplayer.me/${modelId}.png?scene=headshot&blend_shapes=[]&width=512&height=512`;
+    }
+  }
+
+  if (!displayAvatarUrl || imageError) {
     return (
       <div className="relative inline-block">
         {onClick ? (
@@ -59,7 +68,7 @@ export const AvatarDisplay = ({
   return (
     <div className="relative inline-block">
       <img
-        src={avatarUrl}
+        src={displayAvatarUrl}
         alt="User Avatar"
         className={`${sizeClasses[size]} rounded-full object-cover border-2 border-white shadow-lg ${className} ${onClick ? 'cursor-pointer hover:scale-105 transition-transform' : ''}`}
         onError={() => setImageError(true)}

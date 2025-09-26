@@ -124,9 +124,9 @@ export const ReadyPlayerMeCreator = ({
     document.body.appendChild(overlay);
   };
 
-  // Generate PNG snapshot from GLB model with Snapchat-style natural pose
+  // Generate PNG snapshot from GLB model with natural idle animation
   const generateAvatarPNG = async (glbUrl: string): Promise<string | null> => {
-    console.log('Generating Snapchat-style PNG from GLB:', glbUrl);
+    console.log('Generating natural idle pose PNG from GLB:', glbUrl);
     
     return new Promise((resolve) => {
       const canvas = document.createElement('canvas');
@@ -166,138 +166,161 @@ export const ReadyPlayerMeCreator = ({
       fillRight.position.set(2, 1, 1);
       scene.add(fillRight);
       
+      // Animation mixer for handling animations
+      let mixer: THREE.AnimationMixer | null = null;
+      
       // Load GLB model
       const loader = new GLTFLoader();
       loader.load(glbUrl, 
         (gltf) => {
           const model = gltf.scene;
           
-          // Apply natural Snapchat Bitmoji-style relaxed pose with hands down
-          model.traverse((child) => {
-            if (child.type === 'Bone' || (child as any).isBone) {
-              const boneName = child.name.toLowerCase();
+          // Check for animations in the model
+          if (gltf.animations && gltf.animations.length > 0) {
+            mixer = new THREE.AnimationMixer(model);
+            
+            // Look for idle animation or use the first available animation
+            const idleAnimation = gltf.animations.find(animation => 
+              animation.name.toLowerCase().includes('idle') || 
+              animation.name.toLowerCase().includes('breathing') ||
+              animation.name.toLowerCase().includes('stand')
+            ) || gltf.animations[0];
+            
+            if (idleAnimation) {
+              const idleAction = mixer.clipAction(idleAnimation);
+              idleAction.setLoop(THREE.LoopRepeat, Infinity);
+              idleAction.play();
               
-              // Natural arm positioning - arms hanging at sides
-              if (boneName.includes('leftarm') || boneName.includes('l_upperarm') || boneName.includes('leftupperarm')) {
-                child.rotation.x = 0.1;   // Slight forward angle
-                child.rotation.z = 0.05;  // Close to body but not rigid
-                child.rotation.y = 0.05;  // Slight outward rotation
-              }
-              if (boneName.includes('rightarm') || boneName.includes('r_upperarm') || boneName.includes('rightupperarm')) {
-                child.rotation.x = 0.08;  // Slight forward angle
-                child.rotation.z = -0.05; // Close to body but not rigid
-                child.rotation.y = -0.05; // Slight outward rotation
-              }
-              
-              // Natural forearm - hanging down naturally
-              if (boneName.includes('leftforearm') || boneName.includes('l_forearm') || boneName.includes('leftlowerarm')) {
-                child.rotation.x = 0.1;   // Natural hanging angle
-                child.rotation.z = 0.02;  // Slight bend inward
-                child.rotation.y = 0.05;  // Natural twist
-              }
-              if (boneName.includes('rightforearm') || boneName.includes('r_forearm') || boneName.includes('rightlowerarm')) {
-                child.rotation.x = 0.12;  // Natural hanging angle
-                child.rotation.z = -0.02; // Slight bend inward
-                child.rotation.y = -0.05; // Natural twist
-              }
-              
-              // Natural hand positioning - relaxed down
-              if (boneName.includes('lefthand') || boneName.includes('l_hand')) {
-                child.rotation.x = 0.05;  // Slight forward curl
-                child.rotation.y = 0.02;  // Natural position
-                child.rotation.z = 0.01;  // Relaxed
-              }
-              if (boneName.includes('righthand') || boneName.includes('r_hand')) {
-                child.rotation.x = 0.05;  // Slight forward curl
-                child.rotation.y = -0.02; // Natural position
-                child.rotation.z = -0.01; // Relaxed
-              }
-              
-              // Weight shift - slight hip and spine curvature
-              if (boneName.includes('hips') || boneName.includes('pelvis')) {
-                child.rotation.z = 0.03; // Slight lean
-                child.rotation.y = 0.02; // Minor twist
-              }
-              if (boneName.includes('spine') || boneName.includes('chest')) {
-                child.rotation.z = -0.02; // Counter hip lean
-                child.rotation.y = -0.01; // Slight counter-twist
-              }
-              
-              // Natural head position
-              if (boneName.includes('head') || boneName.includes('neck')) {
-                child.rotation.x = 0.04;  // Slight chin down
-                child.rotation.z = -0.02; // Slight tilt
-                child.rotation.y = 0.02;  // Slight turn
-              }
-              
-              // Natural leg positioning - contrapposto stance
-              if (boneName.includes('leftupperleg') || boneName.includes('leftthigh') || boneName.includes('l_thigh')) {
-                child.rotation.x = 0.06;  // Slight forward
-                child.rotation.z = -0.02; // Weight-bearing leg
-              }
-              if (boneName.includes('rightupperleg') || boneName.includes('rightthigh') || boneName.includes('r_thigh')) {
-                child.rotation.x = 0.03;  // Less weight
-                child.rotation.z = 0.04;  // Relaxed leg
-              }
-              
-              // Natural knee bend
-              if (boneName.includes('leftlowerleg') || boneName.includes('leftshin') || boneName.includes('l_shin')) {
-                child.rotation.x = -0.04;
-              }
-              if (boneName.includes('rightlowerleg') || boneName.includes('rightshin') || boneName.includes('r_shin')) {
-                child.rotation.x = -0.06; // Slight more bend on relaxed leg
-              }
-              
-              // Natural foot positioning
-              if (boneName.includes('leftfoot') || boneName.includes('l_foot')) {
-                child.rotation.x = 0.02;
-              }
-              if (boneName.includes('rightfoot') || boneName.includes('r_foot')) {
-                child.rotation.x = 0.03; // Slightly more relaxed
-                child.rotation.y = 0.03; // Slight turn out
-              }
+              // Let animation play for a moment to settle into natural pose
+              setTimeout(() => renderFrame(), 200);
+            } else {
+              applyManualIdlePose(model);
+              renderFrame();
             }
-          });
+          } else {
+            // No animations found, apply manual idle pose
+            applyManualIdlePose(model);
+            renderFrame();
+          }
           
-          // Position and scale for Snapchat-style full body cutout
-          const box = new THREE.Box3().setFromObject(model);
-          const center = box.getCenter(new THREE.Vector3());
-          const size = box.getSize(new THREE.Vector3());
+          function applyManualIdlePose(model: THREE.Group) {
+            // Apply natural relaxed idle pose with arms hanging down
+            model.traverse((child) => {
+              if (child.type === 'Bone' || (child as any).isBone) {
+                const boneName = child.name.toLowerCase();
+                
+                // Natural arm positioning - arms hanging naturally at sides
+                if (boneName.includes('leftarm') || boneName.includes('l_upperarm') || boneName.includes('leftupperarm')) {
+                  child.rotation.x = 0.15;  // More natural forward hang
+                  child.rotation.z = 0.1;   // Closer to body
+                  child.rotation.y = 0.08;  // Slight outward rotation
+                }
+                if (boneName.includes('rightarm') || boneName.includes('r_upperarm') || boneName.includes('rightupperarm')) {
+                  child.rotation.x = 0.15;  // More natural forward hang
+                  child.rotation.z = -0.1;  // Closer to body
+                  child.rotation.y = -0.08; // Slight outward rotation
+                }
+                
+                // Natural forearm - completely relaxed hanging
+                if (boneName.includes('leftforearm') || boneName.includes('l_forearm') || boneName.includes('leftlowerarm')) {
+                  child.rotation.x = 0.4;   // Natural hanging down
+                  child.rotation.z = 0.05;  // Slight inward curve
+                  child.rotation.y = 0.02;  // Natural twist
+                }
+                if (boneName.includes('rightforearm') || boneName.includes('r_forearm') || boneName.includes('rightlowerarm')) {
+                  child.rotation.x = 0.4;   // Natural hanging down
+                  child.rotation.z = -0.05; // Slight inward curve
+                  child.rotation.y = -0.02; // Natural twist
+                }
+                
+                // Natural hand positioning - completely relaxed
+                if (boneName.includes('lefthand') || boneName.includes('l_hand')) {
+                  child.rotation.x = 0.15;  // Slight forward curl
+                  child.rotation.y = 0.05;  // Natural position
+                  child.rotation.z = 0.02;  // Relaxed
+                }
+                if (boneName.includes('righthand') || boneName.includes('r_hand')) {
+                  child.rotation.x = 0.15;  // Slight forward curl
+                  child.rotation.y = -0.05; // Natural position
+                  child.rotation.z = -0.02; // Relaxed
+                }
+                
+                // Subtle weight shift for natural stance
+                if (boneName.includes('hips') || boneName.includes('pelvis')) {
+                  child.rotation.z = 0.02; // Very slight lean
+                  child.rotation.x = 0.01; // Slight forward tilt
+                }
+                if (boneName.includes('spine') || boneName.includes('chest')) {
+                  child.rotation.z = -0.01; // Counter hip lean
+                  child.rotation.x = -0.005; // Slight counter-tilt
+                }
+                
+                // Natural head position - alert but relaxed
+                if (boneName.includes('head') || boneName.includes('neck')) {
+                  child.rotation.x = 0.02;  // Very slight chin down
+                  child.rotation.z = -0.01; // Minimal tilt
+                  child.rotation.y = 0.01;  // Slight turn
+                }
+                
+                // Natural leg positioning - balanced stance
+                if (boneName.includes('leftupperleg') || boneName.includes('leftthigh') || boneName.includes('l_thigh')) {
+                  child.rotation.x = 0.03;  // Slight forward
+                  child.rotation.z = -0.01; // Weight-bearing leg
+                }
+                if (boneName.includes('rightupperleg') || boneName.includes('rightthigh') || boneName.includes('r_thigh')) {
+                  child.rotation.x = 0.02;  // Slightly less weight
+                  child.rotation.z = 0.02;  // Relaxed leg
+                }
+              }
+            });
+          }
           
-          // Center horizontally, align feet to bottom of frame
-          model.position.x = -center.x;
-          model.position.y = -box.min.y; // Feet at ground level (y=0)
-          model.position.z = -center.z;
-          
-          // Scale to fill frame height while maintaining proportions
-          const scaleForHeight = 1.8 / size.y; // Leaves some margin
-          model.scale.setScalar(scaleForHeight);
-          
-          scene.add(model);
-          
-          // Render multiple times to ensure proper lighting
-          renderer.render(scene, camera);
-          
-          // Small delay to ensure rendering is complete
-          setTimeout(() => {
+          function renderFrame() {
+            // Position and scale for full body cutout with feet aligned to bottom
+            const box = new THREE.Box3().setFromObject(model);
+            const center = box.getCenter(new THREE.Vector3());
+            const size = box.getSize(new THREE.Vector3());
+            
+            // Center horizontally, align feet to bottom of frame
+            model.position.x = -center.x;
+            model.position.y = -box.min.y; // Feet at ground level (y=0)
+            model.position.z = -center.z;
+            
+            // Scale to fill frame height while maintaining proportions
+            const scaleForHeight = 1.8 / size.y; // Leaves some margin
+            model.scale.setScalar(scaleForHeight);
+            
+            scene.add(model);
+            
+            // Update animation if available
+            if (mixer) {
+              mixer.update(0.016); // Simulate 60fps frame
+            }
+            
+            // Render multiple times to ensure proper lighting
             renderer.render(scene, camera);
             
-            // Convert to PNG blob and create URL
-            canvas.toBlob((blob) => {
-              if (blob) {
-                const url = URL.createObjectURL(blob);
-                console.log('Generated Snapchat-style PNG:', url);
-                resolve(url);
-              } else {
-                console.error('Failed to create PNG blob');
-                resolve(null);
-              }
-            }, 'image/png', 1.0);
-            
-            // Cleanup
-            renderer.dispose();
-            scene.clear();
-          }, 100);
+            // Small delay to ensure rendering is complete
+            setTimeout(() => {
+              renderer.render(scene, camera);
+              
+              // Convert to PNG blob and create URL
+              canvas.toBlob((blob) => {
+                if (blob) {
+                  const url = URL.createObjectURL(blob);
+                  console.log('Generated natural idle PNG:', url);
+                  resolve(url);
+                } else {
+                  console.error('Failed to create PNG blob');
+                  resolve(null);
+                }
+              }, 'image/png', 1.0);
+              
+              // Cleanup
+              renderer.dispose();
+              scene.clear();
+            }, 100);
+          }
         },
         (progress) => {
           console.log('Avatar loading progress:', progress);
@@ -345,6 +368,7 @@ export const ReadyPlayerMeCreator = ({
       let profileData: any = {
         user_id: userId,
         avatar_url: avatarUrl,
+        pose: 'idle', // Default pose for all avatars
         updated_at: new Date().toISOString()
       };
       

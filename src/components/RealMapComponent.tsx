@@ -32,6 +32,7 @@ export const RealMapComponent = () => {
   const [userProfiles, setUserProfiles] = useState<{[key: string]: any}>({});
   const [mapLoaded, setMapLoaded] = useState(false);
   const [mapboxToken, setMapboxToken] = useState<string | null>(null);
+  const [showZoneNote, setShowZoneNote] = useState(true);
   const markersRef = useRef<{ [key: string]: mapboxgl.Marker }>({});
   const zonesRef = useRef<Set<string>>(new Set());
 
@@ -646,6 +647,31 @@ export const RealMapComponent = () => {
           📍 My Location
         </Button>
       </div>
+
+      {/* Small Zone Note - Only when no users nearby */}
+      {userLocation && Object.keys(userProfiles).length === 0 && showZoneNote && (
+        <div className="absolute top-16 left-4 z-20 animate-fade-in">
+          <div className="bg-background/95 backdrop-blur-sm border rounded-lg p-3 max-w-xs shadow-lg">
+            <div className="flex items-start justify-between gap-2">
+              <div className="flex-1">
+                <div className="flex items-center gap-2 mb-1">
+                  <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                  <span className="text-xs font-medium">Zone: {getZoneName('15038_6442')}</span>
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  No other users nearby. Share with friends to meet up!
+                </p>
+              </div>
+              <button
+                onClick={() => setShowZoneNote(false)}
+                className="text-muted-foreground hover:text-foreground transition-colors p-1 -m-1"
+              >
+                <span className="text-xs">✕</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Location Info */}
       {userLocation && (

@@ -194,60 +194,11 @@ export const RealMapComponent = () => {
     zonesRef.current = zones;
   };
 
-  // Add test users for demonstration
-  const addTestUsers = async () => {
+  // Show demo zone info when no real users are found
+  const showDemoInfo = () => {
     if (!user || !userLocation) return;
 
-    const testUsers = [
-      {
-        user_id: 'test-user-1',
-        display_name: 'Alex Park',
-        avatar_url: 'https://models.readyplayer.me/66f77e043f2b57e8f9f5dccd.png',
-        location_blurred_lat: userLocation.lat + 0.002,
-        location_blurred_lng: userLocation.lng + 0.002,
-        zone_key: 'zone_40.716_-74.004',
-        inSameZone: true
-      },
-      {
-        user_id: 'test-user-2', 
-        display_name: 'Sam Chen',
-        avatar_url: 'https://models.readyplayer.me/66f77e1c3f2b57e8f9f5dce5.png',
-        location_blurred_lat: userLocation.lat - 0.001,
-        location_blurred_lng: userLocation.lng + 0.001,
-        zone_key: 'zone_40.712_-74.006',
-        inSameZone: false
-      }
-    ];
-
-    // Add test users to profiles map
-    const updatedProfiles = { ...userProfiles };
-    testUsers.forEach(testUser => {
-      updatedProfiles[testUser.user_id] = testUser;
-      
-      addUserMarker(
-        testUser.location_blurred_lng,
-        testUser.location_blurred_lat,
-        testUser.user_id,
-        testUser.display_name,
-        false,
-        testUser.avatar_url,
-        false,
-        testUser.zone_key,
-        testUser.inSameZone,
-        testUser.inSameZone ? '#10b981' : '#6b7280'
-      );
-    });
-
-    setUserProfiles(updatedProfiles);
-    
-    // Update zone visualization with test users
-    const { data: currentUserProfile } = await supabase
-      .from('profiles')
-      .select('zone_key')
-      .eq('user_id', user.id)
-      .maybeSingle();
-    
-    updateZoneVisualization(updatedProfiles, currentUserProfile?.zone_key);
+    console.log('No other real users found - showing zone info for demo');
   };
 
   // Load real users with zone-based system for friend requests
@@ -472,9 +423,8 @@ export const RealMapComponent = () => {
             '#3b82f6'
           );
 
-          // Load other users and add test users for demo
+          // Load other users - real users only
           loadRealUsers();
-          setTimeout(() => addTestUsers(), 1000); // Add test users after real users load
         }
       },
       (error) => {
@@ -607,8 +557,8 @@ export const RealMapComponent = () => {
         <p class="text-xs text-gray-500">${avatarUrl ? '✨ Full Body Avatar' : '🎭 Default Avatar'}</p>
         <p class="text-xs text-blue-600 mt-1">🏠 Zone: ${zoneName}</p>`;
 
-    // Add friend request button only for non-friends in the SAME zone
-    if (!isCurrentUser && !isFriend && user && inSameZone) {
+    // Add friend request button only for non-friends in the SAME zone (real users only)
+    if (!isCurrentUser && !isFriend && user && inSameZone && !userId.startsWith('test-')) {
       popupContent += `
         <button 
           onclick="window.sendFriendRequest('${userId}')" 
@@ -621,6 +571,11 @@ export const RealMapComponent = () => {
       popupContent += `
         <div class="mt-2 text-xs text-amber-600 bg-amber-50 p-2 rounded">
           🏠 Move to zone ${targetZoneName} to send friend request
+        </div>`;
+    } else if (!isCurrentUser && !isFriend && user && !inSameZone) {
+      popupContent += `
+        <div class="mt-2 text-xs text-gray-500 bg-gray-50 p-2 rounded">
+          🚶‍♂️ Only users in the same zone can send friend requests
         </div>`;
     }
 
@@ -692,35 +647,47 @@ export const RealMapComponent = () => {
         </Button>
       </div>
 
-      {/* Nearby Users Info - Floating */}
-      {Object.keys(userProfiles).length > 0 && (
+      {/* Zone Info Card - Always show when user has location */}
+      {userLocation && (
         <Card className="absolute bottom-20 right-4 max-w-xs shadow-lg z-20">
           <CardContent className="p-3">
             <h3 className="font-semibold mb-2 flex items-center gap-2 text-sm">
-              👥 People Nearby
-              <Badge variant="secondary">{Object.keys(userProfiles).length}</Badge>
+              🏠 Your Zone
             </h3>
-            <div className="space-y-2 max-h-32 overflow-y-auto">
-              {Object.values(userProfiles).slice(0, 3).map((userProfile: any) => (
-                <div key={userProfile.user_id} className="flex items-center gap-2">
-                  <div className="w-6 h-6">
-                    <AvatarDisplay 
-                      avatarUrl={userProfile?.avatar_url}
-                      size="small"
-                      showStatus={true}
-                      status="online"
-                    />
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <p className="text-xs font-medium truncate">
-                      {userProfile?.display_name || 'Unknown'}
-                    </p>
-                    {userProfile.inSameZone && (
-                      <p className="text-xs text-green-600">Same zone</p>
-                    )}
-                  </div>
+            <div className="space-y-2">
+              <div className="flex items-center gap-2">
+                <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
+                <span className="text-sm">You are in zone: <strong>{getZoneName('15038_6442')}</strong></span>
+              </div>
+              {Object.keys(userProfiles).length === 0 ? (
+                <p className="text-xs text-muted-foreground">
+                  📍 No other users in nearby zones. Share with friends to meet up!
+                </p>
+              ) : (
+                <div className="space-y-2 max-h-32 overflow-y-auto">
+                  <p className="text-xs font-medium">👥 People Nearby ({Object.keys(userProfiles).length}):</p>
+                  {Object.values(userProfiles).slice(0, 3).map((userProfile: any) => (
+                    <div key={userProfile.user_id} className="flex items-center gap-2">
+                      <div className="w-6 h-6">
+                        <AvatarDisplay 
+                          avatarUrl={userProfile?.avatar_url}
+                          size="small"
+                          showStatus={true}
+                          status="online"
+                        />
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <p className="text-xs font-medium truncate">
+                          {userProfile?.display_name || 'Unknown'}
+                        </p>
+                        {userProfile.inSameZone && (
+                          <p className="text-xs text-green-600">Same zone</p>
+                        )}
+                      </div>
+                    </div>
+                  ))}
                 </div>
-              ))}
+              )}
             </div>
           </CardContent>
         </Card>

@@ -3,13 +3,17 @@ import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { RealMapComponent } from "@/components/RealMapComponent";
+import { FriendRequestManager } from "@/components/FriendRequestManager";
+import { LocationToggle } from "@/components/LocationToggle";
 import { useAuth } from "@/components/AuthProvider";
 import { supabase } from "@/integrations/supabase/client";
 import { Plus, Users, MessageCircle, User } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
 
 const MainApp = () => {
   const { user, signOut } = useAuth();
   const navigate = useNavigate();
+  const { toast } = useToast();
   const [userProfile, setUserProfile] = useState<any>(null);
 
   useEffect(() => {
@@ -19,7 +23,47 @@ const MainApp = () => {
     }
 
     loadUserProfile();
-  }, [user, navigate]);
+    
+    // Set up global friend request handler
+    (window as any).sendFriendRequest = async (recipientUserId: string) => {
+      if (!user) return;
+      
+      try {
+        const { error } = await supabase
+          .from('friendships')
+          .insert({
+            requester_id: user.id,
+            recipient_id: recipientUserId,
+            status: 'pending'
+          } as any);
+
+        if (error) {
+          if (error.code === '23505') {
+            toast({
+              title: "Already Requested",
+              description: "You've already sent a friend request to this person",
+              variant: "destructive"
+            });
+          } else {
+            console.error('Error sending friend request:', error);
+            toast({
+              title: "Error",
+              description: "Failed to send friend request",
+              variant: "destructive"
+            });
+          }
+          return;
+        }
+
+        toast({
+          title: "Friend Request Sent",
+          description: "Your friend request has been sent!",
+        });
+      } catch (error) {
+        console.error('Error sending friend request:', error);
+      }
+    };
+  }, [user, navigate, toast]);
 
   const loadUserProfile = async () => {
     if (!user) return;
@@ -61,6 +105,9 @@ const MainApp = () => {
               {userProfile?.display_name || user?.user_metadata?.display_name || 'User'}
             </div>
           </header>
+
+          {/* Location Toggle - Floating */}
+          <LocationToggle user={user} />
         </div>
 
       {/* Bottom Navigation */}
@@ -84,19 +131,6 @@ const MainApp = () => {
             size="sm"
             className="flex flex-col items-center gap-1 h-auto py-2 px-2 min-w-0"
             onClick={() => {
-              // TODO: Implement friends
-              alert('Friends feature coming soon!');
-            }}
-          >
-            <Users className="h-5 w-5" />
-            <span className="text-xs">Friends</span>
-          </Button>
-
-          <Button
-            variant="ghost"
-            size="sm"
-            className="flex flex-col items-center gap-1 h-auto py-2 px-2 min-w-0"
-            onClick={() => {
               // TODO: Implement messages
               alert('Messages feature coming soon!');
             }}
@@ -104,6 +138,8 @@ const MainApp = () => {
             <MessageCircle className="h-5 w-5" />
             <span className="text-xs">Messages</span>
           </Button>
+
+          <FriendRequestManager user={user} />
 
           <Button
             variant="ghost"

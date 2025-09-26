@@ -60,55 +60,93 @@ export const RealMapComponent = () => {
     fetchMapboxToken();
   }, [toast]);
 
-  // Load real users from Supabase with avatars
+  // Load real users from Supabase with privacy and friendship logic
   const loadRealUsers = async () => {
     try {
-      console.log('Loading real users from Supabase...');
+      console.log('Loading real users with privacy system...');
       
-      const { data: locations, error: locationError } = await supabase
-        .from('user_locations')
-        .select('*')
-        .eq('is_sharing', true);
+      // Get users sharing location from profiles (blurred coordinates)
+      const { data: profiles, error: profileError } = await supabase
+        .from('profiles')
+        .select('user_id, username, display_name, avatar_url, location_blurred_lat, location_blurred_lng, zone_key')
+        .eq('location_sharing_enabled', true)
+        .not('location_blurred_lat', 'is', null)
+        .not('location_blurred_lng', 'is', null)
+        .neq('user_id', user?.id || ''); // Exclude current user
 
-      if (locationError) {
-        console.error('Error loading locations:', locationError);
+      if (profileError) {
+        console.error('Error loading profiles:', profileError);
         return;
       }
 
-      console.log('Loaded locations:', locations);
+      console.log('Loaded profiles with location:', profiles);
 
-      if (locations && locations.length > 0) {
-        const userIds = locations.map(loc => loc.user_id);
+      if (profiles && profiles.length > 0) {
+        // Check which users are friends for precise location access
+        const friendshipPromises = profiles.map(async (profile) => {
+          if (!user) return { ...profile, isFriend: false, preciseLocation: null };
+
+          // Check if users are friends
+          const { data: friendData } = await supabase.rpc('are_users_friends', {
+            user1_id: user.id,
+            user2_id: profile.user_id
+          });
+
+          let preciseLocation = null;
+          if (friendData) {
+            // Get precise location from user_locations for friends
+            const { data: locationData } = await supabase
+              .from('user_locations')
+              .select('latitude, longitude')
+              .eq('user_id', profile.user_id)
+              .eq('is_sharing', true)
+              .maybeSingle();
+            
+            if (locationData) {
+              preciseLocation = {
+                lat: parseFloat(locationData.latitude.toString()),
+                lng: parseFloat(locationData.longitude.toString())
+              };
+            }
+          }
+
+          return {
+            ...profile,
+            isFriend: friendData || false,
+            preciseLocation
+          };
+        });
+
+        const profilesWithFriendship = await Promise.all(friendshipPromises);
         
-        const { data: profiles, error: profileError } = await supabase
-          .from('profiles')
-          .select('user_id, username, display_name, avatar_url')
-          .in('user_id', userIds);
-
-        if (profileError) {
-          console.error('Error loading profiles:', profileError);
-          return;
-        }
-
-        console.log('Loaded profiles:', profiles);
-
+        // Create profiles map for UI
         const profilesMap: {[key: string]: any} = {};
-        profiles?.forEach(profile => {
+        profilesWithFriendship.forEach(profile => {
           profilesMap[profile.user_id] = profile;
         });
         setUserProfiles(profilesMap);
 
-        // Add markers for each user with avatar
-        locations.forEach(location => {
-          const profile = profilesMap[location.user_id];
+        // Add markers for each user
+        profilesWithFriendship.forEach(profile => {
           const displayName = profile?.display_name || 'Unknown User';
+          
+          // Use precise location for friends, blurred for others
+          const location = profile.isFriend && profile.preciseLocation 
+            ? profile.preciseLocation
+            : {
+                lat: parseFloat(profile.location_blurred_lat.toString()),
+                lng: parseFloat(profile.location_blurred_lng.toString())
+              };
+
           addUserMarker(
-            parseFloat(location.longitude.toString()),
-            parseFloat(location.latitude.toString()),
-            location.user_id,
+            location.lng,
+            location.lat,
+            profile.user_id,
             displayName,
             false,
-            profile?.avatar_url
+            profile?.avatar_url,
+            profile.isFriend,
+            profile.zone_key
           );
         });
       }
@@ -168,19 +206,46 @@ export const RealMapComponent = () => {
         setUserLocation(location);
 
         if (map.current && user) {
-          // Update location in Supabase
-          const { error } = await supabase
-            .from('user_locations')
-            .upsert({
-              user_id: user.id,
-              latitude: latitude,
-              longitude: longitude,
-              is_sharing: true,
-              last_updated: new Date().toISOString()
-            });
+          // Update both user_locations (precise) and profiles (blurred) with location
+          const { data: blurredData } = await supabase.rpc('blur_coordinates', {
+            lat: latitude,
+            lng: longitude,
+            blur_meters: 300
+          });
 
-          if (error) {
-            console.error('Error updating location:', error);
+          const blurred = blurredData?.[0];
+
+          const [locationResult, profileResult] = await Promise.all([
+            // Update precise location in user_locations
+            supabase
+              .from('user_locations')
+              .upsert({
+                user_id: user.id,
+                latitude: latitude,
+                longitude: longitude,
+                is_sharing: true,
+                last_updated: new Date().toISOString()
+              }, { onConflict: 'user_id' }),
+            
+            // Update blurred location in profiles
+            supabase
+              .from('profiles')
+              .upsert({
+                user_id: user.id,
+                location_blurred_lat: blurred?.blurred_lat,
+                location_blurred_lng: blurred?.blurred_lng,
+                zone_key: blurred?.zone_key,
+                location_sharing_enabled: true,
+                updated_at: new Date().toISOString()
+              }, { onConflict: 'user_id' })
+          ]);
+
+          if (locationResult.error) {
+            console.error('Error updating user location:', locationResult.error);
+          }
+
+          if (profileResult.error) {
+            console.error('Error updating profile location:', profileResult.error);
           }
 
           map.current.flyTo({
@@ -202,7 +267,9 @@ export const RealMapComponent = () => {
             user.id, 
             userProfile?.display_name || 'You', 
             true, 
-            userProfile?.avatar_url
+            userProfile?.avatar_url,
+            false, // Current user is not a "friend" to themselves
+            blurred?.zone_key
           );
 
           // Load other users after adding current user
@@ -225,8 +292,17 @@ export const RealMapComponent = () => {
     );
   };
 
-  // Add Snapchat-style full-body avatar marker
-  const addUserMarker = (lng: number, lat: number, userId: string, name: string, isCurrentUser = false, avatarUrl?: string) => {
+  // Add Snapchat-style full-body avatar marker with friend request functionality
+  const addUserMarker = (
+    lng: number, 
+    lat: number, 
+    userId: string, 
+    name: string, 
+    isCurrentUser = false, 
+    avatarUrl?: string, 
+    isFriend = false, 
+    zoneKey?: string
+  ) => {
     if (!map.current) return;
 
     // Remove existing marker for this user
@@ -293,17 +369,42 @@ export const RealMapComponent = () => {
 
     console.log('Adding Snapchat-style avatar marker for:', name, 'with avatar:', avatarUrl);
 
-    // Create popup with improved styling
+    // Create enhanced popup with friend request functionality
+    let popupContent = `
+      <div class="p-3 bg-white rounded-lg shadow-lg min-w-[200px]">
+        <h3 class="font-semibold text-gray-900 mb-1">${name}</h3>
+        <p class="text-sm text-gray-600 mb-2">${isCurrentUser ? 'Your location' : (isFriend ? 'Friend nearby' : 'Person nearby')}</p>
+        <p class="text-xs text-gray-500">${avatarUrl ? '✨ Full Body Avatar' : '🎭 Default Avatar'}</p>`;
+
+    // Add friend request button for non-friends in same zone
+    if (!isCurrentUser && !isFriend && user && zoneKey) {
+      popupContent += `
+        <button 
+          onclick="window.sendFriendRequest('${userId}')" 
+          class="mt-2 w-full bg-blue-500 hover:bg-blue-600 text-white text-xs px-3 py-1 rounded"
+        >
+          Add Friend
+        </button>`;
+    }
+
+    if (isFriend) {
+      popupContent += `
+        <div class="mt-2 text-xs text-green-600 font-medium flex items-center gap-1">
+          <span>✓</span> Friend - Precise location
+        </div>`;
+    } else if (!isCurrentUser) {
+      popupContent += `
+        <div class="mt-2 text-xs text-gray-500 flex items-center gap-1">
+          <span>📍</span> Approximate location
+        </div>`;
+    }
+
+    popupContent += `</div>`;
+
     const popup = new mapboxgl.Popup({ 
       offset: [0, -10],
       className: 'avatar-popup'
-    }).setHTML(
-      `<div class="p-3 bg-white rounded-lg shadow-lg">
-        <h3 class="font-semibold text-gray-900">${name}</h3>
-        <p class="text-sm text-gray-600">${isCurrentUser ? 'Your location' : 'Friend nearby'}</p>
-        <p class="text-xs text-gray-500 mt-1">${avatarUrl ? '✨ Full Body Avatar' : '🎭 Default Avatar'}</p>
-      </div>`
-    );
+    }).setHTML(popupContent);
 
     // Create marker with custom anchor point (bottom center for feet alignment)
     const marker = new mapboxgl.Marker({

@@ -35,9 +35,10 @@ export const LocationToggle = ({ user }: LocationToggleProps) => {
     if (!user) return;
 
     try {
+      // Load from profiles table instead of user_locations
       const { data, error } = await supabase
-        .from('user_locations')
-        .select('is_sharing, latitude, longitude')
+        .from('profiles')
+        .select('location_sharing_enabled, location_blurred_lat, location_blurred_lng')
         .eq('user_id', user.id)
         .maybeSingle();
 
@@ -47,11 +48,11 @@ export const LocationToggle = ({ user }: LocationToggleProps) => {
       }
 
       if (data) {
-        setIsSharing(data.is_sharing);
-        if (data.latitude && data.longitude) {
-          setLocation({ lat: data.latitude, lng: data.longitude });
+        setIsSharing(data.location_sharing_enabled);
+        if (data.location_blurred_lat && data.location_blurred_lng) {
+          setLocation({ lat: data.location_blurred_lat, lng: data.location_blurred_lng });
         }
-        if (data.is_sharing) {
+        if (data.location_sharing_enabled) {
           setLocationStatus('active');
           startLocationTracking();
         }
@@ -65,20 +66,56 @@ export const LocationToggle = ({ user }: LocationToggleProps) => {
     if (!user) return;
 
     try {
-      const { error } = await supabase
-        .from('user_locations')
-        .upsert({
-          user_id: user.id,
-          latitude: lat,
-          longitude: lng,
-          is_sharing: sharing,
-          last_updated: new Date().toISOString()
-        }, {
-          onConflict: 'user_id'
-        });
+      // Use the blur_coordinates function to get blurred location and zone key
+      const { data: blurredData, error: blurError } = await supabase.rpc('blur_coordinates', {
+        lat: lat,
+        lng: lng,
+        blur_meters: 300
+      });
 
-      if (error) {
-        console.error('Error updating location:', error);
+      if (blurError) {
+        console.error('Error blurring coordinates:', blurError);
+        return;
+      }
+
+      const blurred = blurredData[0];
+
+      // Update both user_locations (for precise tracking) and profiles (for public/friend visibility)
+      const [locationResult, profileResult] = await Promise.all([
+        // Keep precise location in user_locations for internal tracking
+        supabase
+          .from('user_locations')
+          .upsert({
+            user_id: user.id,
+            latitude: lat,
+            longitude: lng,
+            is_sharing: sharing,
+            last_updated: new Date().toISOString()
+          }, {
+            onConflict: 'user_id'
+          }),
+        
+        // Store blurred location in profiles for public visibility
+        supabase
+          .from('profiles')
+          .upsert({
+            user_id: user.id,
+            location_blurred_lat: blurred.blurred_lat,
+            location_blurred_lng: blurred.blurred_lng,
+            zone_key: blurred.zone_key,
+            location_sharing_enabled: sharing,
+            updated_at: new Date().toISOString()
+          }, {
+            onConflict: 'user_id'
+          })
+      ]);
+
+      if (locationResult.error) {
+        console.error('Error updating user location:', locationResult.error);
+      }
+
+      if (profileResult.error) {
+        console.error('Error updating profile location:', profileResult.error);
         toast({
           title: "Database Error",
           description: "Failed to update location in database",

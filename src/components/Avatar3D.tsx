@@ -60,10 +60,11 @@ export const Avatar3D = ({
   }
 
   return (
-    <div className={`rounded-lg overflow-hidden ${className}`} style={{ width, height }}>
+    <div className={`overflow-hidden ${className}`} style={{ width, height }}>
       <Canvas
         camera={{ position: [0, 0, 2], fov: 50 }}
-        style={{ background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' }}
+        gl={{ alpha: true, antialias: true }}
+        style={{ background: 'transparent' }}
       >
         <Suspense fallback={null}>
           <ambientLight intensity={0.6} />

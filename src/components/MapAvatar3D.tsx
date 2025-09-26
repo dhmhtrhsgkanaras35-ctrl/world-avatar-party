@@ -16,9 +16,9 @@ const MapAvatar3DModel = ({ url, isCurrentUser }: MapAvatar3DModelProps) => {
   useFrame((state) => {
     if (meshRef.current) {
       // Gentle floating animation
-      meshRef.current.position.y = Math.sin(state.clock.elapsedTime * 2) * 0.1;
-      // Gentle rotation
-      meshRef.current.rotation.y += 0.01;
+      meshRef.current.position.y = Math.sin(state.clock.elapsedTime * 1.5) * 0.05;
+      // Subtle rotation
+      meshRef.current.rotation.y += 0.005;
     }
   });
 
@@ -26,14 +26,14 @@ const MapAvatar3DModel = ({ url, isCurrentUser }: MapAvatar3DModelProps) => {
     <group ref={meshRef}>
       <primitive 
         object={scene.clone()} 
-        scale={[0.8, 0.8, 0.8]} 
-        position={[0, -0.5, 0]}
+        scale={[1.2, 1.2, 1.2]} 
+        position={[0, -0.3, 0]}
       />
-      {/* Glow effect for current user */}
+      {/* Subtle glow for current user */}
       {isCurrentUser && (
-        <mesh position={[0, -0.5, 0]}>
-          <cylinderGeometry args={[0.6, 0.6, 0.05, 32]} />
-          <meshBasicMaterial color="#3b82f6" transparent opacity={0.3} />
+        <mesh position={[0, -0.4, 0]}>
+          <cylinderGeometry args={[0.4, 0.4, 0.02, 32]} />
+          <meshBasicMaterial color="#3b82f6" transparent opacity={0.4} />
         </mesh>
       )}
     </group>
@@ -73,11 +73,10 @@ export const MapAvatar3D = ({
 
   return (
     <div 
-      className="rounded-lg overflow-hidden shadow-xl border-2 border-white"
+      className="overflow-hidden"
       style={{ 
         width: size, 
-        height: size,
-        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)'
+        height: size
       }}
     >
       <Canvas

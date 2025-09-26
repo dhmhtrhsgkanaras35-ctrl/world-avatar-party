@@ -97,11 +97,37 @@ export type Database = {
         }
         Relationships: []
       }
+      friend_request_limits: {
+        Row: {
+          created_at: string
+          id: string
+          request_count: number
+          user_id: string
+          window_start: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          request_count?: number
+          user_id: string
+          window_start?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          request_count?: number
+          user_id?: string
+          window_start?: string
+        }
+        Relationships: []
+      }
       friendships: {
         Row: {
           created_at: string
           friend_id: string
           id: string
+          recipient_id: string
+          requester_id: string
           status: string
           updated_at: string
           user_id: string
@@ -110,6 +136,8 @@ export type Database = {
           created_at?: string
           friend_id: string
           id?: string
+          recipient_id: string
+          requester_id: string
           status?: string
           updated_at?: string
           user_id: string
@@ -118,6 +146,8 @@ export type Database = {
           created_at?: string
           friend_id?: string
           id?: string
+          recipient_id?: string
+          requester_id?: string
           status?: string
           updated_at?: string
           user_id?: string
@@ -161,10 +191,14 @@ export type Database = {
           created_at: string
           display_name: string | null
           id: string
+          location_blurred_lat: number | null
+          location_blurred_lng: number | null
+          location_sharing_enabled: boolean | null
           pose: string | null
           updated_at: string
           user_id: string
           username: string | null
+          zone_key: string | null
         }
         Insert: {
           avatar_url?: string | null
@@ -172,10 +206,14 @@ export type Database = {
           created_at?: string
           display_name?: string | null
           id?: string
+          location_blurred_lat?: number | null
+          location_blurred_lng?: number | null
+          location_sharing_enabled?: boolean | null
           pose?: string | null
           updated_at?: string
           user_id: string
           username?: string | null
+          zone_key?: string | null
         }
         Update: {
           avatar_url?: string | null
@@ -183,10 +221,14 @@ export type Database = {
           created_at?: string
           display_name?: string | null
           id?: string
+          location_blurred_lat?: number | null
+          location_blurred_lng?: number | null
+          location_sharing_enabled?: boolean | null
           pose?: string | null
           updated_at?: string
           user_id?: string
           username?: string | null
+          zone_key?: string | null
         }
         Relationships: []
       }
@@ -225,7 +267,18 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      are_users_friends: {
+        Args: { user1_id: string; user2_id: string }
+        Returns: boolean
+      }
+      blur_coordinates: {
+        Args: { blur_meters?: number; lat: number; lng: number }
+        Returns: {
+          blurred_lat: number
+          blurred_lng: number
+          zone_key: string
+        }[]
+      }
     }
     Enums: {
       [_ in never]: never

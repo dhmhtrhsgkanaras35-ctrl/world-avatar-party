@@ -251,17 +251,17 @@ export const LocationToggle = ({ user }: LocationToggleProps) => {
   };
 
   return (
-    <div className="fixed top-16 right-4 z-40">
+    <div className="fixed top-12 right-2 z-40">
       <Card className="shadow-lg bg-background/95 backdrop-blur-sm border">
-        <CardContent className="p-2">
-          <div className="flex items-center gap-2">
-            <div className={`w-2 h-2 rounded-full ${getStatusColor()}`} />
+        <CardContent className="p-1">
+          <div className="flex items-center gap-1">
+            <div className={`w-1.5 h-1.5 rounded-full ${getStatusColor()}`} />
             
             <Button
               onClick={toggleLocationSharing}
               variant={isSharing ? "destructive" : "ghost"}
               size="sm"
-              className={`h-8 px-2 text-xs ${isSharing ? "" : "bg-primary/10 hover:bg-primary/20"}`}
+              className={`h-6 px-1.5 text-xs ${isSharing ? "" : "bg-primary/10 hover:bg-primary/20"}`}
               disabled={locationStatus === 'requesting' || !user}
             >
               {isSharing ? (
@@ -273,7 +273,7 @@ export const LocationToggle = ({ user }: LocationToggleProps) => {
           </div>
           
           {!user && (
-            <div className="mt-1 text-xs text-muted-foreground max-w-[120px]">
+            <div className="mt-1 text-xs text-muted-foreground max-w-[80px]">
               Sign in to share zone
             </div>
           )}

@@ -637,45 +637,45 @@ export const RealMapComponent = () => {
       {/* Map Container - Full screen */}
       <div ref={mapContainer} className="w-full h-full" />
       
-      {/* Map Controls - positioned to avoid header */}
-      <div className="absolute top-16 left-4 space-y-2 z-20">
+      {/* Map Controls - positioned below header */}
+      <div className="absolute top-12 left-2 space-y-1 z-20">
         <Button
           size="sm"
           onClick={getUserLocation}
-          className="bg-white text-black hover:bg-gray-100 shadow-lg"
+          className="bg-white text-black hover:bg-gray-100 shadow-md text-xs h-8 px-2"
         >
           📍 My Location
         </Button>
       </div>
 
-      {/* Small Zone Note - Only when no users nearby - positioned to avoid buttons */}
+      {/* Small Zone Note - positioned below location toggle */}
       {userLocation && Object.keys(userProfiles).length === 0 && showZoneNote && (
-        <div className="absolute top-16 right-4 z-20 animate-fade-in">
-          <div className="bg-background/95 backdrop-blur-sm border rounded-lg p-2 shadow-lg max-w-xs">
-            <div className="flex items-center justify-between gap-2">
-              <div className="flex items-center gap-2 flex-1">
-                <div className="w-2 h-2 bg-blue-500 rounded-full flex-shrink-0"></div>
+        <div className="absolute top-20 right-2 z-20 animate-fade-in">
+          <div className="bg-background/95 backdrop-blur-sm border rounded-md p-1.5 shadow-md max-w-[160px]">
+            <div className="flex items-center justify-between gap-1">
+              <div className="flex items-center gap-1 flex-1 min-w-0">
+                <div className="w-1.5 h-1.5 bg-blue-500 rounded-full flex-shrink-0"></div>
                 <span className="text-xs font-medium truncate">Zone: {getZoneName('15038_6442')}</span>
               </div>
               <button
                 onClick={() => setShowZoneNote(false)}
-                className="text-muted-foreground hover:text-foreground transition-colors p-1 -m-1 flex-shrink-0"
+                className="text-muted-foreground hover:text-foreground transition-colors p-0.5 -m-0.5 flex-shrink-0"
                 aria-label="Close notification"
               >
-                <span className="text-xs font-bold">✕</span>
+                <span className="text-xs font-bold leading-none">✕</span>
               </button>
             </div>
-            <p className="text-xs text-muted-foreground mt-1">
-              No users nearby. Share with friends!
+            <p className="text-xs text-muted-foreground mt-1 leading-tight">
+              No users nearby
             </p>
           </div>
         </div>
       )}
 
-      {/* Location Info */}
+      {/* Location Info - smaller */}
       {userLocation && (
-        <Card className="absolute bottom-4 left-4 shadow-lg z-20">
-          <CardContent className="p-2">
+        <Card className="absolute bottom-4 left-2 shadow-md z-20">
+          <CardContent className="p-1">
             <p className="text-xs text-muted-foreground">
               {userLocation.lat.toFixed(4)}, {userLocation.lng.toFixed(4)}
             </p>

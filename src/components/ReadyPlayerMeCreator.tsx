@@ -130,22 +130,22 @@ export const ReadyPlayerMeCreator = ({
     
     return new Promise((resolve) => {
       const canvas = document.createElement('canvas');
-      canvas.width = 400;
-      canvas.height = 800; // 1:2 ratio for natural full body
+      canvas.width = 500;
+      canvas.height = 800; // Wider aspect ratio to include hands
       const renderer = new THREE.WebGLRenderer({ 
         canvas, 
         alpha: true, 
         antialias: true,
         preserveDrawingBuffer: true 
       });
-      renderer.setSize(400, 800);
+      renderer.setSize(500, 800);
       renderer.setClearColor(0x000000, 0); // Transparent background
       
       const scene = new THREE.Scene();
-      const camera = new THREE.PerspectiveCamera(30, 400/800, 0.1, 1000);
+      const camera = new THREE.PerspectiveCamera(35, 500/800, 0.1, 1000); // Wider FOV
       
       // Camera positioned for natural standing view (slightly elevated, front-facing)
-      camera.position.set(0, 1.2, 4);
+      camera.position.set(0, 1.2, 4.5); // Moved camera back slightly
       camera.lookAt(0, 0.9, 0); // Look at upper torso for natural framing
       
       // Soft, even lighting setup for clean cutout appearance
@@ -286,9 +286,11 @@ export const ReadyPlayerMeCreator = ({
             model.position.y = -box.min.y; // Feet at ground level (y=0)
             model.position.z = -center.z;
             
-            // Scale to fill frame height while maintaining proportions
-            const scaleForHeight = 1.8 / size.y; // Leaves some margin
-            model.scale.setScalar(scaleForHeight);
+            // Scale to fit both height and width with margin for hands
+            const scaleForHeight = 1.7 / size.y; // Slightly smaller to ensure full body fits
+            const scaleForWidth = 1.6 / size.x;  // Ensure arms/hands don't get cut off
+            const finalScale = Math.min(scaleForHeight, scaleForWidth); // Use smaller scale
+            model.scale.setScalar(finalScale);
             
             scene.add(model);
             

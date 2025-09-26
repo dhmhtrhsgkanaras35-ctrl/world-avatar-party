@@ -60,10 +60,24 @@ export const RealMapComponent = () => {
     fetchMapboxToken();
   }, [toast]);
 
-  // Load real users with open location sharing (less privacy-focused)
+  // Load real users with zone-based system for friend requests
   const loadRealUsers = async () => {
     try {
-      console.log('Loading users with open location sharing...');
+      console.log('Loading users with zone-based friend system...');
+      
+      // Get current user's zone first
+      let currentUserZone = null;
+      if (user) {
+        const { data: currentUserProfile } = await supabase
+          .from('profiles')
+          .select('zone_key')
+          .eq('user_id', user.id)
+          .eq('location_sharing_enabled', true)
+          .maybeSingle();
+        
+        currentUserZone = currentUserProfile?.zone_key;
+        console.log('Current user zone:', currentUserZone);
+      }
       
       // Get all users sharing location publicly
       const { data: profiles, error: profileError } = await supabase
@@ -82,20 +96,23 @@ export const RealMapComponent = () => {
       console.log('Loaded profiles with location:', profiles);
 
       if (profiles && profiles.length > 0) {
-        // For mobile-friendly open sharing, check friendships but show everyone
+        // Check friendships and zone compatibility
         const friendshipPromises = profiles.map(async (profile) => {
-          if (!user) return { ...profile, isFriend: false, preciseLocation: null };
+          if (!user) return { ...profile, isFriend: false, inSameZone: false };
 
-          // Check if users are friends for enhanced features
+          // Check if users are friends
           const { data: friendData } = await supabase.rpc('are_users_friends', {
             user1_id: user.id,
             user2_id: profile.user_id
           });
 
+          // Check if in same zone for friend requests
+          const inSameZone = currentUserZone && profile.zone_key === currentUserZone;
+
           return {
             ...profile,
             isFriend: friendData || false,
-            // Use slightly blurred location for everyone (mobile-friendly)
+            inSameZone: inSameZone || false,
             location: {
               lat: parseFloat(profile.location_blurred_lat.toString()),
               lng: parseFloat(profile.location_blurred_lng.toString())
@@ -105,32 +122,35 @@ export const RealMapComponent = () => {
 
         const profilesWithFriendship = await Promise.all(friendshipPromises);
         
-        // Create profiles map for UI
+        // Filter and prioritize users in same zone
+        const sameZoneUsers = profilesWithFriendship.filter(p => p.inSameZone);
+        const otherUsers = profilesWithFriendship.filter(p => !p.inSameZone);
+        
+        console.log(`Found ${sameZoneUsers.length} users in same zone, ${otherUsers.length} in other zones`);
+        
+        // Create profiles map for UI (prioritize same zone users)
         const profilesMap: {[key: string]: any} = {};
-        profilesWithFriendship.forEach(profile => {
+        [...sameZoneUsers, ...otherUsers].forEach(profile => {
           profilesMap[profile.user_id] = profile;
         });
         setUserProfiles(profilesMap);
 
-        // Add markers for each user
-        profilesWithFriendship.forEach(profile => {
+        // Add markers for each user with zone indicators
+        [...sameZoneUsers, ...otherUsers].forEach(profile => {
           const displayName = profile?.display_name || 'Unknown User';
-
-          // Use the location coordinates from the profile
-          const location = {
-            lat: parseFloat(profile.location_blurred_lat.toString()),
-            lng: parseFloat(profile.location_blurred_lng.toString())
-          };
+          const markerColor = profile.inSameZone ? '#10b981' : '#6b7280'; // Green for same zone, gray for others
 
           addUserMarker(
-            location.lng,
-            location.lat,
+            parseFloat(profile.location_blurred_lng.toString()),
+            parseFloat(profile.location_blurred_lat.toString()),
             profile.user_id,
             displayName,
             false,
             profile?.avatar_url,
             profile.isFriend,
-            profile.zone_key
+            profile.zone_key,
+            profile.inSameZone,
+            markerColor
           );
         });
       }
@@ -253,7 +273,9 @@ export const RealMapComponent = () => {
             true, 
             userProfile?.avatar_url,
             false, // Current user is not a "friend" to themselves
-            blurred?.zone_key
+            blurred?.zone_key,
+            false, // Current user is not in same zone as themselves
+            '#3b82f6'
           );
 
           // Load other users after adding current user
@@ -276,7 +298,7 @@ export const RealMapComponent = () => {
     );
   };
 
-  // Add Snapchat-style full-body avatar marker with friend request functionality
+  // Add zone-based avatar marker with enhanced visual indicators
   const addUserMarker = (
     lng: number, 
     lat: number, 
@@ -285,7 +307,9 @@ export const RealMapComponent = () => {
     isCurrentUser = false, 
     avatarUrl?: string, 
     isFriend = false, 
-    zoneKey?: string
+    zoneKey?: string,
+    inSameZone = false,
+    markerColor = '#10b981'
   ) => {
     if (!map.current) return;
 
@@ -295,7 +319,7 @@ export const RealMapComponent = () => {
       markersRef.current[markerId].remove();
     }
 
-    // Create Snapchat-style avatar marker element
+    // Create zone-aware avatar marker element
     const el = document.createElement('div');
     el.style.cssText = `
       width: 50px;
@@ -309,7 +333,7 @@ export const RealMapComponent = () => {
     `;
 
     if (avatarUrl) {
-      // Snapchat-style full-body avatar PNG with transparent background
+      // Snapchat-style full-body avatar PNG with zone-based border
       const avatarImg = document.createElement('img');
       avatarImg.src = avatarUrl;
       avatarImg.style.cssText = `
@@ -318,11 +342,36 @@ export const RealMapComponent = () => {
         object-fit: contain;
         object-position: center bottom;
         filter: drop-shadow(0 1px 3px rgba(0,0,0,0.2));
-        ${isCurrentUser ? 'filter: drop-shadow(0 0 8px #3b82f6) drop-shadow(0 1px 3px rgba(0,0,0,0.2));' : ''}
+        border-radius: 8px;
+        ${isCurrentUser ? 'border: 3px solid #3b82f6;' : ''}
+        ${inSameZone && !isCurrentUser ? `border: 2px solid ${markerColor};` : ''}
+        ${isFriend ? 'border: 2px solid #10b981;' : ''}
         transition: transform 0.2s ease;
       `;
       
-      // Add subtle hover animation
+      // Add zone indicator dot
+      if (!isCurrentUser) {
+        const zoneIndicator = document.createElement('div');
+        zoneIndicator.style.cssText = `
+          position: absolute;
+          top: -2px;
+          right: -2px;
+          width: 14px;
+          height: 14px;
+          border-radius: 50%;
+          background: ${inSameZone ? '#10b981' : '#6b7280'};
+          border: 2px solid white;
+          box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-size: 8px;
+        `;
+        zoneIndicator.textContent = inSameZone ? '🤝' : '📍';
+        el.appendChild(zoneIndicator);
+      }
+      
+      // Add hover animation
       avatarImg.addEventListener('mouseenter', () => {
         avatarImg.style.transform = 'scale(1.05)';
       });
@@ -332,12 +381,12 @@ export const RealMapComponent = () => {
       
       el.appendChild(avatarImg);
     } else {
-      // Fallback Bitmoji-style bubble avatar
+      // Fallback with zone-based styling
       const fallback = document.createElement('div');
       fallback.style.cssText = `
         width: 40px;
         height: 40px;
-        background: ${isCurrentUser ? '#3b82f6' : '#10b981'};
+        background: ${isCurrentUser ? '#3b82f6' : (inSameZone ? markerColor : '#6b7280')};
         border-radius: 50%;
         display: flex;
         align-items: center;
@@ -347,28 +396,34 @@ export const RealMapComponent = () => {
         box-shadow: 0 2px 6px rgba(0,0,0,0.15);
         margin-bottom: 8px;
       `;
-      fallback.textContent = isCurrentUser ? '📍' : name.charAt(0).toUpperCase();
+      fallback.textContent = isCurrentUser ? '📍' : (inSameZone ? '🤝' : name.charAt(0).toUpperCase());
       el.appendChild(fallback);
     }
 
-    console.log('Adding Snapchat-style avatar marker for:', name, 'with avatar:', avatarUrl);
+    console.log('Adding zone-based avatar marker for:', name, 'Zone:', zoneKey, 'Same zone:', inSameZone);
 
-    // Create enhanced popup with friend request functionality
+    // Create enhanced popup with zone-based friend request functionality
     let popupContent = `
       <div class="p-3 bg-white rounded-lg shadow-lg min-w-[200px]">
         <h3 class="font-semibold text-gray-900 mb-1">${name}</h3>
         <p class="text-sm text-gray-600 mb-2">${isCurrentUser ? 'Your location' : (isFriend ? 'Friend nearby' : 'Person nearby')}</p>
-        <p class="text-xs text-gray-500">${avatarUrl ? '✨ Full Body Avatar' : '🎭 Default Avatar'}</p>`;
+        <p class="text-xs text-gray-500">${avatarUrl ? '✨ Full Body Avatar' : '🎭 Default Avatar'}</p>
+        <p class="text-xs text-blue-600 mt-1">📍 Zone: ${zoneKey || 'Unknown'}</p>`;
 
-    // Add friend request button for non-friends in same zone
-    if (!isCurrentUser && !isFriend && user && zoneKey) {
+    // Add friend request button only for non-friends in the SAME zone
+    if (!isCurrentUser && !isFriend && user && inSameZone) {
       popupContent += `
         <button 
           onclick="window.sendFriendRequest('${userId}')" 
-          class="mt-2 w-full bg-blue-500 hover:bg-blue-600 text-white text-xs px-3 py-1 rounded"
+          class="mt-2 w-full bg-blue-500 hover:bg-blue-600 text-white text-xs px-3 py-1 rounded transition-colors"
         >
-          Add Friend
+          🤝 Add Friend (Same Zone)
         </button>`;
+    } else if (!isCurrentUser && !isFriend && user && zoneKey && !inSameZone) {
+      popupContent += `
+        <div class="mt-2 text-xs text-amber-600 bg-amber-50 p-2 rounded">
+          📍 Move to zone ${zoneKey} to send friend request
+        </div>`;
     }
 
     if (isFriend) {
@@ -379,7 +434,7 @@ export const RealMapComponent = () => {
     } else if (!isCurrentUser) {
       popupContent += `
         <div class="mt-2 text-xs text-gray-500 flex items-center gap-1">
-          <span>📍</span> Approximate location
+          <span>📍</span> Zone-based location (~100m)
         </div>`;
     }
 
@@ -462,6 +517,9 @@ export const RealMapComponent = () => {
                     <p className="text-xs font-medium truncate">
                       {userProfile?.display_name || 'Unknown'}
                     </p>
+                    {userProfile.inSameZone && (
+                      <p className="text-xs text-green-600">Same zone</p>
+                    )}
                   </div>
                 </div>
               ))}

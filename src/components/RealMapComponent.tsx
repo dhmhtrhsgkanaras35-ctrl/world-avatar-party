@@ -225,7 +225,7 @@ export const RealMapComponent = () => {
     );
   };
 
-  // Add user marker with full-body PNG avatar
+  // Add Snapchat-style full-body avatar marker
   const addUserMarker = (lng: number, lat: number, userId: string, name: string, isCurrentUser = false, avatarUrl?: string) => {
     if (!map.current) return;
 
@@ -235,63 +235,81 @@ export const RealMapComponent = () => {
       markersRef.current[markerId].remove();
     }
 
-    // Create avatar marker element
+    // Create Snapchat-style avatar marker element
     const el = document.createElement('div');
     el.style.cssText = `
-      width: 60px;
-      height: 120px;
+      width: 50px;
+      height: 100px;
       cursor: pointer;
       position: relative;
       display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: flex-end;
+      align-items: flex-end;
+      justify-content: center;
+      transform-origin: center bottom;
     `;
 
     if (avatarUrl) {
-      // Full-body avatar PNG
+      // Snapchat-style full-body avatar PNG with transparent background
       const avatarImg = document.createElement('img');
       avatarImg.src = avatarUrl;
       avatarImg.style.cssText = `
-        width: 50px;
-        height: 100px;
+        width: 48px;
+        height: 96px;
         object-fit: contain;
-        filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3));
-        ${isCurrentUser ? 'border: 2px solid #3b82f6; border-radius: 8px; background: rgba(59, 130, 246, 0.1);' : ''}
+        object-position: center bottom;
+        filter: drop-shadow(0 1px 3px rgba(0,0,0,0.2));
+        ${isCurrentUser ? 'filter: drop-shadow(0 0 8px #3b82f6) drop-shadow(0 1px 3px rgba(0,0,0,0.2));' : ''}
+        transition: transform 0.2s ease;
       `;
+      
+      // Add subtle hover animation
+      avatarImg.addEventListener('mouseenter', () => {
+        avatarImg.style.transform = 'scale(1.05)';
+      });
+      avatarImg.addEventListener('mouseleave', () => {
+        avatarImg.style.transform = 'scale(1)';
+      });
+      
       el.appendChild(avatarImg);
     } else {
-      // Fallback emoji avatar
+      // Fallback Bitmoji-style bubble avatar
       const fallback = document.createElement('div');
       fallback.style.cssText = `
-        width: 50px;
-        height: 50px;
+        width: 40px;
+        height: 40px;
         background: ${isCurrentUser ? '#3b82f6' : '#10b981'};
         border-radius: 50%;
         display: flex;
         align-items: center;
         justify-content: center;
-        font-size: 24px;
-        border: 2px solid white;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+        font-size: 20px;
+        border: 3px solid white;
+        box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+        margin-bottom: 8px;
       `;
       fallback.textContent = isCurrentUser ? '📍' : name.charAt(0).toUpperCase();
       el.appendChild(fallback);
     }
 
-    console.log('Adding avatar marker for:', name, 'with avatar:', avatarUrl);
+    console.log('Adding Snapchat-style avatar marker for:', name, 'with avatar:', avatarUrl);
 
-    // Create popup
-    const popup = new mapboxgl.Popup({ offset: 25 }).setHTML(
-      `<div class="p-2">
-        <h3 class="font-semibold">${name}</h3>
+    // Create popup with improved styling
+    const popup = new mapboxgl.Popup({ 
+      offset: [0, -10],
+      className: 'avatar-popup'
+    }).setHTML(
+      `<div class="p-3 bg-white rounded-lg shadow-lg">
+        <h3 class="font-semibold text-gray-900">${name}</h3>
         <p class="text-sm text-gray-600">${isCurrentUser ? 'Your location' : 'Friend nearby'}</p>
-        <p class="text-xs text-gray-500">Avatar: ${avatarUrl ? 'Full Body' : 'Default'}</p>
+        <p class="text-xs text-gray-500 mt-1">${avatarUrl ? '✨ Full Body Avatar' : '🎭 Default Avatar'}</p>
       </div>`
     );
 
-    // Create and add marker
-    const marker = new mapboxgl.Marker(el)
+    // Create marker with custom anchor point (bottom center for feet alignment)
+    const marker = new mapboxgl.Marker({
+      element: el,
+      anchor: 'bottom'
+    })
       .setLngLat([lng, lat])
       .setPopup(popup)
       .addTo(map.current);

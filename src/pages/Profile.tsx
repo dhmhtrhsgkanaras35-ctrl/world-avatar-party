@@ -102,22 +102,20 @@ const Profile = () => {
             <p className="text-muted-foreground">Manage your avatar and profile information</p>
           </div>
 
-          {/* Full-body Avatar Display */}
+          {/* Snapchat-style Full-body Avatar Display */}
           <div className="flex justify-center">
             {readyPlayerMeUrl ? (
-              <div className="w-64 h-96 flex items-center justify-center bg-gradient-to-b from-background to-muted rounded-lg shadow-inner border-2 border-muted">
+              <div className="w-48 h-96 flex items-end justify-center">
                 <img 
                   src={readyPlayerMeUrl} 
                   alt="Your Avatar"
-                  className="max-w-full max-h-full object-contain"
+                  className="max-w-full max-h-full object-contain object-bottom filter drop-shadow-lg"
                 />
               </div>
             ) : (
-              <div className="w-64 h-96 bg-gradient-to-br from-primary to-primary-glow rounded-lg flex items-center justify-center text-white">
+              <div className="w-32 h-32 bg-gradient-to-br from-primary to-primary-glow rounded-full flex items-center justify-center text-white shadow-xl">
                 <div className="text-center">
-                  <div className="text-6xl mb-4">👤</div>
-                  <p className="text-lg font-semibold">No Avatar</p>
-                  <p className="text-sm opacity-80">Create one below</p>
+                  <div className="text-6xl">👤</div>
                 </div>
               </div>
             )}

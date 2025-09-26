@@ -124,40 +124,47 @@ export const ReadyPlayerMeCreator = ({
     document.body.appendChild(overlay);
   };
 
-  // Generate PNG snapshot from GLB model
+  // Generate PNG snapshot from GLB model with Snapchat-style natural pose
   const generateAvatarPNG = async (glbUrl: string): Promise<string | null> => {
-    console.log('Generating PNG from GLB:', glbUrl);
+    console.log('Generating Snapchat-style PNG from GLB:', glbUrl);
     
     return new Promise((resolve) => {
       const canvas = document.createElement('canvas');
-      canvas.width = 512;
-      canvas.height = 1024; // Taller for full body
+      canvas.width = 400;
+      canvas.height = 800; // 1:2 ratio for natural full body
       const renderer = new THREE.WebGLRenderer({ 
         canvas, 
         alpha: true, 
         antialias: true,
         preserveDrawingBuffer: true 
       });
-      renderer.setSize(512, 1024);
+      renderer.setSize(400, 800);
       renderer.setClearColor(0x000000, 0); // Transparent background
       
       const scene = new THREE.Scene();
-      const camera = new THREE.PerspectiveCamera(25, 512/1024, 0.1, 1000);
-      camera.position.set(0, 0.8, 5);
-      camera.lookAt(0, 0.3, 0);
+      const camera = new THREE.PerspectiveCamera(30, 400/800, 0.1, 1000);
       
-      // Add lighting for good visibility
-      const ambientLight = new THREE.AmbientLight(0xffffff, 0.9);
+      // Camera positioned for natural standing view (slightly elevated, front-facing)
+      camera.position.set(0, 1.2, 4);
+      camera.lookAt(0, 0.9, 0); // Look at upper torso for natural framing
+      
+      // Soft, even lighting setup for clean cutout appearance
+      const ambientLight = new THREE.AmbientLight(0xffffff, 1.2);
       scene.add(ambientLight);
-      const directionalLight = new THREE.DirectionalLight(0xffffff, 1.2);
-      directionalLight.position.set(2, 3, 2);
-      directionalLight.castShadow = false;
-      scene.add(directionalLight);
       
-      // Add fill light from the other side
-      const fillLight = new THREE.DirectionalLight(0xffffff, 0.5);
-      fillLight.position.set(-2, 1, 2);
-      scene.add(fillLight);
+      // Front key light
+      const keyLight = new THREE.DirectionalLight(0xffffff, 0.8);
+      keyLight.position.set(0, 2, 3);
+      scene.add(keyLight);
+      
+      // Gentle fill lights from sides to eliminate harsh shadows
+      const fillLeft = new THREE.DirectionalLight(0xffffff, 0.4);
+      fillLeft.position.set(-2, 1, 1);
+      scene.add(fillLeft);
+      
+      const fillRight = new THREE.DirectionalLight(0xffffff, 0.4);
+      fillRight.position.set(2, 1, 1);
+      scene.add(fillRight);
       
       // Load GLB model
       const loader = new GLTFLoader();
@@ -165,47 +172,74 @@ export const ReadyPlayerMeCreator = ({
         (gltf) => {
           const model = gltf.scene;
           
-          // Center and scale the model for full body view
+          // Apply natural relaxed pose if possible
+          model.traverse((child) => {
+            if (child.type === 'Bone' || (child as any).isBone) {
+              // Apply subtle relaxed rotations to key bones for natural stance
+              if (child.name.includes('LeftArm') || child.name.includes('L_upperarm')) {
+                child.rotation.z = 0.1; // Slight arm relaxation
+              }
+              if (child.name.includes('RightArm') || child.name.includes('R_upperarm')) {
+                child.rotation.z = -0.1;
+              }
+              if (child.name.includes('LeftForeArm') || child.name.includes('L_forearm')) {
+                child.rotation.z = 0.15;
+              }
+              if (child.name.includes('RightForeArm') || child.name.includes('R_forearm')) {
+                child.rotation.z = -0.15;
+              }
+              // Slight hip shift for natural stance
+              if (child.name.includes('Hips') || child.name.includes('pelvis')) {
+                child.rotation.z = 0.02;
+              }
+            }
+          });
+          
+          // Position and scale for Snapchat-style full body cutout
           const box = new THREE.Box3().setFromObject(model);
           const center = box.getCenter(new THREE.Vector3());
           const size = box.getSize(new THREE.Vector3());
           
-          // Position model to show full body
+          // Center horizontally, align feet to bottom of frame
           model.position.x = -center.x;
-          model.position.y = -center.y - size.y * 0.4; // Show from feet up
+          model.position.y = -box.min.y; // Feet at ground level (y=0)
           model.position.z = -center.z;
           
-          // Scale to fit nicely in frame, showing full body
-          const maxDimension = Math.max(size.x, size.y, size.z);
-          const scale = 1.6 / maxDimension;
-          model.scale.setScalar(scale);
+          // Scale to fill frame height while maintaining proportions
+          const scaleForHeight = 1.8 / size.y; // Leaves some margin
+          model.scale.setScalar(scaleForHeight);
           
           scene.add(model);
           
-          // Render the scene
+          // Render multiple times to ensure proper lighting
           renderer.render(scene, camera);
           
-          // Convert to PNG blob and create URL
-          canvas.toBlob((blob) => {
-            if (blob) {
-              const url = URL.createObjectURL(blob);
-              console.log('Generated PNG blob URL:', url);
-              resolve(url);
-            } else {
-              console.error('Failed to create blob');
-              resolve(null);
-            }
-          }, 'image/png', 1.0);
-          
-          // Cleanup
-          renderer.dispose();
-          scene.clear();
+          // Small delay to ensure rendering is complete
+          setTimeout(() => {
+            renderer.render(scene, camera);
+            
+            // Convert to PNG blob and create URL
+            canvas.toBlob((blob) => {
+              if (blob) {
+                const url = URL.createObjectURL(blob);
+                console.log('Generated Snapchat-style PNG:', url);
+                resolve(url);
+              } else {
+                console.error('Failed to create PNG blob');
+                resolve(null);
+              }
+            }, 'image/png', 1.0);
+            
+            // Cleanup
+            renderer.dispose();
+            scene.clear();
+          }, 100);
         },
         (progress) => {
-          console.log('Loading progress:', progress);
+          console.log('Avatar loading progress:', progress);
         },
         (error) => {
-          console.error('Error loading GLB:', error);
+          console.error('Error loading GLB for PNG generation:', error);
           renderer.dispose();
           resolve(null);
         }

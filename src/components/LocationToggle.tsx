@@ -66,23 +66,18 @@ export const LocationToggle = ({ user }: LocationToggleProps) => {
     if (!user) return;
 
     try {
-      // Use the blur_coordinates function to get blurred location and zone key
-      const { data: blurredData, error: blurError } = await supabase.rpc('blur_coordinates', {
+      // Update both user_locations (precise) and profiles (for public visibility) with location
+      const { data: blurredData } = await supabase.rpc('blur_coordinates', {
         lat: lat,
         lng: lng,
-        blur_meters: 300
+        blur_meters: 100 // Reduced blur for more open sharing
       });
 
-      if (blurError) {
-        console.error('Error blurring coordinates:', blurError);
-        return;
-      }
+      const blurred = blurredData?.[0];
 
-      const blurred = blurredData[0];
-
-      // Update both user_locations (for precise tracking) and profiles (for public/friend visibility)
+      // For mobile-friendly open sharing, store both precise and slightly blurred locations
       const [locationResult, profileResult] = await Promise.all([
-        // Keep precise location in user_locations for internal tracking
+        // Keep precise location in user_locations 
         supabase
           .from('user_locations')
           .upsert({
@@ -95,14 +90,14 @@ export const LocationToggle = ({ user }: LocationToggleProps) => {
             onConflict: 'user_id'
           }),
         
-        // Store blurred location in profiles for public visibility
+        // Store publicly visible location in profiles (less blurred for open sharing)
         supabase
           .from('profiles')
           .upsert({
             user_id: user.id,
-            location_blurred_lat: blurred.blurred_lat,
-            location_blurred_lng: blurred.blurred_lng,
-            zone_key: blurred.zone_key,
+            location_blurred_lat: blurred?.blurred_lat,
+            location_blurred_lng: blurred?.blurred_lng,
+            zone_key: blurred?.zone_key,
             location_sharing_enabled: sharing,
             updated_at: new Date().toISOString()
           }, {
@@ -213,16 +208,16 @@ export const LocationToggle = ({ user }: LocationToggleProps) => {
       setIsSharing(false);
       stopLocationTracking();
       toast({
-        title: "Location Sharing Disabled",
-        description: "Your location is no longer being shared",
+        title: "Location Sharing Off",
+        description: "Your location is no longer visible to others",
       });
     } else {
       // Start sharing
       setIsSharing(true);
       startLocationTracking();
       toast({
-        title: "Location Sharing Enabled",
-        description: "Your location is now being shared with friends",
+        title: "Location Sharing On",
+        description: "Your location is now visible to everyone nearby",
       });
     }
   };
@@ -256,43 +251,34 @@ export const LocationToggle = ({ user }: LocationToggleProps) => {
   };
 
   return (
-    <Card className="fixed bottom-6 right-6 z-50 shadow-lg">
-      <CardContent className="p-4">
-        <div className="flex items-center gap-3">
+    <div className="fixed top-20 right-4 z-40">
+      <Card className="shadow-lg bg-background/95 backdrop-blur-sm border">
+        <CardContent className="p-2">
           <div className="flex items-center gap-2">
-            <div className={`w-3 h-3 rounded-full ${getStatusColor()}`} />
-            <Badge variant={isSharing ? "default" : "secondary"}>
-              {getStatusText()}
-            </Badge>
+            <div className={`w-2 h-2 rounded-full ${getStatusColor()}`} />
+            
+            <Button
+              onClick={toggleLocationSharing}
+              variant={isSharing ? "destructive" : "ghost"}
+              size="sm"
+              className={`h-8 px-2 text-xs ${isSharing ? "" : "bg-primary/10 hover:bg-primary/20"}`}
+              disabled={locationStatus === 'requesting' || !user}
+            >
+              {isSharing ? (
+                <>📍</>
+              ) : (
+                <>🗺️</>
+              )}
+            </Button>
           </div>
           
-          <Button
-            onClick={toggleLocationSharing}
-            variant={isSharing ? "destructive" : "default"}
-            size="sm"
-            className={isSharing ? "" : "gradient-party border-0"}
-            disabled={locationStatus === 'requesting' || !user}
-          >
-            {isSharing ? (
-              <>📍 Stop Sharing</>
-            ) : (
-              <>🗺️ Share Location</>
-            )}
-          </Button>
-        </div>
-        
-        {location && user && (
-          <div className="mt-2 text-xs text-muted-foreground">
-            📍 {location.lat.toFixed(4)}, {location.lng.toFixed(4)}
-          </div>
-        )}
-        
-        {!user && (
-          <div className="mt-2 text-xs text-muted-foreground">
-            Sign in to share your location with friends
-          </div>
-        )}
-      </CardContent>
-    </Card>
+          {!user && (
+            <div className="mt-1 text-xs text-muted-foreground max-w-[120px]">
+              Sign in to share location
+            </div>
+          )}
+        </CardContent>
+      </Card>
+    </div>
   );
 };

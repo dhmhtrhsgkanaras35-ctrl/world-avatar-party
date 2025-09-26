@@ -60,12 +60,12 @@ export const RealMapComponent = () => {
     fetchMapboxToken();
   }, [toast]);
 
-  // Load real users from Supabase with privacy and friendship logic
+  // Load real users with open location sharing (less privacy-focused)
   const loadRealUsers = async () => {
     try {
-      console.log('Loading real users with privacy system...');
+      console.log('Loading users with open location sharing...');
       
-      // Get users sharing location from profiles (blurred coordinates)
+      // Get all users sharing location publicly
       const { data: profiles, error: profileError } = await supabase
         .from('profiles')
         .select('user_id, username, display_name, avatar_url, location_blurred_lat, location_blurred_lng, zone_key')
@@ -82,38 +82,24 @@ export const RealMapComponent = () => {
       console.log('Loaded profiles with location:', profiles);
 
       if (profiles && profiles.length > 0) {
-        // Check which users are friends for precise location access
+        // For mobile-friendly open sharing, check friendships but show everyone
         const friendshipPromises = profiles.map(async (profile) => {
           if (!user) return { ...profile, isFriend: false, preciseLocation: null };
 
-          // Check if users are friends
+          // Check if users are friends for enhanced features
           const { data: friendData } = await supabase.rpc('are_users_friends', {
             user1_id: user.id,
             user2_id: profile.user_id
           });
 
-          let preciseLocation = null;
-          if (friendData) {
-            // Get precise location from user_locations for friends
-            const { data: locationData } = await supabase
-              .from('user_locations')
-              .select('latitude, longitude')
-              .eq('user_id', profile.user_id)
-              .eq('is_sharing', true)
-              .maybeSingle();
-            
-            if (locationData) {
-              preciseLocation = {
-                lat: parseFloat(locationData.latitude.toString()),
-                lng: parseFloat(locationData.longitude.toString())
-              };
-            }
-          }
-
           return {
             ...profile,
             isFriend: friendData || false,
-            preciseLocation
+            // Use slightly blurred location for everyone (mobile-friendly)
+            location: {
+              lat: parseFloat(profile.location_blurred_lat.toString()),
+              lng: parseFloat(profile.location_blurred_lng.toString())
+            }
           };
         });
 
@@ -129,14 +115,12 @@ export const RealMapComponent = () => {
         // Add markers for each user
         profilesWithFriendship.forEach(profile => {
           const displayName = profile?.display_name || 'Unknown User';
-          
-          // Use precise location for friends, blurred for others
-          const location = profile.isFriend && profile.preciseLocation 
-            ? profile.preciseLocation
-            : {
-                lat: parseFloat(profile.location_blurred_lat.toString()),
-                lng: parseFloat(profile.location_blurred_lng.toString())
-              };
+
+          // Use the location coordinates from the profile
+          const location = {
+            lat: parseFloat(profile.location_blurred_lat.toString()),
+            lng: parseFloat(profile.location_blurred_lng.toString())
+          };
 
           addUserMarker(
             location.lng,
@@ -206,11 +190,11 @@ export const RealMapComponent = () => {
         setUserLocation(location);
 
         if (map.current && user) {
-          // Update both user_locations (precise) and profiles (blurred) with location
+          // Update both user_locations (precise) and profiles (public) with location
           const { data: blurredData } = await supabase.rpc('blur_coordinates', {
             lat: latitude,
             lng: longitude,
-            blur_meters: 300
+            blur_meters: 100 // Less blur for open sharing
           });
 
           const blurred = blurredData?.[0];
@@ -227,7 +211,7 @@ export const RealMapComponent = () => {
                 last_updated: new Date().toISOString()
               }, { onConflict: 'user_id' }),
             
-            // Update blurred location in profiles
+            // Update public location in profiles
             supabase
               .from('profiles')
               .upsert({

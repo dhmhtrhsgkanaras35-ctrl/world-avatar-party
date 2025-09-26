@@ -637,8 +637,8 @@ export const RealMapComponent = () => {
       {/* Map Container - Full screen */}
       <div ref={mapContainer} className="w-full h-full" />
       
-      {/* Map Controls - positioned below header */}
-      <div className="absolute top-12 left-2 space-y-1 z-20">
+      {/* Map Controls - positioned below location toggle */}
+      <div className="absolute top-20 left-2 space-y-1 z-20">
         <Button
           size="sm"
           onClick={getUserLocation}
@@ -648,9 +648,9 @@ export const RealMapComponent = () => {
         </Button>
       </div>
 
-      {/* Small Zone Note - positioned below location toggle */}
+      {/* Small Zone Note - positioned on the right side */}
       {userLocation && Object.keys(userProfiles).length === 0 && showZoneNote && (
-        <div className="absolute top-20 right-2 z-20 animate-fade-in">
+        <div className="absolute top-12 right-2 z-20 animate-fade-in">
           <div className="bg-background/95 backdrop-blur-sm border rounded-md p-1.5 shadow-md max-w-[160px]">
             <div className="flex items-center justify-between gap-1">
               <div className="flex items-center gap-1 flex-1 min-w-0">

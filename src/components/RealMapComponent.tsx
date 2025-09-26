@@ -637,8 +637,8 @@ export const RealMapComponent = () => {
       {/* Map Container - Full screen */}
       <div ref={mapContainer} className="w-full h-full" />
       
-      {/* Map Controls */}
-      <div className="absolute top-20 left-4 space-y-2 z-20">
+      {/* Map Controls - positioned to avoid header */}
+      <div className="absolute top-16 left-4 space-y-2 z-20">
         <Button
           size="sm"
           onClick={getUserLocation}
@@ -650,25 +650,24 @@ export const RealMapComponent = () => {
 
       {/* Small Zone Note - Only when no users nearby */}
       {userLocation && Object.keys(userProfiles).length === 0 && showZoneNote && (
-        <div className="absolute top-16 left-4 z-20 animate-fade-in">
-          <div className="bg-background/95 backdrop-blur-sm border rounded-lg p-3 max-w-xs shadow-lg">
-            <div className="flex items-start justify-between gap-2">
-              <div className="flex-1">
-                <div className="flex items-center gap-2 mb-1">
-                  <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-                  <span className="text-xs font-medium">Zone: {getZoneName('15038_6442')}</span>
-                </div>
-                <p className="text-xs text-muted-foreground">
-                  No other users nearby. Share with friends to meet up!
-                </p>
+        <div className="absolute top-20 left-4 right-4 z-20 animate-fade-in">
+          <div className="bg-background/95 backdrop-blur-sm border rounded-lg p-2 shadow-lg ml-auto mr-auto max-w-xs">
+            <div className="flex items-center justify-between gap-2">
+              <div className="flex items-center gap-2 flex-1">
+                <div className="w-2 h-2 bg-blue-500 rounded-full flex-shrink-0"></div>
+                <span className="text-xs font-medium truncate">Zone: {getZoneName('15038_6442')}</span>
               </div>
               <button
                 onClick={() => setShowZoneNote(false)}
-                className="text-muted-foreground hover:text-foreground transition-colors p-1 -m-1"
+                className="text-muted-foreground hover:text-foreground transition-colors p-1 -m-1 flex-shrink-0"
+                aria-label="Close notification"
               >
-                <span className="text-xs">✕</span>
+                <span className="text-xs font-bold">✕</span>
               </button>
             </div>
+            <p className="text-xs text-muted-foreground mt-1">
+              No users nearby. Share with friends!
+            </p>
           </div>
         </div>
       )}

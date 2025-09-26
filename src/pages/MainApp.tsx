@@ -116,12 +116,12 @@ const MainApp = () => {
         <div className="flex-1 relative">
           <RealMapComponent />
           
-          {/* Floating header - smaller */}
-          <header className="absolute top-4 left-4 right-4 bg-background/80 backdrop-blur-sm rounded-lg border p-2 flex items-center justify-between z-10">
+          {/* Floating header - smaller and positioned to avoid map controls */}
+          <header className="absolute top-4 left-4 right-20 bg-background/80 backdrop-blur-sm rounded-lg border p-2 flex items-center justify-between z-10">
             <h1 className="text-sm font-bold gradient-party bg-clip-text text-transparent">
               WorldMe
             </h1>
-            <div className="text-xs text-muted-foreground">
+            <div className="text-xs text-muted-foreground truncate">
               {userProfile?.display_name || user?.user_metadata?.display_name || 'User'}
             </div>
           </header>

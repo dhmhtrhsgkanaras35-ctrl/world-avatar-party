@@ -8,7 +8,6 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "./AuthProvider";
 import { AvatarDisplay } from "./AvatarDisplay";
 import { useToast } from "@/hooks/use-toast";
-import { createMapAvatar3DMarker } from "./MapAvatar3D";
 
 interface UserLocation {
   user_id: string;
@@ -226,7 +225,7 @@ export const RealMapComponent = () => {
     );
   };
 
-  // Add user marker with 3D avatar
+  // Add user marker with full-body PNG avatar
   const addUserMarker = (lng: number, lat: number, userId: string, name: string, isCurrentUser = false, avatarUrl?: string) => {
     if (!map.current) return;
 
@@ -236,17 +235,58 @@ export const RealMapComponent = () => {
       markersRef.current[markerId].remove();
     }
 
-    // Create 3D avatar marker
-    const el = createMapAvatar3DMarker(avatarUrl, name, isCurrentUser);
-    
-    console.log('Adding 3D avatar marker for:', name, 'with avatar:', avatarUrl);
+    // Create avatar marker element
+    const el = document.createElement('div');
+    el.style.cssText = `
+      width: 60px;
+      height: 120px;
+      cursor: pointer;
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-end;
+    `;
+
+    if (avatarUrl) {
+      // Full-body avatar PNG
+      const avatarImg = document.createElement('img');
+      avatarImg.src = avatarUrl;
+      avatarImg.style.cssText = `
+        width: 50px;
+        height: 100px;
+        object-fit: contain;
+        filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3));
+        ${isCurrentUser ? 'border: 2px solid #3b82f6; border-radius: 8px; background: rgba(59, 130, 246, 0.1);' : ''}
+      `;
+      el.appendChild(avatarImg);
+    } else {
+      // Fallback emoji avatar
+      const fallback = document.createElement('div');
+      fallback.style.cssText = `
+        width: 50px;
+        height: 50px;
+        background: ${isCurrentUser ? '#3b82f6' : '#10b981'};
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 24px;
+        border: 2px solid white;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+      `;
+      fallback.textContent = isCurrentUser ? '📍' : name.charAt(0).toUpperCase();
+      el.appendChild(fallback);
+    }
+
+    console.log('Adding avatar marker for:', name, 'with avatar:', avatarUrl);
 
     // Create popup
     const popup = new mapboxgl.Popup({ offset: 25 }).setHTML(
       `<div class="p-2">
         <h3 class="font-semibold">${name}</h3>
         <p class="text-sm text-gray-600">${isCurrentUser ? 'Your location' : 'Friend nearby'}</p>
-        <p class="text-xs text-gray-500">Avatar: ${avatarUrl ? '3D Model' : 'Default'}</p>
+        <p class="text-xs text-gray-500">Avatar: ${avatarUrl ? 'Full Body' : 'Default'}</p>
       </div>`
     );
 

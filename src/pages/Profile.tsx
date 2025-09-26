@@ -96,82 +96,43 @@ const Profile = () => {
           </div>
         </div>
 
-        {/* Profile Info */}
-        <Card className="mb-8">
-          <CardHeader>
-            <CardTitle>Account Information</CardTitle>
-          </CardHeader>
-          <CardContent className="flex items-center gap-6">
-            <AvatarDisplay
-              avatarUrl={readyPlayerMeUrl}
-              size="large"
-              showStatus={true}
-              status="online"
-              onClick={() => setShowRPMCreator(true)}
-            />
-            <div>
-              <h3 className="text-xl font-semibold">
-                {user.user_metadata?.display_name || 'No name set'}
-              </h3>
-              <p className="text-muted-foreground">
-                @{user.user_metadata?.username || 'No username set'}
-              </p>
-              <p className="text-sm text-muted-foreground mt-1">
-                {user.email}
-              </p>
-            </div>
-          </CardContent>
-        </Card>
+        <div className="space-y-6">
+          <div className="text-center">
+            <h1 className="text-3xl font-bold mb-2">My Profile</h1>
+            <p className="text-muted-foreground">Manage your avatar and profile information</p>
+          </div>
 
-        {/* Avatar Management */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* 3D Avatar Preview */}
-          <Card>
-            <CardHeader>
-              <CardTitle>3D Avatar Preview</CardTitle>
-            </CardHeader>
-            <CardContent className="flex justify-center">
-              <Avatar3D 
-                avatarUrl={readyPlayerMeUrl}
-                width={350}
-                height={450}
-                animate={true}
-                showControls={true}
-              />
-            </CardContent>
-          </Card>
-
-          {/* Avatar Controls */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Avatar Options</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="text-center mb-4">
-                <AvatarDisplay
-                  avatarUrl={readyPlayerMeUrl}
-                  size="large"
-                  showStatus={true}
-                  status="online"
-                  onClick={() => setShowRPMCreator(true)}
+          {/* Full-body Avatar Display */}
+          <div className="flex justify-center">
+            {readyPlayerMeUrl ? (
+              <div className="w-64 h-96 flex items-center justify-center bg-gradient-to-b from-background to-muted rounded-lg shadow-inner border-2 border-muted">
+                <img 
+                  src={readyPlayerMeUrl} 
+                  alt="Your Avatar"
+                  className="max-w-full max-h-full object-contain"
                 />
               </div>
-              
-              <Button 
-                onClick={() => setShowRPMCreator(true)}
-                className="w-full gradient-party border-0"
-                size="lg"
-              >
-                🎭 {readyPlayerMeUrl ? 'Update' : 'Create'} Ready Player Me Avatar
-              </Button>
-              
-              {readyPlayerMeUrl && (
-                <div className="text-sm text-muted-foreground text-center">
-                  Click and drag to rotate your 3D avatar
+            ) : (
+              <div className="w-64 h-96 bg-gradient-to-br from-primary to-primary-glow rounded-lg flex items-center justify-center text-white">
+                <div className="text-center">
+                  <div className="text-6xl mb-4">👤</div>
+                  <p className="text-lg font-semibold">No Avatar</p>
+                  <p className="text-sm opacity-80">Create one below</p>
                 </div>
-              )}
-            </CardContent>
-          </Card>
+              </div>
+            )}
+          </div>
+
+          {/* Create Avatar Button */}
+          <div className="text-center">
+            <Button 
+              onClick={() => setShowRPMCreator(true)}
+              className="gradient-party border-0"
+              size="lg"
+            >
+              🎭 {readyPlayerMeUrl ? 'Update' : 'Create'} Avatar
+            </Button>
+          </div>
         </div>
 
         {/* Ready Player Me Creator Modal */}

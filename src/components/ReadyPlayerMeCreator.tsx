@@ -3,6 +3,9 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import * as THREE from 'three';
+// @ts-ignore
+import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 
 interface ReadyPlayerMeCreatorProps {
   userId: string;
@@ -93,7 +96,11 @@ export const ReadyPlayerMeCreator = ({
 
       if (avatarUrl) {
         console.log('Avatar URL captured:', avatarUrl);
-        await saveAvatarUrl(avatarUrl);
+        // Generate PNG snapshot from GLB model
+        const pngUrl = await generateAvatarPNG(avatarUrl);
+        if (pngUrl) {
+          await saveAvatarUrl(pngUrl);
+        }
         cleanup();
       }
     };
@@ -115,6 +122,95 @@ export const ReadyPlayerMeCreator = ({
     modal.appendChild(iframe);
     overlay.appendChild(modal);
     document.body.appendChild(overlay);
+  };
+
+  // Generate PNG snapshot from GLB model
+  const generateAvatarPNG = async (glbUrl: string): Promise<string | null> => {
+    console.log('Generating PNG from GLB:', glbUrl);
+    
+    return new Promise((resolve) => {
+      const canvas = document.createElement('canvas');
+      canvas.width = 512;
+      canvas.height = 1024; // Taller for full body
+      const renderer = new THREE.WebGLRenderer({ 
+        canvas, 
+        alpha: true, 
+        antialias: true,
+        preserveDrawingBuffer: true 
+      });
+      renderer.setSize(512, 1024);
+      renderer.setClearColor(0x000000, 0); // Transparent background
+      
+      const scene = new THREE.Scene();
+      const camera = new THREE.PerspectiveCamera(25, 512/1024, 0.1, 1000);
+      camera.position.set(0, 0.8, 5);
+      camera.lookAt(0, 0.3, 0);
+      
+      // Add lighting for good visibility
+      const ambientLight = new THREE.AmbientLight(0xffffff, 0.9);
+      scene.add(ambientLight);
+      const directionalLight = new THREE.DirectionalLight(0xffffff, 1.2);
+      directionalLight.position.set(2, 3, 2);
+      directionalLight.castShadow = false;
+      scene.add(directionalLight);
+      
+      // Add fill light from the other side
+      const fillLight = new THREE.DirectionalLight(0xffffff, 0.5);
+      fillLight.position.set(-2, 1, 2);
+      scene.add(fillLight);
+      
+      // Load GLB model
+      const loader = new GLTFLoader();
+      loader.load(glbUrl, 
+        (gltf) => {
+          const model = gltf.scene;
+          
+          // Center and scale the model for full body view
+          const box = new THREE.Box3().setFromObject(model);
+          const center = box.getCenter(new THREE.Vector3());
+          const size = box.getSize(new THREE.Vector3());
+          
+          // Position model to show full body
+          model.position.x = -center.x;
+          model.position.y = -center.y - size.y * 0.4; // Show from feet up
+          model.position.z = -center.z;
+          
+          // Scale to fit nicely in frame, showing full body
+          const maxDimension = Math.max(size.x, size.y, size.z);
+          const scale = 1.6 / maxDimension;
+          model.scale.setScalar(scale);
+          
+          scene.add(model);
+          
+          // Render the scene
+          renderer.render(scene, camera);
+          
+          // Convert to PNG blob and create URL
+          canvas.toBlob((blob) => {
+            if (blob) {
+              const url = URL.createObjectURL(blob);
+              console.log('Generated PNG blob URL:', url);
+              resolve(url);
+            } else {
+              console.error('Failed to create blob');
+              resolve(null);
+            }
+          }, 'image/png', 1.0);
+          
+          // Cleanup
+          renderer.dispose();
+          scene.clear();
+        },
+        (progress) => {
+          console.log('Loading progress:', progress);
+        },
+        (error) => {
+          console.error('Error loading GLB:', error);
+          renderer.dispose();
+          resolve(null);
+        }
+      );
+    });
   };
 
   const saveAvatarUrl = async (avatarUrl: string) => {

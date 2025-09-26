@@ -1,5 +1,4 @@
 import { useState } from "react";
-import { Avatar3D } from "./Avatar3D";
 
 interface AvatarDisplayProps {
   avatarUrl?: string | null;
@@ -34,9 +33,6 @@ export const AvatarDisplay = ({
 
   const { width, height } = sizeMap[size];
 
-  // Check if it's a Ready Player Me GLB model
-  const isGlbAvatar = avatarUrl && avatarUrl.includes('readyplayer.me') && avatarUrl.endsWith('.glb');
-
   // Fallback avatar
   const fallbackAvatar = (
     <div className={`bg-gradient-to-br from-primary to-primary-glow rounded-full flex items-center justify-center text-white font-bold ${className}`} style={{ width, height }}>
@@ -62,39 +58,13 @@ export const AvatarDisplay = ({
     );
   }
 
-  // If it's a GLB model, use 3D avatar
-  if (isGlbAvatar) {
-    return (
-      <div className="relative inline-block">
-        <div 
-          className={`rounded-full overflow-hidden ${onClick ? 'cursor-pointer hover:scale-105 transition-transform' : ''} ${className}`}
-          onClick={onClick}
-          style={{ width, height }}
-        >
-          <Avatar3D 
-            avatarUrl={avatarUrl}
-            width={width}
-            height={height}
-            animate={true}
-            showControls={false}
-            className="rounded-full"
-          />
-        </div>
-        
-        {showStatus && (
-          <div className={`absolute -bottom-1 -right-1 w-3 h-3 ${statusColors[status]} rounded-full border-2 border-white`} />
-        )}
-      </div>
-    );
-  }
-
-  // Regular image avatar
+  // For PNG avatars, show as is with proper aspect ratio
   return (
     <div className="relative inline-block">
       <img
         src={avatarUrl}
         alt="User Avatar"
-        className={`rounded-full object-cover border-2 border-white shadow-lg ${className} ${onClick ? 'cursor-pointer hover:scale-105 transition-transform' : ''}`}
+        className={`object-contain ${className} ${onClick ? 'cursor-pointer hover:scale-105 transition-transform' : ''}`}
         style={{ width, height }}
         onError={() => setImageError(true)}
         onClick={onClick}

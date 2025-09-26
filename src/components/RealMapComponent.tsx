@@ -32,6 +32,7 @@ export const RealMapComponent = () => {
   const [mapLoaded, setMapLoaded] = useState(false);
   const [mapboxToken, setMapboxToken] = useState<string | null>(null);
   const markersRef = useRef<{ [key: string]: mapboxgl.Marker }>({});
+  const zonesRef = useRef<Set<string>>(new Set());
 
   // Get Mapbox token from Supabase Edge Function
   useEffect(() => {
@@ -59,6 +60,194 @@ export const RealMapComponent = () => {
 
     fetchMapboxToken();
   }, [toast]);
+
+  // Add zone visualization layers
+  const addZoneLayers = () => {
+    if (!map.current) return;
+
+    // Add source for zone circles
+    map.current.addSource('zone-circles', {
+      type: 'geojson',
+      data: {
+        type: 'FeatureCollection',
+        features: []
+      }
+    });
+
+    // Add fill layer with fade effect
+    map.current.addLayer({
+      id: 'zone-fill',
+      type: 'fill',
+      source: 'zone-circles',
+      paint: {
+        'fill-color': [
+          'case',
+          ['==', ['get', 'active'], true],
+          '#10b981', // Green for active zones
+          '#6366f1'  // Purple for other zones
+        ],
+        'fill-opacity': [
+          'interpolate',
+          ['linear'],
+          ['zoom'],
+          10, 0.1,
+          15, 0.3,
+          18, 0.1
+        ]
+      }
+    });
+
+    // Add border layer
+    map.current.addLayer({
+      id: 'zone-border',
+      type: 'line',
+      source: 'zone-circles',
+      paint: {
+        'line-color': [
+          'case',
+          ['==', ['get', 'active'], true],
+          '#10b981',
+          '#6366f1'
+        ],
+        'line-width': 2,
+        'line-opacity': 0.8
+      }
+    });
+  };
+
+  // Create zone circle geometry
+  const createZoneCircle = (center: [number, number], radiusKm = 0.5, zoneKey: string, isActive = false) => {
+    const points = 64;
+    const km = radiusKm;
+    const ret = [];
+    const distanceX = km / (111.32 * Math.cos(center[1] * Math.PI / 180));
+    const distanceY = km / 110.54;
+
+    let theta, x, y;
+    for (let i = 0; i < points; i++) {
+      theta = (i / points) * (2 * Math.PI);
+      x = distanceX * Math.cos(theta);
+      y = distanceY * Math.sin(theta);
+      ret.push([center[0] + x, center[1] + y]);
+    }
+    ret.push(ret[0]);
+
+    return {
+      type: 'Feature' as const,
+      properties: {
+        zoneKey,
+        active: isActive
+      },
+      geometry: {
+        type: 'Polygon' as const,
+        coordinates: [ret]
+      }
+    };
+  };
+
+  // Update zone visualization
+  const updateZoneVisualization = (userProfiles: {[key: string]: any}, currentUserZone?: string) => {
+    if (!map.current) return;
+
+    const source = map.current.getSource('zone-circles') as mapboxgl.GeoJSONSource;
+    if (!source) return;
+
+    // Get unique zones from user profiles
+    const zones = new Set<string>();
+    const zoneData: {[key: string]: {center: [number, number], active: boolean}} = {};
+
+    Object.values(userProfiles).forEach((profile: any) => {
+      if (profile.zone_key && profile.location_blurred_lng && profile.location_blurred_lat) {
+        zones.add(profile.zone_key);
+        if (!zoneData[profile.zone_key]) {
+          zoneData[profile.zone_key] = {
+            center: [parseFloat(profile.location_blurred_lng), parseFloat(profile.location_blurred_lat)],
+            active: profile.zone_key === currentUserZone
+          };
+        }
+      }
+    });
+
+    // Add current user zone if not already present
+    if (currentUserZone && userLocation) {
+      zones.add(currentUserZone);
+      if (!zoneData[currentUserZone]) {
+        zoneData[currentUserZone] = {
+          center: [userLocation.lng, userLocation.lat],
+          active: true
+        };
+      }
+    }
+
+    // Create zone circle features
+    const features = Array.from(zones).map(zoneKey => {
+      const zone = zoneData[zoneKey];
+      return createZoneCircle(zone.center, 0.5, zoneKey, zone.active);
+    });
+
+    source.setData({
+      type: 'FeatureCollection',
+      features
+    });
+
+    zonesRef.current = zones;
+  };
+
+  // Add test users for demonstration
+  const addTestUsers = async () => {
+    if (!user || !userLocation) return;
+
+    const testUsers = [
+      {
+        user_id: 'test-user-1',
+        display_name: 'Alex Park',
+        avatar_url: 'https://models.readyplayer.me/66f77e043f2b57e8f9f5dccd.png',
+        location_blurred_lat: userLocation.lat + 0.002,
+        location_blurred_lng: userLocation.lng + 0.002,
+        zone_key: 'zone_40.716_-74.004',
+        inSameZone: true
+      },
+      {
+        user_id: 'test-user-2', 
+        display_name: 'Sam Chen',
+        avatar_url: 'https://models.readyplayer.me/66f77e1c3f2b57e8f9f5dce5.png',
+        location_blurred_lat: userLocation.lat - 0.001,
+        location_blurred_lng: userLocation.lng + 0.001,
+        zone_key: 'zone_40.712_-74.006',
+        inSameZone: false
+      }
+    ];
+
+    // Add test users to profiles map
+    const updatedProfiles = { ...userProfiles };
+    testUsers.forEach(testUser => {
+      updatedProfiles[testUser.user_id] = testUser;
+      
+      addUserMarker(
+        testUser.location_blurred_lng,
+        testUser.location_blurred_lat,
+        testUser.user_id,
+        testUser.display_name,
+        false,
+        testUser.avatar_url,
+        false,
+        testUser.zone_key,
+        testUser.inSameZone,
+        testUser.inSameZone ? '#10b981' : '#6b7280'
+      );
+    });
+
+    setUserProfiles(updatedProfiles);
+    
+    // Update zone visualization with test users
+    const { data: currentUserProfile } = await supabase
+      .from('profiles')
+      .select('zone_key')
+      .eq('user_id', user.id)
+      .maybeSingle();
+    
+    updateZoneVisualization(updatedProfiles, currentUserProfile?.zone_key);
+  };
 
   // Load real users with zone-based system for friend requests
   const loadRealUsers = async () => {
@@ -135,6 +324,9 @@ export const RealMapComponent = () => {
         });
         setUserProfiles(profilesMap);
 
+        // Update zone visualization
+        updateZoneVisualization(profilesMap, currentUserZone);
+
         // Add markers for each user with zone indicators
         [...sameZoneUsers, ...otherUsers].forEach(profile => {
           const displayName = profile?.display_name || 'Unknown User';
@@ -181,6 +373,7 @@ export const RealMapComponent = () => {
 
     map.current.on('load', () => {
       setMapLoaded(true);
+      addZoneLayers();
       getUserLocation();
     });
 
@@ -278,8 +471,9 @@ export const RealMapComponent = () => {
             '#3b82f6'
           );
 
-          // Load other users after adding current user
+          // Load other users and add test users for demo
           loadRealUsers();
+          setTimeout(() => addTestUsers(), 1000); // Add test users after real users load
         }
       },
       (error) => {

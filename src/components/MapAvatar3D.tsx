@@ -16,7 +16,7 @@ const MapAvatar3DModel = ({ url, isCurrentUser }: MapAvatar3DModelProps) => {
   useFrame((state) => {
     if (meshRef.current) {
       // Gentle floating animation
-      meshRef.current.position.y = Math.sin(state.clock.elapsedTime * 1.5) * 0.05;
+      meshRef.current.position.y = Math.sin(state.clock.elapsedTime * 1.5) * 0.05 - 0.6;
       // Subtle rotation
       meshRef.current.rotation.y += 0.005;
     }
@@ -26,13 +26,13 @@ const MapAvatar3DModel = ({ url, isCurrentUser }: MapAvatar3DModelProps) => {
     <group ref={meshRef}>
       <primitive 
         object={scene.clone()} 
-        scale={[0.8, 0.8, 0.8]} 
-        position={[0, -0.8, 0]}
+        scale={[0.6, 0.6, 0.6]} 
+        position={[0, -0.6, 0]}
       />
       {/* Subtle glow for current user */}
       {isCurrentUser && (
-        <mesh position={[0, -1.2, 0]}>
-          <cylinderGeometry args={[0.4, 0.4, 0.02, 32]} />
+        <mesh position={[0, -1.0, 0]}>
+          <cylinderGeometry args={[0.3, 0.3, 0.02, 32]} />
           <meshBasicMaterial color="#3b82f6" transparent opacity={0.4} />
         </mesh>
       )}
@@ -80,7 +80,7 @@ export const MapAvatar3D = ({
       }}
     >
       <Canvas
-        camera={{ position: [0, 0, 3], fov: 45 }}
+        camera={{ position: [0, 0, 4], fov: 35 }}
         gl={{ alpha: true, antialias: true }}
         style={{ background: 'transparent' }}
       >

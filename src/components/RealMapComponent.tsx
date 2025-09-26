@@ -648,10 +648,10 @@ export const RealMapComponent = () => {
         </Button>
       </div>
 
-      {/* Small Zone Note - Only when no users nearby */}
+      {/* Small Zone Note - Only when no users nearby - positioned to avoid buttons */}
       {userLocation && Object.keys(userProfiles).length === 0 && showZoneNote && (
-        <div className="absolute top-20 left-4 right-4 z-20 animate-fade-in">
-          <div className="bg-background/95 backdrop-blur-sm border rounded-lg p-2 shadow-lg ml-auto mr-auto max-w-xs">
+        <div className="absolute top-16 right-4 z-20 animate-fade-in">
+          <div className="bg-background/95 backdrop-blur-sm border rounded-lg p-2 shadow-lg max-w-xs">
             <div className="flex items-center justify-between gap-2">
               <div className="flex items-center gap-2 flex-1">
                 <div className="w-2 h-2 bg-blue-500 rounded-full flex-shrink-0"></div>

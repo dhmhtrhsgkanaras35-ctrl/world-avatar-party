@@ -172,46 +172,50 @@ export const ReadyPlayerMeCreator = ({
         (gltf) => {
           const model = gltf.scene;
           
-          // Apply natural Snapchat Bitmoji-style relaxed pose
+          // Apply natural Snapchat Bitmoji-style relaxed pose with hands down
           model.traverse((child) => {
             if (child.type === 'Bone' || (child as any).isBone) {
               const boneName = child.name.toLowerCase();
               
-              // Natural arm positioning - one arm slightly forward, one back
+              // Natural arm positioning - arms hanging at sides
               if (boneName.includes('leftarm') || boneName.includes('l_upperarm') || boneName.includes('leftupperarm')) {
-                child.rotation.x = -0.2; // Slight forward swing
-                child.rotation.z = 0.15; // Relaxed away from body
-                child.rotation.y = 0.1;  // Slight twist
+                child.rotation.x = 0.1;   // Slight forward angle
+                child.rotation.z = 0.05;  // Close to body but not rigid
+                child.rotation.y = 0.05;  // Slight outward rotation
               }
               if (boneName.includes('rightarm') || boneName.includes('r_upperarm') || boneName.includes('rightupperarm')) {
-                child.rotation.x = 0.15;  // Slight backward swing  
-                child.rotation.z = -0.12; // Relaxed away from body
-                child.rotation.y = -0.08; // Slight twist
+                child.rotation.x = 0.08;  // Slight forward angle
+                child.rotation.z = -0.05; // Close to body but not rigid
+                child.rotation.y = -0.05; // Slight outward rotation
               }
               
-              // Natural forearm bend
+              // Natural forearm - hanging down naturally
               if (boneName.includes('leftforearm') || boneName.includes('l_forearm') || boneName.includes('leftlowerarm')) {
-                child.rotation.z = 0.3;  // More natural bend
-                child.rotation.x = -0.1; // Slight forward angle
+                child.rotation.x = 0.1;   // Natural hanging angle
+                child.rotation.z = 0.02;  // Slight bend inward
+                child.rotation.y = 0.05;  // Natural twist
               }
               if (boneName.includes('rightforearm') || boneName.includes('r_forearm') || boneName.includes('rightlowerarm')) {
-                child.rotation.z = -0.25; // Natural bend
-                child.rotation.x = 0.08;  // Slight angle
+                child.rotation.x = 0.12;  // Natural hanging angle
+                child.rotation.z = -0.02; // Slight bend inward
+                child.rotation.y = -0.05; // Natural twist
               }
               
-              // Natural hand positioning
+              // Natural hand positioning - relaxed down
               if (boneName.includes('lefthand') || boneName.includes('l_hand')) {
-                child.rotation.x = 0.1;
-                child.rotation.z = 0.05;
+                child.rotation.x = 0.05;  // Slight forward curl
+                child.rotation.y = 0.02;  // Natural position
+                child.rotation.z = 0.01;  // Relaxed
               }
               if (boneName.includes('righthand') || boneName.includes('r_hand')) {
-                child.rotation.x = -0.08;
-                child.rotation.z = -0.05;
+                child.rotation.x = 0.05;  // Slight forward curl
+                child.rotation.y = -0.02; // Natural position
+                child.rotation.z = -0.01; // Relaxed
               }
               
               // Weight shift - slight hip and spine curvature
               if (boneName.includes('hips') || boneName.includes('pelvis')) {
-                child.rotation.z = 0.04; // Slight lean
+                child.rotation.z = 0.03; // Slight lean
                 child.rotation.y = 0.02; // Minor twist
               }
               if (boneName.includes('spine') || boneName.includes('chest')) {
@@ -221,27 +225,27 @@ export const ReadyPlayerMeCreator = ({
               
               // Natural head position
               if (boneName.includes('head') || boneName.includes('neck')) {
-                child.rotation.x = 0.05;  // Slight chin down
+                child.rotation.x = 0.04;  // Slight chin down
                 child.rotation.z = -0.02; // Slight tilt
-                child.rotation.y = 0.03;  // Slight turn
+                child.rotation.y = 0.02;  // Slight turn
               }
               
               // Natural leg positioning - contrapposto stance
               if (boneName.includes('leftupperleg') || boneName.includes('leftthigh') || boneName.includes('l_thigh')) {
-                child.rotation.x = 0.08;  // Slight forward
-                child.rotation.z = -0.03; // Weight-bearing leg
+                child.rotation.x = 0.06;  // Slight forward
+                child.rotation.z = -0.02; // Weight-bearing leg
               }
               if (boneName.includes('rightupperleg') || boneName.includes('rightthigh') || boneName.includes('r_thigh')) {
                 child.rotation.x = 0.03;  // Less weight
-                child.rotation.z = 0.05;  // Relaxed leg
+                child.rotation.z = 0.04;  // Relaxed leg
               }
               
               // Natural knee bend
               if (boneName.includes('leftlowerleg') || boneName.includes('leftshin') || boneName.includes('l_shin')) {
-                child.rotation.x = -0.05;
+                child.rotation.x = -0.04;
               }
               if (boneName.includes('rightlowerleg') || boneName.includes('rightshin') || boneName.includes('r_shin')) {
-                child.rotation.x = -0.08; // Slight more bend on relaxed leg
+                child.rotation.x = -0.06; // Slight more bend on relaxed leg
               }
               
               // Natural foot positioning
@@ -249,8 +253,8 @@ export const ReadyPlayerMeCreator = ({
                 child.rotation.x = 0.02;
               }
               if (boneName.includes('rightfoot') || boneName.includes('r_foot')) {
-                child.rotation.x = 0.05; // Slightly more relaxed
-                child.rotation.y = 0.05; // Slight turn out
+                child.rotation.x = 0.03; // Slightly more relaxed
+                child.rotation.y = 0.03; // Slight turn out
               }
             }
           });

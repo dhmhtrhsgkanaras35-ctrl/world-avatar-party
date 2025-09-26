@@ -8,6 +8,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "./AuthProvider";
 import { AvatarDisplay } from "./AvatarDisplay";
 import { useToast } from "@/hooks/use-toast";
+import { getZoneName } from "@/utils/zoneNames";
 
 interface UserLocation {
   user_id: string;
@@ -543,27 +544,28 @@ export const RealMapComponent = () => {
         transition: transform 0.2s ease;
       `;
       
-      // Add zone indicator dot
-      if (!isCurrentUser) {
-        const zoneIndicator = document.createElement('div');
-        zoneIndicator.style.cssText = `
-          position: absolute;
-          top: -2px;
-          right: -2px;
-          width: 14px;
-          height: 14px;
-          border-radius: 50%;
-          background: ${inSameZone ? '#10b981' : '#6b7280'};
-          border: 2px solid white;
-          box-shadow: 0 1px 3px rgba(0,0,0,0.2);
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          font-size: 8px;
-        `;
-        zoneIndicator.textContent = inSameZone ? '🤝' : '📍';
-        el.appendChild(zoneIndicator);
-      }
+    // Add zone name badge
+    if (zoneKey) {
+      const zoneName = getZoneName(zoneKey);
+      const zoneIndicator = document.createElement('div');
+      zoneIndicator.style.cssText = `
+        position: absolute;
+        top: -8px;
+        left: 50%;
+        transform: translateX(-50%);
+        background: ${inSameZone ? '#10b981' : '#6366f1'};
+        color: white;
+        border-radius: 8px;
+        padding: 2px 6px;
+        font-size: 10px;
+        font-weight: 600;
+        white-space: nowrap;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+        border: 1px solid white;
+      `;
+      zoneIndicator.textContent = zoneName;
+      el.appendChild(zoneIndicator);
+    }
       
       // Add hover animation
       avatarImg.addEventListener('mouseenter', () => {
@@ -597,12 +599,13 @@ export const RealMapComponent = () => {
     console.log('Adding zone-based avatar marker for:', name, 'Zone:', zoneKey, 'Same zone:', inSameZone);
 
     // Create enhanced popup with zone-based friend request functionality
+    const zoneName = zoneKey ? getZoneName(zoneKey) : 'Unknown';
     let popupContent = `
       <div class="p-3 bg-white rounded-lg shadow-lg min-w-[200px]">
         <h3 class="font-semibold text-gray-900 mb-1">${name}</h3>
-        <p class="text-sm text-gray-600 mb-2">${isCurrentUser ? 'Your location' : (isFriend ? 'Friend nearby' : 'Person nearby')}</p>
+        <p class="text-sm text-gray-600 mb-2">${isCurrentUser ? 'Your zone' : (isFriend ? 'Friend nearby' : 'Person nearby')}</p>
         <p class="text-xs text-gray-500">${avatarUrl ? '✨ Full Body Avatar' : '🎭 Default Avatar'}</p>
-        <p class="text-xs text-blue-600 mt-1">📍 Zone: ${zoneKey || 'Unknown'}</p>`;
+        <p class="text-xs text-blue-600 mt-1">🏠 Zone: ${zoneName}</p>`;
 
     // Add friend request button only for non-friends in the SAME zone
     if (!isCurrentUser && !isFriend && user && inSameZone) {
@@ -614,9 +617,10 @@ export const RealMapComponent = () => {
           🤝 Add Friend (Same Zone)
         </button>`;
     } else if (!isCurrentUser && !isFriend && user && zoneKey && !inSameZone) {
+      const targetZoneName = getZoneName(zoneKey);
       popupContent += `
         <div class="mt-2 text-xs text-amber-600 bg-amber-50 p-2 rounded">
-          📍 Move to zone ${zoneKey} to send friend request
+          🏠 Move to zone ${targetZoneName} to send friend request
         </div>`;
     }
 

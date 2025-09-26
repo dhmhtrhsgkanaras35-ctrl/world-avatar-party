@@ -208,16 +208,16 @@ export const LocationToggle = ({ user }: LocationToggleProps) => {
       setIsSharing(false);
       stopLocationTracking();
       toast({
-        title: "Location Sharing Off",
-        description: "Your location is no longer visible to others",
+        title: "Zone Sharing Off",
+        description: "Your zone is no longer shared with the avatar world",
       });
     } else {
       // Start sharing
       setIsSharing(true);
       startLocationTracking();
       toast({
-        title: "Location Sharing On",
-        description: "Your location is now visible to everyone nearby",
+        title: "Zone Sharing On",
+        description: "Your zone is being shared with the avatar world",
       });
     }
   };
@@ -240,18 +240,18 @@ export const LocationToggle = ({ user }: LocationToggleProps) => {
     
     switch (locationStatus) {
       case 'active':
-        return isSharing ? 'Sharing location' : 'Location found';
+        return isSharing ? 'Zone active' : 'Zone found';
       case 'requesting':
-        return 'Finding location...';
+        return 'Finding zone...';
       case 'error':
-        return 'Location error';
+        return 'Zone error';
       default:
-        return 'Location off';
+        return 'Zone off';
     }
   };
 
   return (
-    <div className="fixed top-20 right-4 z-40">
+    <div className="fixed top-16 right-4 z-40">
       <Card className="shadow-lg bg-background/95 backdrop-blur-sm border">
         <CardContent className="p-2">
           <div className="flex items-center gap-2">
@@ -274,7 +274,7 @@ export const LocationToggle = ({ user }: LocationToggleProps) => {
           
           {!user && (
             <div className="mt-1 text-xs text-muted-foreground max-w-[120px]">
-              Sign in to share location
+              Sign in to share zone
             </div>
           )}
         </CardContent>

@@ -340,7 +340,7 @@ export const ReadyPlayerMeCreator = ({
     setIsSaving(true);
     try {
       console.log('=== AVATAR SAVE DEBUG ===');
-      console.log('Avatar URL:', avatarUrl);
+      console.log('Avatar PNG Blob URL:', avatarUrl);
       console.log('User ID:', userId);
       
       // Check if user is authenticated
@@ -355,6 +355,51 @@ export const ReadyPlayerMeCreator = ({
       if (user.id !== userId) {
         console.warn('User ID mismatch:', { authenticated: user.id, provided: userId });
       }
+
+      // Convert blob URL to file for upload
+      const response = await fetch(avatarUrl);
+      const blob = await response.blob();
+      const fileName = `${userId}/avatar.png`;
+      
+      console.log('Uploading avatar PNG to storage:', fileName);
+      
+      // Check if avatar already exists and delete it
+      const { data: existingFile } = await supabase.storage
+        .from('avatars')
+        .list(userId);
+        
+      if (existingFile && existingFile.length > 0) {
+        console.log('Removing old avatar file');
+        const { error: deleteError } = await supabase.storage
+          .from('avatars')
+          .remove([`${userId}/avatar.png`]);
+        if (deleteError) {
+          console.warn('Error deleting old avatar:', deleteError);
+        }
+      }
+      
+      // Upload new avatar PNG to Supabase storage
+      const { data: uploadData, error: uploadError } = await supabase.storage
+        .from('avatars')
+        .upload(fileName, blob, {
+          cacheControl: '3600',
+          upsert: true,
+          contentType: 'image/png'
+        });
+
+      if (uploadError) {
+        console.error('Storage upload error:', uploadError);
+        throw uploadError;
+      }
+
+      console.log('Avatar uploaded to storage:', uploadData);
+
+      // Get public URL for the uploaded avatar
+      const { data: { publicUrl } } = supabase.storage
+        .from('avatars')
+        .getPublicUrl(fileName);
+        
+      console.log('Avatar public URL:', publicUrl);
       
       // First, try to get existing profile
       const { data: existingProfile, error: fetchError } = await supabase
@@ -366,10 +411,10 @@ export const ReadyPlayerMeCreator = ({
       console.log('Existing profile:', existingProfile);
       console.log('Fetch error:', fetchError);
       
-      // Prepare the profile data
+      // Prepare the profile data with storage URL
       let profileData: any = {
         user_id: userId,
-        avatar_url: avatarUrl,
+        avatar_url: publicUrl,
         pose: 'idle', // Default pose for all avatars
         updated_at: new Date().toISOString()
       };
@@ -398,14 +443,17 @@ export const ReadyPlayerMeCreator = ({
         throw error;
       }
 
-      console.log('Avatar saved successfully:', data);
+      console.log('Avatar saved successfully to storage:', data);
       
       toast({
         title: "Avatar Created!",
         description: "Your Ready Player Me avatar has been saved successfully.",
       });
 
-      onAvatarCreated?.(avatarUrl);
+      // Clean up the blob URL
+      URL.revokeObjectURL(avatarUrl);
+
+      onAvatarCreated?.(publicUrl);
     } catch (error: any) {
       console.error('=== SAVE AVATAR ERROR ===');
       console.error('Error details:', error);

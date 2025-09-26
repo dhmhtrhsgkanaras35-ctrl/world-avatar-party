@@ -647,52 +647,6 @@ export const RealMapComponent = () => {
         </Button>
       </div>
 
-      {/* Zone Info Card - Always show when user has location */}
-      {userLocation && (
-        <Card className="absolute bottom-20 right-4 max-w-xs shadow-lg z-20">
-          <CardContent className="p-3">
-            <h3 className="font-semibold mb-2 flex items-center gap-2 text-sm">
-              🏠 Your Zone
-            </h3>
-            <div className="space-y-2">
-              <div className="flex items-center gap-2">
-                <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
-                <span className="text-sm">You are in zone: <strong>{getZoneName('15038_6442')}</strong></span>
-              </div>
-              {Object.keys(userProfiles).length === 0 ? (
-                <p className="text-xs text-muted-foreground">
-                  📍 No other users in nearby zones. Share with friends to meet up!
-                </p>
-              ) : (
-                <div className="space-y-2 max-h-32 overflow-y-auto">
-                  <p className="text-xs font-medium">👥 People Nearby ({Object.keys(userProfiles).length}):</p>
-                  {Object.values(userProfiles).slice(0, 3).map((userProfile: any) => (
-                    <div key={userProfile.user_id} className="flex items-center gap-2">
-                      <div className="w-6 h-6">
-                        <AvatarDisplay 
-                          avatarUrl={userProfile?.avatar_url}
-                          size="small"
-                          showStatus={true}
-                          status="online"
-                        />
-                      </div>
-                      <div className="min-w-0 flex-1">
-                        <p className="text-xs font-medium truncate">
-                          {userProfile?.display_name || 'Unknown'}
-                        </p>
-                        {userProfile.inSameZone && (
-                          <p className="text-xs text-green-600">Same zone</p>
-                        )}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
       {/* Location Info */}
       {userLocation && (
         <Card className="absolute bottom-4 left-4 shadow-lg z-20">

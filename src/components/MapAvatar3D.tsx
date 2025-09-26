@@ -26,12 +26,12 @@ const MapAvatar3DModel = ({ url, isCurrentUser }: MapAvatar3DModelProps) => {
     <group ref={meshRef}>
       <primitive 
         object={scene.clone()} 
-        scale={[1.2, 1.2, 1.2]} 
-        position={[0, -0.3, 0]}
+        scale={[0.8, 0.8, 0.8]} 
+        position={[0, -0.8, 0]}
       />
       {/* Subtle glow for current user */}
       {isCurrentUser && (
-        <mesh position={[0, -0.4, 0]}>
+        <mesh position={[0, -1.2, 0]}>
           <cylinderGeometry args={[0.4, 0.4, 0.02, 32]} />
           <meshBasicMaterial color="#3b82f6" transparent opacity={0.4} />
         </mesh>
@@ -80,7 +80,7 @@ export const MapAvatar3D = ({
       }}
     >
       <Canvas
-        camera={{ position: [0, 0, 2], fov: 50 }}
+        camera={{ position: [0, 0, 3], fov: 45 }}
         gl={{ alpha: true, antialias: true }}
         style={{ background: 'transparent' }}
       >

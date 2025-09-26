@@ -13,10 +13,19 @@ const MapAvatar3DModel = ({ url, isCurrentUser }: MapAvatar3DModelProps) => {
   const { scene } = useGLTF(url);
   const meshRef = useRef<THREE.Group>(null);
 
+  // Debug: Log model bounds for map avatar
+  console.log('MapAvatar3D Model loaded:', url);
+  if (scene) {
+    const box = new THREE.Box3().setFromObject(scene);
+    const size = box.getSize(new THREE.Vector3());
+    const center = box.getCenter(new THREE.Vector3());
+    console.log('Map Model bounds:', { size, center });
+  }
+
   useFrame((state) => {
     if (meshRef.current) {
       // Gentle floating animation
-      meshRef.current.position.y = Math.sin(state.clock.elapsedTime * 1.5) * 0.05 - 0.6;
+      meshRef.current.position.y = Math.sin(state.clock.elapsedTime * 1.5) * 0.05 - 0.3;
       // Subtle rotation
       meshRef.current.rotation.y += 0.005;
     }
@@ -26,13 +35,13 @@ const MapAvatar3DModel = ({ url, isCurrentUser }: MapAvatar3DModelProps) => {
     <group ref={meshRef}>
       <primitive 
         object={scene.clone()} 
-        scale={[0.6, 0.6, 0.6]} 
-        position={[0, -0.6, 0]}
+        scale={[0.5, 0.5, 0.5]} 
+        position={[0, -0.3, 0]}
       />
       {/* Subtle glow for current user */}
       {isCurrentUser && (
-        <mesh position={[0, -1.0, 0]}>
-          <cylinderGeometry args={[0.3, 0.3, 0.02, 32]} />
+        <mesh position={[0, -0.8, 0]}>
+          <cylinderGeometry args={[0.25, 0.25, 0.02, 32]} />
           <meshBasicMaterial color="#3b82f6" transparent opacity={0.4} />
         </mesh>
       )}
@@ -80,7 +89,7 @@ export const MapAvatar3D = ({
       }}
     >
       <Canvas
-        camera={{ position: [0, 0, 4], fov: 35 }}
+        camera={{ position: [0, 0.2, 5], fov: 30 }}
         gl={{ alpha: true, antialias: true }}
         style={{ background: 'transparent' }}
       >

@@ -12,6 +12,15 @@ const Avatar3DModel = ({ url, animate = false }: Avatar3DModelProps) => {
   const { scene } = useGLTF(url);
   const meshRef = useRef<THREE.Group>(null);
 
+  // Debug: Log model bounds
+  console.log('Avatar3D Model loaded:', url);
+  if (scene) {
+    const box = new THREE.Box3().setFromObject(scene);
+    const size = box.getSize(new THREE.Vector3());
+    const center = box.getCenter(new THREE.Vector3());
+    console.log('Model bounds:', { size, center });
+  }
+
   useFrame((state) => {
     if (meshRef.current && animate) {
       meshRef.current.rotation.y = Math.sin(state.clock.elapsedTime * 0.5) * 0.3;
@@ -20,7 +29,7 @@ const Avatar3DModel = ({ url, animate = false }: Avatar3DModelProps) => {
 
   return (
     <group ref={meshRef}>
-      <primitive object={scene.clone()} scale={[1, 1, 1]} position={[0, -0.8, 0]} />
+      <primitive object={scene.clone()} scale={[0.8, 0.8, 0.8]} position={[0, -0.5, 0]} />
     </group>
   );
 };
@@ -62,7 +71,7 @@ export const Avatar3D = ({
   return (
     <div className={`overflow-hidden ${className}`} style={{ width, height }}>
       <Canvas
-        camera={{ position: [0, 0, 4], fov: 35 }}
+        camera={{ position: [0, 0.5, 5], fov: 30 }}
         gl={{ alpha: true, antialias: true }}
         style={{ background: 'transparent' }}
       >

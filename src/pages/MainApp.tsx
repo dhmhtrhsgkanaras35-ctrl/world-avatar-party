@@ -5,7 +5,6 @@ import { Card, CardContent } from "@/components/ui/card";
 import { RealMapComponent } from "@/components/RealMapComponent";
 import { FriendRequestManager } from "@/components/FriendRequestManager";
 import { LocationToggle } from "@/components/LocationToggle";
-import { ZoneVisualization } from "@/components/ZoneVisualization";
 import { useAuth } from "@/components/AuthProvider";
 import { supabase } from "@/integrations/supabase/client";
 import { Plus, Users, MessageCircle, User } from "lucide-react";
@@ -129,9 +128,6 @@ const MainApp = () => {
 
           {/* Location Toggle - Floating - adjusted for smaller header */}
           <LocationToggle user={user} />
-
-          {/* Zone Activity Visualization */}
-          <ZoneVisualization />
         </div>
 
       {/* Bottom Navigation */}

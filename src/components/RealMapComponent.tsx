@@ -1245,6 +1245,14 @@ export const RealMapComponent = () => {
             },
             onEventDelete: async (eventId) => {
               try {
+                console.log('Deleting permanent event:', eventId);
+                // First remove the marker immediately
+                if (eventMarkersRef.current[eventId]) {
+                  eventMarkersRef.current[eventId].remove();
+                  delete eventMarkersRef.current[eventId];
+                  console.log('Removed marker for event:', eventId);
+                }
+                
                 await supabase.from('event_attendees').delete().eq('event_id', eventId);
                 const { error } = await supabase.from('events').delete().eq('id', eventId);
                 
@@ -1255,19 +1263,24 @@ export const RealMapComponent = () => {
                     description: "Failed to delete event",
                     variant: "destructive"
                   });
+                  // Re-add the marker if deletion failed
+                  loadNearbyEvents();
                 } else {
+                  console.log('Event deleted successfully:', eventId);
                   toast({
                     title: "Event Deleted",
                     description: "Event removed successfully"
                   });
-                  // Remove marker immediately
-                  if (eventMarkersRef.current[eventId]) {
-                    eventMarkersRef.current[eventId].remove();
-                    delete eventMarkersRef.current[eventId];
-                  }
                 }
               } catch (error) {
                 console.error('Error deleting event:', error);
+                toast({
+                  title: "Error",
+                  description: "Failed to delete event",
+                  variant: "destructive"
+                });
+                // Re-add the marker if deletion failed
+                loadNearbyEvents();
               }
             }
           });

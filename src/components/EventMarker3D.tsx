@@ -248,6 +248,7 @@ export const createEventMarker3D = ({
     
     deleteButton.addEventListener('click', (e) => {
       e.stopPropagation();
+      console.log('Delete button clicked for permanent event:', event.id);
       if (onEventDelete && confirm('Are you sure you want to delete this event?')) {
         onEventDelete(event.id);
       }

@@ -31,30 +31,56 @@ const Profile = () => {
     if (!user) return;
 
     try {
+      console.log('🔍 Loading profile for user:', user.id);
       const { data, error } = await supabase
         .from('profiles')
         .select('*')
         .eq('user_id', user.id)
         .maybeSingle();
 
+      console.log('📊 Profile query result:', { data, error });
+
       if (error && error.code !== 'PGRST116') {
-        console.error('Error loading profile:', error);
+        console.error('❌ Error loading profile:', error);
         return;
       }
 
       if (data?.avatar_url) {
-        console.log('Profile loaded with avatar_url:', data.avatar_url);
+        console.log('✅ Profile loaded with avatar_url:', data.avatar_url);
+        
+        // Test the URL directly
+        const testImg = new Image();
+        testImg.crossOrigin = 'anonymous';
+        testImg.onload = () => {
+          console.log('✅ Avatar URL test - Image loads successfully!');
+        };
+        testImg.onerror = (e) => {
+          console.error('❌ Avatar URL test - Image failed to load:', e);
+          console.error('❌ Trying without CORS...');
+          
+          // Test without CORS
+          const testImg2 = new Image();
+          testImg2.onload = () => {
+            console.log('✅ Avatar loads without CORS - CORS is the issue!');
+          };
+          testImg2.onerror = (e2) => {
+            console.error('❌ Avatar fails even without CORS:', e2);
+          };
+          testImg2.src = data.avatar_url;
+        };
+        testImg.src = data.avatar_url;
+        
         // Add cache-busting parameter to prevent browser caching issues
         const avatarUrl = data.avatar_url.includes('?') 
           ? `${data.avatar_url}&t=${Date.now()}`
           : `${data.avatar_url}?t=${Date.now()}`;
-        console.log('Setting readyPlayerMeUrl to:', avatarUrl);
+        console.log('🔄 Setting readyPlayerMeUrl to:', avatarUrl);
         setReadyPlayerMeUrl(avatarUrl);
       } else {
-        console.log('No avatar_url found in profile data:', data);
+        console.log('❌ No avatar_url found in profile data:', data);
       }
     } catch (error) {
-      console.error('Error loading profile:', error);
+      console.error('❌ Error loading profile:', error);
     } finally {
       setLoading(false);
     }
@@ -113,27 +139,35 @@ const Profile = () => {
           {/* Snapchat-style Full-body Avatar Display */}
           <div className="flex justify-center">
             {readyPlayerMeUrl ? (
-              <div className="w-48 h-96 flex items-end justify-center">
+              <div className="w-48 h-96 flex items-end justify-center relative border-2 border-dashed border-gray-300">
                 <img 
                   src={readyPlayerMeUrl} 
                   alt="Your Avatar"
-                  crossOrigin="anonymous"
                   className="max-w-full max-h-full object-contain object-bottom filter drop-shadow-lg"
                   style={{ display: 'block' }}
-                  onLoad={() => console.log('✅ Profile avatar image loaded successfully:', readyPlayerMeUrl)}
+                  onLoad={(e) => {
+                    console.log('✅ Profile avatar image loaded successfully:', readyPlayerMeUrl);
+                    const img = e.target as HTMLImageElement;
+                    console.log('📐 Image dimensions:', img.naturalWidth, 'x', img.naturalHeight);
+                  }}
                   onError={(e) => {
                     console.error('❌ Profile avatar image failed to load:', readyPlayerMeUrl);
-                    console.error('Image error event:', e);
+                    console.error('❌ Image error event:', e);
                     // Show fallback
                     const img = e.target as HTMLImageElement;
                     img.style.display = 'none';
                   }}
                 />
+                {/* Debug info */}
+                <div className="absolute top-2 left-2 bg-black/70 text-white text-xs p-2 rounded z-10">
+                  Avatar URL: {readyPlayerMeUrl.substring(0, 50)}...
+                </div>
               </div>
             ) : (
               <div className="w-32 h-32 bg-gradient-to-br from-primary to-primary-glow rounded-full flex items-center justify-center text-white shadow-xl">
                 <div className="text-center">
                   <div className="text-6xl">👤</div>
+                  <div className="text-xs mt-2">No Avatar</div>
                 </div>
               </div>
             )}

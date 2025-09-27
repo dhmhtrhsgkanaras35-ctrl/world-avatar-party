@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
@@ -32,12 +32,33 @@ export const CreateEventDialog = ({ user, userLocation, userZone, onEventCreated
     is_public: true
   });
 
+  // Set default start time when dialog opens
+  useEffect(() => {
+    if (isOpen && !formData.start_time) {
+      const defaultStartTime = getCurrentDateTime();
+      setFormData(prev => ({
+        ...prev,
+        start_time: defaultStartTime
+      }));
+    }
+  }, [isOpen]);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!user || !userLocation) {
       toast({
         title: "Location Required",
         description: "Please enable location sharing to create events",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    // Validate required fields
+    if (!formData.title.trim()) {
+      toast({
+        title: "Title Required",
+        description: "Please enter an event title",
         variant: "destructive"
       });
       return;
@@ -51,8 +72,8 @@ export const CreateEventDialog = ({ user, userLocation, userZone, onEventCreated
         title: formData.title,
         description: formData.description || null,
         event_type: formData.event_type,
-        start_time: formData.start_time ? new Date(formData.start_time).toISOString() : null,
-        end_time: formData.end_time ? new Date(formData.end_time).toISOString() : null,
+        start_time: formData.start_time || null,
+        end_time: formData.end_time || null,
         max_attendees: formData.max_attendees ? parseInt(formData.max_attendees) : null,
         is_public: formData.is_public,
         latitude: userLocation.lat,
@@ -84,6 +105,17 @@ export const CreateEventDialog = ({ user, userLocation, userZone, onEventCreated
         is_public: true
       });
       setIsOpen(false);
+
+      setFormData({
+        title: '',
+        description: '',
+        event_type: 'party',
+        start_time: '',
+        end_time: '',
+        max_attendees: '',
+        is_public: true
+      });
+      setIsOpen(false);
     } catch (error) {
       console.error('Error creating event:', error);
       toast({
@@ -98,6 +130,8 @@ export const CreateEventDialog = ({ user, userLocation, userZone, onEventCreated
 
   const getCurrentDateTime = () => {
     const now = new Date();
+    // Add 1 hour to current time as default
+    now.setHours(now.getHours() + 1);
     const year = now.getFullYear();
     const month = String(now.getMonth() + 1).padStart(2, '0');
     const day = String(now.getDate()).padStart(2, '0');
@@ -197,16 +231,18 @@ export const CreateEventDialog = ({ user, userLocation, userZone, onEventCreated
                 value={formData.start_time}
                 onChange={(e) => setFormData(prev => ({ ...prev, start_time: e.target.value }))}
                 min={getCurrentDateTime()}
+                className="text-sm"
               />
             </div>
             <div>
-              <Label htmlFor="end_time">End Time</Label>
+              <Label htmlFor="end_time">End Time (optional)</Label>
               <Input
                 id="end_time"
                 type="datetime-local"
                 value={formData.end_time}
                 onChange={(e) => setFormData(prev => ({ ...prev, end_time: e.target.value }))}
                 min={formData.start_time || getCurrentDateTime()}
+                className="text-sm"
               />
             </div>
           </div>

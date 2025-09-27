@@ -616,7 +616,7 @@ export const RealMapComponent = () => {
         // If it's not a Ready Player Me URL, try to extract avatar ID and convert
         const avatarId = extractAvatarIdFromUrl(avatarUrl);
         if (avatarId) {
-          finalAvatarUrl = `https://render.readyplayer.me/avatar/${avatarId}.png?pose=relaxed&quality=high&transparent=true`;
+          finalAvatarUrl = `https://render.readyplayer.me/avatar/${avatarId}.png?pose=standing&quality=high&transparent=true`;
         }
       }
 

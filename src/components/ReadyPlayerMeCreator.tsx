@@ -99,7 +99,7 @@ export const ReadyPlayerMeCreator = ({
         // Extract avatar ID from GLB URL and create Ready Player Me PNG URL
         const avatarId = extractAvatarIdFromUrl(avatarGlbUrl);
         if (avatarId) {
-          const pngUrl = `https://render.readyplayer.me/avatar/${avatarId}.png?pose=relaxed&quality=high&transparent=true`;
+          const pngUrl = `https://render.readyplayer.me/avatar/${avatarId}.png?pose=standing&quality=high&transparent=true`;
           console.log('Ready Player Me PNG URL:', pngUrl);
           await saveAvatarUrl(pngUrl);
         } else {

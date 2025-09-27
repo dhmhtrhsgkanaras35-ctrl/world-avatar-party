@@ -43,11 +43,15 @@ const Profile = () => {
       }
 
       if (data?.avatar_url) {
+        console.log('Profile loaded with avatar_url:', data.avatar_url);
         // Add cache-busting parameter to prevent browser caching issues
         const avatarUrl = data.avatar_url.includes('?') 
           ? `${data.avatar_url}&t=${Date.now()}`
           : `${data.avatar_url}?t=${Date.now()}`;
+        console.log('Setting readyPlayerMeUrl to:', avatarUrl);
         setReadyPlayerMeUrl(avatarUrl);
+      } else {
+        console.log('No avatar_url found in profile data:', data);
       }
     } catch (error) {
       console.error('Error loading profile:', error);
@@ -114,6 +118,11 @@ const Profile = () => {
                   src={readyPlayerMeUrl} 
                   alt="Your Avatar"
                   className="max-w-full max-h-full object-contain object-bottom filter drop-shadow-lg"
+                  onLoad={() => console.log('Avatar image loaded successfully:', readyPlayerMeUrl)}
+                  onError={(e) => {
+                    console.error('Avatar image failed to load:', readyPlayerMeUrl);
+                    console.error('Image error:', e);
+                  }}
                 />
               </div>
             ) : (

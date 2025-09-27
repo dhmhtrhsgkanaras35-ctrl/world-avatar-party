@@ -192,10 +192,23 @@ export const createEventMarker3D = ({
       
       cancelButton.addEventListener('click', (e) => {
         e.stopPropagation();
+        e.preventDefault();
+        e.stopImmediatePropagation();
         console.log('Cancel button clicked for temp event:', event.id);
         if (onEventDelete) {
           onEventDelete(event.id);
         }
+      });
+      
+      // Prevent any dragging or moving on the cancel button
+      cancelButton.addEventListener('mousedown', (e) => {
+        e.stopPropagation();
+        e.preventDefault();
+      });
+      
+      cancelButton.addEventListener('touchstart', (e) => {
+        e.stopPropagation();
+        e.preventDefault();
       });
       
       cancelButton.addEventListener('mouseenter', () => {
@@ -281,10 +294,23 @@ export const createEventMarker3D = ({
     
     deleteButton.addEventListener('click', (e) => {
       e.stopPropagation();
+      e.preventDefault();
+      e.stopImmediatePropagation();
       console.log('Delete button clicked for permanent event:', event.id);
       if (onEventDelete && confirm('Are you sure you want to delete this event?')) {
         onEventDelete(event.id);
       }
+    });
+    
+    // Prevent any dragging or moving on the delete button
+    deleteButton.addEventListener('mousedown', (e) => {
+      e.stopPropagation();
+      e.preventDefault();
+    });
+    
+    deleteButton.addEventListener('touchstart', (e) => {
+      e.stopPropagation();
+      e.preventDefault();
     });
     
     el.appendChild(deleteButton);

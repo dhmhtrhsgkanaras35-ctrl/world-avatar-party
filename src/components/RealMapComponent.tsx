@@ -342,7 +342,7 @@ export const RealMapComponent = () => {
   useEffect(() => {
     if (!user) return;
 
-    // Listen for custom event from LocationToggle
+    // Listen for custom events from LocationToggle
     const handleLocationSharingEnabled = (event: CustomEvent) => {
       console.log('Location sharing enabled event:', event.detail);
       const { latitude, longitude } = event.detail;
@@ -365,7 +365,21 @@ export const RealMapComponent = () => {
       }
     };
 
+    const handleLocationSharingDisabled = () => {
+      console.log('Location sharing disabled event - removing user avatar');
+      if (map.current) {
+        // Remove the current user's avatar marker
+        const markerId = 'current-user';
+        if (markersRef.current[markerId]) {
+          console.log('Removing current user marker from map');
+          markersRef.current[markerId].remove();
+          delete markersRef.current[markerId];
+        }
+      }
+    };
+
     window.addEventListener('locationSharingEnabled', handleLocationSharingEnabled as EventListener);
+    window.addEventListener('locationSharingDisabled', handleLocationSharingDisabled as EventListener);
 
     const channel = supabase
       .channel('profile-changes')
@@ -390,6 +404,7 @@ export const RealMapComponent = () => {
 
     return () => {
       window.removeEventListener('locationSharingEnabled', handleLocationSharingEnabled as EventListener);
+      window.removeEventListener('locationSharingDisabled', handleLocationSharingDisabled as EventListener);
       supabase.removeChannel(channel);
     };
   }, [user]);

@@ -231,9 +231,12 @@ export const LocationToggle = ({ user }: LocationToggleProps) => {
         await updateLocationInDatabase(location.lat, location.lng, false);
       }
       
+      // Trigger map to remove avatar immediately
+      window.dispatchEvent(new CustomEvent('locationSharingDisabled'));
+      
       toast({
         title: "Zone Sharing Off",
-        description: "Your zone is no longer shared with the avatar world",
+        description: "Your location zone is no longer shared with the avatar world",
       });
     } else {
       // Start sharing
@@ -263,7 +266,7 @@ export const LocationToggle = ({ user }: LocationToggleProps) => {
         
         toast({
           title: "Zone Sharing On",
-          description: "Your real location is being shared with the avatar world",
+          description: "Your location zone is being shared with the avatar world",
         });
         
         // Start continuous tracking
@@ -285,7 +288,7 @@ export const LocationToggle = ({ user }: LocationToggleProps) => {
         
         toast({
           title: "Zone Sharing On",
-          description: "Using approximate location for avatar world sharing",
+          description: "Your location zone is being shared with the avatar world",
         });
         
         // Still try to start tracking in background

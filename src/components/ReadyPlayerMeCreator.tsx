@@ -359,22 +359,24 @@ export const ReadyPlayerMeCreator = ({
       // Convert blob URL to file for upload
       const response = await fetch(avatarUrl);
       const blob = await response.blob();
-      const fileName = `${userId}/avatar.png`;
+      const timestamp = Date.now();
+      const fileName = `${userId}/avatar_${timestamp}.png`;
       
       console.log('Uploading avatar PNG to storage:', fileName);
       
-      // Check if avatar already exists and delete it
-      const { data: existingFile } = await supabase.storage
+      // Check if avatar already exists and delete old ones
+      const { data: existingFiles } = await supabase.storage
         .from('avatars')
         .list(userId);
         
-      if (existingFile && existingFile.length > 0) {
-        console.log('Removing old avatar file');
+      if (existingFiles && existingFiles.length > 0) {
+        console.log('Removing old avatar files');
+        const filesToDelete = existingFiles.map(file => `${userId}/${file.name}`);
         const { error: deleteError } = await supabase.storage
           .from('avatars')
-          .remove([`${userId}/avatar.png`]);
+          .remove(filesToDelete);
         if (deleteError) {
-          console.warn('Error deleting old avatar:', deleteError);
+          console.warn('Error deleting old avatars:', deleteError);
         }
       }
       

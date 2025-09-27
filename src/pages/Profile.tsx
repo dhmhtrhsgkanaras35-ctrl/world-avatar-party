@@ -43,7 +43,11 @@ const Profile = () => {
       }
 
       if (data?.avatar_url) {
-        setReadyPlayerMeUrl(data.avatar_url);
+        // Add cache-busting parameter to prevent browser caching issues
+        const avatarUrl = data.avatar_url.includes('?') 
+          ? `${data.avatar_url}&t=${Date.now()}`
+          : `${data.avatar_url}?t=${Date.now()}`;
+        setReadyPlayerMeUrl(avatarUrl);
       }
     } catch (error) {
       console.error('Error loading profile:', error);

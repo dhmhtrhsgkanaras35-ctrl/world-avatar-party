@@ -608,15 +608,19 @@ export const RealMapComponent = () => {
       transform-origin: center bottom;
     `;
 
-      console.log('Creating marker element for user:', userId);
+      console.log('🎯 Creating marker element for user:', userId, 'with avatarUrl:', avatarUrl);
 
       // Check if avatar URL is Ready Player Me format
       let finalAvatarUrl = avatarUrl;
+      console.log('🔍 Initial avatar URL check:', avatarUrl, 'includes readyplayer.me:', avatarUrl?.includes('render.readyplayer.me'));
+      
       if (avatarUrl && !avatarUrl.includes('render.readyplayer.me')) {
         // If it's not a Ready Player Me URL, try to extract avatar ID and convert
         const avatarId = extractAvatarIdFromUrl(avatarUrl);
+        console.log('🔑 Extracted avatar ID:', avatarId);
         if (avatarId) {
           finalAvatarUrl = `https://render.readyplayer.me/avatar/${avatarId}.png?pose=standing&quality=high&transparent=true`;
+          console.log('🔄 Converted to Ready Player Me URL:', finalAvatarUrl);
         }
       }
 
@@ -624,9 +628,10 @@ export const RealMapComponent = () => {
       if (finalAvatarUrl && finalAvatarUrl.includes('render.readyplayer.me')) {
         const separator = finalAvatarUrl.includes('?') ? '&' : '?';
         finalAvatarUrl = `${finalAvatarUrl}${separator}t=${Date.now()}`;
+        console.log('⏰ Added cache-busting to URL:', finalAvatarUrl);
       }
 
-      console.log('Final avatar URL for marker:', finalAvatarUrl);
+      console.log('✅ Final avatar URL for marker:', finalAvatarUrl);
 
       if (finalAvatarUrl) {
         // Snapchat-style full-body avatar PNG with zone-based border
@@ -647,11 +652,16 @@ export const RealMapComponent = () => {
 
         // Handle image load errors
         avatarImg.onerror = (e: Event) => {
-          console.error('Avatar image failed to load:', finalAvatarUrl);
+          console.error('❌ Avatar image failed to load:', finalAvatarUrl, 'Error:', e);
           // Replace with fallback dot
           const target = e.target as HTMLImageElement;
           target?.remove();
           addFallbackDot();
+        };
+
+        // Handle successful image load
+        avatarImg.onload = () => {
+          console.log('✅ Avatar image loaded successfully:', finalAvatarUrl);
         };
 
         // Add hover animation

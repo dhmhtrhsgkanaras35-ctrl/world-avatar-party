@@ -9,6 +9,7 @@ import { useAuth } from "./AuthProvider";
 import { AvatarDisplay } from "./AvatarDisplay";
 import { useToast } from "@/hooks/use-toast";
 import { getZoneName } from "@/utils/zoneNames";
+import { createEventMarker3D } from "./EventMarker3D";
 
 interface UserLocation {
   user_id: string;
@@ -22,6 +23,19 @@ interface UserLocation {
   };
 }
 
+interface Event {
+  id: string;
+  title: string;
+  event_type: string;
+  latitude: number;
+  longitude: number;
+  start_time?: string;
+  end_time?: string;
+  max_attendees?: number;
+  created_by: string;
+  is_public: boolean;
+}
+
 export const RealMapComponent = () => {
   const mapContainer = useRef<HTMLDivElement>(null);
   const map = useRef<mapboxgl.Map | null>(null);
@@ -30,10 +44,12 @@ export const RealMapComponent = () => {
   
   const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
   const [userProfiles, setUserProfiles] = useState<{[key: string]: any}>({});
+  const [events, setEvents] = useState<Event[]>([]);
   const [mapLoaded, setMapLoaded] = useState(false);
   const [mapboxToken, setMapboxToken] = useState<string | null>(null);
   const [showZoneNote, setShowZoneNote] = useState(true);
   const markersRef = useRef<{ [key: string]: mapboxgl.Marker }>({});
+  const eventMarkersRef = useRef<{ [key: string]: mapboxgl.Marker }>({});
   const zonesRef = useRef<Set<string>>(new Set());
 
   // Get Mapbox token from Supabase Edge Function
@@ -332,6 +348,14 @@ export const RealMapComponent = () => {
 
     // Cleanup on unmount
     return () => {
+      // Cleanup user markers
+      Object.values(markersRef.current).forEach(marker => marker.remove());
+      markersRef.current = {};
+      
+      // Cleanup event markers
+      Object.values(eventMarkersRef.current).forEach(marker => marker.remove());
+      eventMarkersRef.current = {};
+      
       if (map.current) {
         map.current.remove();
       }
@@ -1005,8 +1029,99 @@ export const RealMapComponent = () => {
     if (mapLoaded && userLocation) {
       console.log('Map loaded, loading real users from Supabase...');
       loadRealUsers();
+      loadNearbyEvents();
     }
   }, [mapLoaded, userLocation]);
+
+  // Load nearby events
+  const loadNearbyEvents = async () => {
+    if (!userLocation || !map.current) return;
+
+    try {
+      const { data: eventsData, error } = await supabase
+        .from('events')
+        .select(`
+          *,
+          event_attendees(count)
+        `)
+        .eq('is_public', true)
+        .gte('start_time', new Date().toISOString()) // Only future events
+        .limit(50);
+
+      if (error) {
+        console.error('Error loading events:', error);
+        return;
+      }
+
+      setEvents(eventsData || []);
+      
+      // Clear existing event markers
+      Object.values(eventMarkersRef.current).forEach(marker => marker.remove());
+      eventMarkersRef.current = {};
+
+      // Add event markers to map
+      eventsData?.forEach((event) => {
+        if (event.latitude && event.longitude) {
+          const attendeeCount = event.event_attendees?.[0]?.count || 0;
+          
+          const eventElement = createEventMarker3D({
+            event,
+            attendeeCount,
+            onEventClick: (eventId) => {
+              console.log('Event clicked:', eventId);
+              // Handle event click - could open event details dialog
+              toast({
+                title: `Event: ${event.title}`,
+                description: `${event.event_type} event - Click to join!`,
+              });
+            }
+          });
+
+          const marker = new mapboxgl.Marker({
+            element: eventElement,
+            anchor: 'bottom'
+          })
+            .setLngLat([event.longitude, event.latitude])
+            .addTo(map.current!);
+
+          eventMarkersRef.current[event.id] = marker;
+        }
+      });
+      
+      console.log(`Added ${eventsData?.length || 0} event markers to map`);
+      
+    } catch (error) {
+      console.error('Error in loadNearbyEvents:', error);
+    }
+  };
+
+  // Listen for new events
+  useEffect(() => {
+    if (!user) return;
+
+    const channel = supabase
+      .channel('events-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'events'
+        },
+        (payload) => {
+          console.log('New event created:', payload);
+          // Reload events when a new one is created
+          if (mapLoaded && userLocation) {
+            loadNearbyEvents();
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [user, mapLoaded, userLocation]);
 
   if (!mapboxToken) {
     return (

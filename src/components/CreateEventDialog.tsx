@@ -9,6 +9,7 @@ import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { User } from '@supabase/supabase-js';
 import { Plus, Calendar, MapPin } from "lucide-react";
+import { StageParty3D } from "./StageParty3D";
 
 interface CreateEventDialogProps {
   user: User | null;
@@ -181,6 +182,19 @@ export const CreateEventDialog = ({ user, userLocation, userZone }: CreateEventD
               </SelectContent>
             </Select>
           </div>
+
+          {/* 3D Stage Preview for Party Events */}
+          {formData.event_type === 'party' && (
+            <div className="bg-card border border-border rounded-lg p-4">
+              <div className="text-sm font-medium text-foreground mb-2 flex items-center gap-2">
+                🎪 Your Party Stage Preview
+              </div>
+              <StageParty3D width={280} height={160} animate={true} className="mx-auto" />
+              <p className="text-xs text-muted-foreground mt-2 text-center">
+                This animated 3D stage will appear on the map for your party! 🎉
+              </p>
+            </div>
+          )}
 
           <div>
             <Label htmlFor="description">Description</Label>

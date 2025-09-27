@@ -637,6 +637,7 @@ export const RealMapComponent = () => {
         // Snapchat-style full-body avatar PNG with zone-based border
         const avatarImg = document.createElement('img');
         avatarImg.src = finalAvatarUrl;
+        avatarImg.crossOrigin = 'anonymous'; // Add CORS support
         avatarImg.style.cssText = `
           width: 48px;
           height: 96px;
@@ -648,6 +649,7 @@ export const RealMapComponent = () => {
           ${inSameZone && !isCurrentUser ? `border: 2px solid ${markerColor};` : ''}
           ${isFriend ? 'border: 2px solid #10b981;' : ''}
           transition: transform 0.2s ease;
+          display: block;
         `;
 
         // Handle image load errors
@@ -674,6 +676,7 @@ export const RealMapComponent = () => {
         
         el.appendChild(avatarImg);
       } else {
+        console.log('🔸 No finalAvatarUrl available, using fallback dot');
         addFallbackDot();
       }
 

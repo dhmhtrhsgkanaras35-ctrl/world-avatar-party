@@ -117,11 +117,16 @@ const Profile = () => {
                 <img 
                   src={readyPlayerMeUrl} 
                   alt="Your Avatar"
+                  crossOrigin="anonymous"
                   className="max-w-full max-h-full object-contain object-bottom filter drop-shadow-lg"
-                  onLoad={() => console.log('Avatar image loaded successfully:', readyPlayerMeUrl)}
+                  style={{ display: 'block' }}
+                  onLoad={() => console.log('✅ Profile avatar image loaded successfully:', readyPlayerMeUrl)}
                   onError={(e) => {
-                    console.error('Avatar image failed to load:', readyPlayerMeUrl);
-                    console.error('Image error:', e);
+                    console.error('❌ Profile avatar image failed to load:', readyPlayerMeUrl);
+                    console.error('Image error event:', e);
+                    // Show fallback
+                    const img = e.target as HTMLImageElement;
+                    img.style.display = 'none';
                   }}
                 />
               </div>

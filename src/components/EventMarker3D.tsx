@@ -112,19 +112,22 @@ export const createEventMarker3D = ({
       const placementHint = document.createElement('div');
       placementHint.style.cssText = `
         position: absolute;
-        bottom: -25px;
+        bottom: -35px;
         left: 50%;
         transform: translateX(-50%);
-        background: rgba(59, 130, 246, 0.9);
+        background: rgba(59, 130, 246, 0.95);
         color: white;
-        padding: 4px 8px;
-        border-radius: 12px;
-        font-size: 9px;
+        padding: 6px 12px;
+        border-radius: 16px;
+        font-size: 11px;
         font-weight: 600;
         white-space: nowrap;
         animation: bounce 2s infinite;
+        cursor: pointer;
+        border: 2px solid white;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.3);
       `;
-      placementHint.textContent = 'Drop to place!';
+      placementHint.textContent = '👆 Click to place here!';
       el.appendChild(placementHint);
 
       // Add bounce animation
@@ -132,7 +135,7 @@ export const createEventMarker3D = ({
       bounceStyle.textContent = `
         @keyframes bounce {
           0%, 100% { transform: translateX(-50%) translateY(0); }
-          50% { transform: translateX(-50%) translateY(-3px); }
+          50% { transform: translateX(-50%) translateY(-5px); }
         }
       `;
       document.head.appendChild(bounceStyle);

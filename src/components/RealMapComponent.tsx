@@ -338,6 +338,32 @@ export const RealMapComponent = () => {
     };
   }, [mapboxToken]);
 
+  // Listen for profile updates (location sharing changes)
+  useEffect(() => {
+    if (!user) return;
+
+    const channel = supabase
+      .channel('profile-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'profiles',
+          filter: `user_id=eq.${user.id}`
+        },
+        (payload) => {
+          // When user's profile is updated (location sharing toggled), refresh their location
+          getUserLocation();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [user]);
+
   // Get user's current location
   const getUserLocation = () => {
     if (!navigator.geolocation) {

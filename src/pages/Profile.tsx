@@ -153,13 +153,13 @@ const Profile = () => {
             <p className="text-muted-foreground">Manage your avatar and profile information</p>
           </div>
 
-          {/* Snapchat-style Full-body Avatar Display */}
+          {/* Full-body Avatar Display */}
           <div className="flex justify-center">
             {readyPlayerMeUrl ? (
-              <div className="w-48 h-96 flex items-end justify-center relative border-2 border-dashed border-gray-300">
+              <div className="w-48 h-96 flex items-end justify-center relative">
                 {readyPlayerMeUrl.endsWith('.glb') ? (
-                  // Render GLB file using Avatar3D component
-                  <div className="w-full h-full">
+                  // Render GLB file using Avatar3D component - positioned lower
+                  <div className="w-full h-full" style={{ transform: 'translateY(20px)' }}>
                     <Avatar3D 
                       avatarUrl={readyPlayerMeUrl} 
                       width={192} 
@@ -189,10 +189,6 @@ const Profile = () => {
                     }}
                   />
                 )}
-                {/* Debug info */}
-                <div className="absolute top-2 left-2 bg-black/70 text-white text-xs p-2 rounded z-10 max-w-[180px] break-all">
-                  URL: {readyPlayerMeUrl.substring(0, 50)}...
-                </div>
               </div>
             ) : (
               <div className="w-32 h-32 bg-gradient-to-br from-primary to-primary-glow rounded-full flex items-center justify-center text-white shadow-xl">

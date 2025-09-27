@@ -186,6 +186,7 @@ export type Database = {
       }
       profiles: {
         Row: {
+          avatar_id: string | null
           avatar_url: string | null
           bio: string | null
           created_at: string
@@ -201,6 +202,7 @@ export type Database = {
           zone_key: string | null
         }
         Insert: {
+          avatar_id?: string | null
           avatar_url?: string | null
           bio?: string | null
           created_at?: string
@@ -216,6 +218,7 @@ export type Database = {
           zone_key?: string | null
         }
         Update: {
+          avatar_id?: string | null
           avatar_url?: string | null
           bio?: string | null
           created_at?: string

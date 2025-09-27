@@ -101,7 +101,8 @@ export const ReadyPlayerMeCreator = ({
         if (avatarId) {
           const pngUrl = `https://render.readyplayer.me/avatar/${avatarId}.png?pose=standing&quality=high&transparent=true`;
           console.log('Ready Player Me PNG URL:', pngUrl);
-          await saveAvatarUrl(pngUrl);
+          console.log('Avatar ID extracted:', avatarId);
+          await saveAvatarUrl(pngUrl, avatarId);
         } else {
           console.error('Could not extract avatar ID from URL:', avatarGlbUrl);
         }
@@ -137,11 +138,12 @@ export const ReadyPlayerMeCreator = ({
     return matches ? matches[1] : null;
   };
 
-  const saveAvatarUrl = async (avatarPngUrl: string) => {
+  const saveAvatarUrl = async (avatarPngUrl: string, avatarId: string) => {
     setIsSaving(true);
     try {
       console.log('=== AVATAR SAVE DEBUG ===');
       console.log('Ready Player Me PNG URL:', avatarPngUrl);
+      console.log('Avatar ID:', avatarId);
       console.log('User ID:', userId);
       
       // Check if user is authenticated
@@ -167,10 +169,11 @@ export const ReadyPlayerMeCreator = ({
       console.log('Existing profile:', existingProfile);
       console.log('Fetch error:', fetchError);
       
-      // Prepare the profile data with Ready Player Me PNG URL
+      // Prepare the profile data with Ready Player Me PNG URL and avatar ID
       let profileData: any = {
         user_id: userId,
         avatar_url: avatarPngUrl, // Store the Ready Player Me PNG URL directly
+        avatar_id: avatarId, // Store the extracted avatar ID
         pose: 'idle', // Default pose for Ready Player Me avatars
         updated_at: new Date().toISOString()
       };
@@ -199,7 +202,7 @@ export const ReadyPlayerMeCreator = ({
         throw error;
       }
 
-      console.log('Avatar URL saved successfully:', data);
+      console.log('Avatar URL and ID saved successfully:', data);
       
       toast({
         title: "Avatar Created!",

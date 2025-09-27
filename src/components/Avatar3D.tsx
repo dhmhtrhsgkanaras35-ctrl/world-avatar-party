@@ -72,7 +72,14 @@ export const Avatar3D = ({
     <div className={`overflow-hidden ${className}`} style={{ width, height }}>
       <Canvas
         camera={{ position: [0, 0.2, 4], fov: 50 }}
-        gl={{ alpha: true, antialias: true }}
+        gl={{ 
+          alpha: true, 
+          antialias: true,
+          powerPreference: "high-performance",
+          precision: "highp",
+          preserveDrawingBuffer: true
+        }}
+        dpr={[1, 2]}
         style={{ background: 'transparent' }}
       >
         <Suspense fallback={null}>

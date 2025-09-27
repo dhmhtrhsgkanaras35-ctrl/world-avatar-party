@@ -647,8 +647,15 @@ export const RealMapComponent = () => {
         // Create a canvas to proxy the image and avoid CORS issues
         const canvas = document.createElement('canvas');
         const ctx = canvas.getContext('2d');
-        canvas.width = 48;
-        canvas.height = 96;
+        const size = 96; // Increased size for better quality
+        canvas.width = size;
+        canvas.height = size * 2; // 2:1 ratio for full body
+        
+        // Enable high-quality rendering
+        if (ctx) {
+          ctx.imageSmoothingEnabled = true;
+          ctx.imageSmoothingQuality = 'high';
+        }
         
         const proxyImg = new Image();
         
@@ -660,23 +667,29 @@ export const RealMapComponent = () => {
           
           // Draw the image to canvas to create a data URL
           if (ctx) {
+            // Clear canvas with transparent background
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            // Draw image with high quality scaling
             ctx.drawImage(proxyImg, 0, 0, canvas.width, canvas.height);
             
             // Create the final image element
             const avatarImg = document.createElement('img');
-            avatarImg.src = canvas.toDataURL();
+            avatarImg.src = canvas.toDataURL('image/png', 1.0); // Max quality
             avatarImg.style.cssText = `
               width: 48px;
               height: 96px;
               object-fit: cover;
               object-position: center top;
-              filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3));
+              filter: drop-shadow(0 3px 8px rgba(0,0,0,0.4)) brightness(1.05) contrast(1.05);
               border-radius: 12px;
               ${isCurrentUser ? 'border: 3px solid #3b82f6;' : ''}
               ${inSameZone && !isCurrentUser ? `border: 2px solid ${markerColor};` : ''}
               ${isFriend ? 'border: 2px solid #10b981;' : ''}
               transition: transform 0.2s ease;
               display: block;
+              image-rendering: -webkit-optimize-contrast;
+              image-rendering: crisp-edges;
             `;
 
             // Add hover animation
@@ -719,13 +732,15 @@ export const RealMapComponent = () => {
           height: 96px;
           object-fit: cover;
           object-position: center top;
-          filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3));
+          filter: drop-shadow(0 3px 8px rgba(0,0,0,0.4)) brightness(1.05) contrast(1.05);
           border-radius: 12px;
           ${isCurrentUser ? 'border: 3px solid #3b82f6;' : ''}
           ${inSameZone && !isCurrentUser ? `border: 2px solid ${markerColor};` : ''}
           ${isFriend ? 'border: 2px solid #10b981;' : ''}
           transition: transform 0.2s ease;
           display: block;
+          image-rendering: -webkit-optimize-contrast;
+          image-rendering: crisp-edges;
         `;
 
         avatarImg.onload = () => {

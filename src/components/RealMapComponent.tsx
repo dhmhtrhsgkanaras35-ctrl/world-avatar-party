@@ -356,6 +356,15 @@ export const RealMapComponent = () => {
         setUserLocation(location);
 
         if (map.current && user) {
+          // Check current sharing status from profile
+          const { data: currentProfile } = await supabase
+            .from('profiles')
+            .select('location_sharing_enabled')
+            .eq('user_id', user.id)
+            .maybeSingle();
+
+          const isSharing = currentProfile?.location_sharing_enabled || false;
+
           // Update both user_locations (precise) and profiles (public) with location
           const { data: blurredData } = await supabase.rpc('blur_coordinates', {
             lat: latitude,
@@ -366,26 +375,26 @@ export const RealMapComponent = () => {
           const blurred = blurredData?.[0];
 
           const [locationResult, profileResult] = await Promise.all([
-            // Update precise location in user_locations
+            // Update precise location in user_locations (preserve sharing status)
             supabase
               .from('user_locations')
               .upsert({
                 user_id: user.id,
                 latitude: latitude,
                 longitude: longitude,
-                is_sharing: true,
+                is_sharing: isSharing,
                 last_updated: new Date().toISOString()
               }, { onConflict: 'user_id' }),
             
-            // Update public location in profiles
+            // Update public location in profiles (preserve sharing status)
             supabase
               .from('profiles')
               .upsert({
                 user_id: user.id,
-                location_blurred_lat: blurred?.blurred_lat,
-                location_blurred_lng: blurred?.blurred_lng,
-                zone_key: blurred?.zone_key,
-                location_sharing_enabled: true,
+                location_blurred_lat: isSharing ? blurred?.blurred_lat : null,
+                location_blurred_lng: isSharing ? blurred?.blurred_lng : null,
+                zone_key: isSharing ? blurred?.zone_key : null,
+                location_sharing_enabled: isSharing,
                 updated_at: new Date().toISOString()
               }, { onConflict: 'user_id' })
           ]);
@@ -404,25 +413,35 @@ export const RealMapComponent = () => {
             duration: 2000
           });
 
-          // Get user's avatar from profile and add marker
-          const { data: userProfile } = await supabase
-            .from('profiles')
-            .select('avatar_url, display_name')
-            .eq('user_id', user.id)
-            .maybeSingle();
+          // Only add user marker if they are sharing location
+          if (isSharing) {
+            // Get user's avatar from profile and add marker
+            const { data: userProfile } = await supabase
+              .from('profiles')
+              .select('avatar_url, display_name')
+              .eq('user_id', user.id)
+              .maybeSingle();
 
-          addUserMarker(
-            longitude, 
-            latitude, 
-            user.id, 
-            userProfile?.display_name || 'You', 
-            true, 
-            userProfile?.avatar_url,
-            false, // Current user is not a "friend" to themselves
-            blurred?.zone_key,
-            false, // Current user is not in same zone as themselves
-            '#3b82f6'
-          );
+            addUserMarker(
+              longitude, 
+              latitude, 
+              user.id, 
+              userProfile?.display_name || 'You', 
+              true, 
+              userProfile?.avatar_url,
+              false, // Current user is not a "friend" to themselves
+              blurred?.zone_key,
+              false, // Current user is not in same zone as themselves
+              '#3b82f6'
+            );
+          } else {
+            // Remove current user marker if they exist and are not sharing
+            const markerId = 'current-user';
+            if (markersRef.current[markerId]) {
+              markersRef.current[markerId].remove();
+              delete markersRef.current[markerId];
+            }
+          }
 
           // Load other users - real users only
           loadRealUsers();

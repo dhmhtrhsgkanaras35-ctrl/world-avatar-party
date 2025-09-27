@@ -55,12 +55,19 @@ export const RealMapComponent = () => {
 
   // Listen for temporary event creation from dialog
   useEffect(() => {
+    console.log('Setting up tempEventCreated listener');
     const handleTempEventCreated = (event: any) => {
+      console.log('Received tempEventCreated event:', event.detail);
       const tempEventData = event.detail;
-      setTempEvents(prev => [...prev, tempEventData]);
+      setTempEvents(prev => {
+        console.log('Adding temp event to state:', tempEventData);
+        console.log('Previous temp events:', prev);
+        return [...prev, tempEventData];
+      });
       
       // Fly to the event location for better UX
       if (map.current) {
+        console.log('Flying to event location:', tempEventData.longitude, tempEventData.latitude);
         map.current.flyTo({
           center: [tempEventData.longitude, tempEventData.latitude],
           zoom: 16,
@@ -1047,6 +1054,14 @@ export const RealMapComponent = () => {
     markersRef.current[markerId] = marker;
   };
 
+  // Re-render events when tempEvents changes
+  useEffect(() => {
+    if (mapLoaded && map.current) {
+      console.log('tempEvents changed, reloading events on map');
+      loadNearbyEvents();
+    }
+  }, [tempEvents, mapLoaded]);
+
   // Load nearby users when map is ready
   useEffect(() => {
     if (mapLoaded && userLocation) {
@@ -1078,16 +1093,29 @@ export const RealMapComponent = () => {
 
       setEvents(eventsData || []);
       
-      // Clear existing event markers
-      Object.values(eventMarkersRef.current).forEach(marker => marker.remove());
-      eventMarkersRef.current = {};
+  // Clear existing event markers
+  Object.values(eventMarkersRef.current).forEach(marker => marker.remove());
+  eventMarkersRef.current = {};
+
+  console.log('About to render events - tempEvents:', tempEvents.length, 'eventsData:', eventsData?.length || 0);
 
       // Add event markers to map
       const allEvents = [...(eventsData || []), ...tempEvents];
+      console.log('Rendering events on map:', allEvents.length, 'total events');
+      console.log('Temp events:', tempEvents);
+      console.log('Regular events:', eventsData?.length || 0);
       
       allEvents.forEach((event) => {
         if (event.latitude && event.longitude) {
           const attendeeCount = event.event_attendees?.[0]?.count || 0;
+          console.log('Creating marker for event:', event.title, 'isTemporary:', event.isTemporary);
+          
+          // Log what type of marker we're creating
+          if (event.event_type === 'party') {
+            console.log('Creating 3D party stage for:', event.title);
+          } else {
+            console.log('Creating regular marker for:', event.title, 'type:', event.event_type);
+          }
           
           const eventElement = createEventMarker3D({
             event,
@@ -1221,6 +1249,8 @@ export const RealMapComponent = () => {
           })
             .setLngLat([event.longitude, event.latitude])
             .addTo(map.current!);
+
+          console.log('Added marker to map for event:', event.title, 'at coords:', event.longitude, event.latitude);
 
           // Handle drag end for repositioning events
           if (user?.id === event.created_by || event.isTemporary) {

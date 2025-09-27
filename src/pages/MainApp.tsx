@@ -20,6 +20,7 @@ const MainApp = () => {
   const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
 
   const handleEventCreated = (tempEventData: any) => {
+    console.log('handleEventCreated called with:', tempEventData);
     // This will be passed to RealMapComponent to show temporary draggable event
     window.dispatchEvent(new CustomEvent('tempEventCreated', { 
       detail: tempEventData 
@@ -122,6 +123,13 @@ const MainApp = () => {
         {/* Map - takes full screen */}
         <div className="flex-1 relative">
           <RealMapComponent />
+          
+          {/* Debug info for temporary events */}
+          {process.env.NODE_ENV === 'development' && (
+            <div className="absolute top-20 left-2 bg-black/80 text-white p-2 rounded text-xs z-50">
+              Debug: Check console logs for event creation
+            </div>
+          )}
           
           {/* Floating header - very compact to avoid map controls */}
           <header className="absolute top-2 left-2 right-16 bg-background/90 backdrop-blur-sm rounded-md border px-2 py-1 flex items-center justify-between z-10 max-w-[200px]">

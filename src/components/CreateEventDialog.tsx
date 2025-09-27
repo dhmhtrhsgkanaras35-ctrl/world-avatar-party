@@ -85,6 +85,7 @@ export const CreateEventDialog = ({ user, userLocation, userZone, onEventCreated
       };
 
       // Show drag and drop preview
+      console.log('Creating temporary event:', tempEventData);
       toast({
         title: "Drag to Place Event!",
         description: `Drag the transparent ${formData.title} event to your desired location on the map`,
@@ -92,7 +93,10 @@ export const CreateEventDialog = ({ user, userLocation, userZone, onEventCreated
 
       // Call the callback to show draggable event on map
       if (onEventCreated) {
+        console.log('Calling onEventCreated callback');
         onEventCreated(tempEventData);
+      } else {
+        console.log('No onEventCreated callback provided');
       }
 
       setFormData({

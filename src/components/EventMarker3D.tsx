@@ -62,6 +62,7 @@ export const createEventMarker3D = ({
 
   // Create container for 3D stage or regular marker
   if (event.event_type === 'party') {
+    console.log('Creating 3D stage for party event:', event.title, 'isTemporary:', event.isTemporary);
     // Container for 3D stage
     const stageContainer = document.createElement('div');
     stageContainer.style.cssText = `
@@ -84,6 +85,7 @@ export const createEventMarker3D = ({
     );
     
     el.appendChild(stageContainer);
+    console.log('3D stage added to DOM for event:', event.title);
     
     // Add event info overlay
     const infoOverlay = document.createElement('div');

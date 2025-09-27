@@ -66,6 +66,8 @@ export const LocationToggle = ({ user }: LocationToggleProps) => {
     if (!user) return;
 
     try {
+      console.log('Updating location in database. Sharing:', sharing);
+      
       // Update both user_locations (precise) and profiles (for public visibility) with location
       const { data: blurredData } = await supabase.rpc('blur_coordinates', {
         lat: lat,
@@ -95,9 +97,9 @@ export const LocationToggle = ({ user }: LocationToggleProps) => {
           .from('profiles')
           .upsert({
             user_id: user.id,
-            location_blurred_lat: blurred?.blurred_lat,
-            location_blurred_lng: blurred?.blurred_lng,
-            zone_key: blurred?.zone_key,
+            location_blurred_lat: sharing ? blurred?.blurred_lat : null,
+            location_blurred_lng: sharing ? blurred?.blurred_lng : null,
+            zone_key: sharing ? blurred?.zone_key : null,
             location_sharing_enabled: sharing,
             updated_at: new Date().toISOString()
           }, {
@@ -116,6 +118,8 @@ export const LocationToggle = ({ user }: LocationToggleProps) => {
           description: "Failed to update location in database",
           variant: "destructive"
         });
+      } else {
+        console.log('Successfully updated profile with sharing status:', sharing);
       }
     } catch (error) {
       console.error('Error updating location:', error);

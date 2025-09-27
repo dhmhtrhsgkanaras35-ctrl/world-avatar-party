@@ -353,8 +353,12 @@ export const RealMapComponent = () => {
           filter: `user_id=eq.${user.id}`
         },
         (payload) => {
+          console.log('Profile updated, payload:', payload);
           // When user's profile is updated (location sharing toggled), refresh their location
-          getUserLocation();
+          setTimeout(() => {
+            console.log('Refreshing location after profile update');
+            getUserLocation();
+          }, 500); // Small delay to ensure database is updated
         }
       )
       .subscribe();
@@ -382,6 +386,8 @@ export const RealMapComponent = () => {
         setUserLocation(location);
 
         if (map.current && user) {
+          console.log('Getting location for user:', user.id);
+          
           // Check current sharing status from profile
           const { data: currentProfile } = await supabase
             .from('profiles')
@@ -390,6 +396,7 @@ export const RealMapComponent = () => {
             .maybeSingle();
 
           const isSharing = currentProfile?.location_sharing_enabled || false;
+          console.log('Current sharing status:', isSharing);
 
           // Update both user_locations (precise) and profiles (public) with location
           const { data: blurredData } = await supabase.rpc('blur_coordinates', {
@@ -441,6 +448,7 @@ export const RealMapComponent = () => {
 
           // Only add user marker if they are sharing location
           if (isSharing) {
+            console.log('Adding user marker because sharing is enabled');
             // Get user's avatar from profile and add marker
             const { data: userProfile } = await supabase
               .from('profiles')
@@ -461,6 +469,7 @@ export const RealMapComponent = () => {
               '#3b82f6'
             );
           } else {
+            console.log('Removing user marker because sharing is disabled');
             // Remove current user marker if they exist and are not sharing
             const markerId = 'current-user';
             if (markersRef.current[markerId]) {

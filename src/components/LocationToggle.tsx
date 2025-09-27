@@ -256,6 +256,11 @@ export const LocationToggle = ({ user }: LocationToggleProps) => {
         setLocationStatus('active');
         await updateLocationInDatabase(latitude, longitude, true);
         
+        // Trigger map update immediately
+        window.dispatchEvent(new CustomEvent('locationSharingEnabled', { 
+          detail: { latitude, longitude, sharing: true } 
+        }));
+        
         toast({
           title: "Zone Sharing On",
           description: "Your real location is being shared with the avatar world",
@@ -272,6 +277,11 @@ export const LocationToggle = ({ user }: LocationToggleProps) => {
         setLocation({ lat: defaultLat, lng: defaultLng });
         setLocationStatus('active');
         await updateLocationInDatabase(defaultLat, defaultLng, true);
+        
+        // Trigger map update immediately
+        window.dispatchEvent(new CustomEvent('locationSharingEnabled', { 
+          detail: { latitude: defaultLat, longitude: defaultLng, sharing: true } 
+        }));
         
         toast({
           title: "Zone Sharing On",

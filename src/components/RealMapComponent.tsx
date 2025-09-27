@@ -342,6 +342,31 @@ export const RealMapComponent = () => {
   useEffect(() => {
     if (!user) return;
 
+    // Listen for custom event from LocationToggle
+    const handleLocationSharingEnabled = (event: CustomEvent) => {
+      console.log('Location sharing enabled event:', event.detail);
+      const { latitude, longitude } = event.detail;
+      
+      // Immediately add the user marker
+      if (map.current) {
+        console.log('Adding user marker from location sharing event');
+        addUserMarker(
+          longitude,
+          latitude,
+          user.id,
+          user.user_metadata?.display_name || 'You',
+          true,
+          user.user_metadata?.avatar_url,
+          false,
+          null, // Will be set after blur calculation
+          false,
+          '#3b82f6'
+        );
+      }
+    };
+
+    window.addEventListener('locationSharingEnabled', handleLocationSharingEnabled as EventListener);
+
     const channel = supabase
       .channel('profile-changes')
       .on(
@@ -364,6 +389,7 @@ export const RealMapComponent = () => {
       .subscribe();
 
     return () => {
+      window.removeEventListener('locationSharingEnabled', handleLocationSharingEnabled as EventListener);
       supabase.removeChannel(channel);
     };
   }, [user]);
@@ -456,6 +482,9 @@ export const RealMapComponent = () => {
               .eq('user_id', user.id)
               .maybeSingle();
 
+            console.log('User profile for marker:', userProfile);
+            console.log('Adding marker at coordinates:', longitude, latitude);
+
             addUserMarker(
               longitude, 
               latitude, 
@@ -498,7 +527,6 @@ export const RealMapComponent = () => {
     );
   };
 
-  // Add zone-based avatar marker with enhanced visual indicators
   const addUserMarker = (
     lng: number, 
     lat: number, 
@@ -511,11 +539,17 @@ export const RealMapComponent = () => {
     inSameZone = false,
     markerColor = '#10b981'
   ) => {
-    if (!map.current) return;
+    if (!map.current) {
+      console.log('Cannot add marker: map not initialized');
+      return;
+    }
+
+    console.log('addUserMarker called:', { lng, lat, userId, name, isCurrentUser, avatarUrl });
 
     // Remove existing marker for this user
     const markerId = isCurrentUser ? 'current-user' : userId;
     if (markersRef.current[markerId]) {
+      console.log('Removing existing marker:', markerId);
       markersRef.current[markerId].remove();
     }
 
@@ -531,6 +565,8 @@ export const RealMapComponent = () => {
       justify-content: center;
       transform-origin: center bottom;
     `;
+
+    console.log('Creating marker element for user:', userId);
 
     if (avatarUrl) {
       // Snapchat-style full-body avatar PNG with zone-based border

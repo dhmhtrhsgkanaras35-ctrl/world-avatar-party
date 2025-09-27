@@ -45,39 +45,56 @@ const Profile = () => {
         return;
       }
 
-      if (data?.avatar_url) {
+      if (data?.avatar_id) {
+        console.log('✅ Profile loaded with avatar_id:', data.avatar_id);
+        
+        // Try different URL formats
+        const glbUrl = `https://models.readyplayer.me/${data.avatar_id}.glb`;
+        const pngUrl1 = `https://render.readyplayer.me/avatar/${data.avatar_id}.png?pose=A&quality=medium`;
+        const pngUrl2 = `https://models.readyplayer.me/${data.avatar_id}.png?pose=A&quality=medium`;
+        
+        console.log('🔍 Trying GLB URL:', glbUrl);
+        console.log('🔍 Trying PNG URL 1:', pngUrl1);
+        console.log('🔍 Trying PNG URL 2:', pngUrl2);
+        
+        // Test which URL works
+        const testUrl = async (url: string, name: string): Promise<{success: boolean, url: string}> => {
+          return new Promise((resolve) => {
+            const testImg = new Image();
+            testImg.onload = () => {
+              console.log(`✅ ${name} loads successfully!`, url);
+              resolve({ success: true, url });
+            };
+            testImg.onerror = (e) => {
+              console.log(`❌ ${name} failed:`, e);
+              resolve({ success: false, url });
+            };
+            testImg.src = url;
+          });
+        };
+        
+        // Test all URLs
+        const results = await Promise.all([
+          testUrl(pngUrl1, 'PNG URL 1'),
+          testUrl(pngUrl2, 'PNG URL 2'),
+          testUrl(data.avatar_url || '', 'Current avatar_url')
+        ]);
+        
+        // Find the first working URL
+        const workingResult = results.find(r => r.success);
+        if (workingResult) {
+          console.log('🎉 Using working URL:', workingResult.url);
+          setReadyPlayerMeUrl(workingResult.url);
+        } else {
+          console.log('❌ No working image URLs, will render GLB');
+          // Use GLB URL and we'll render it with Three.js
+          setReadyPlayerMeUrl(glbUrl);
+        }
+      } else if (data?.avatar_url) {
         console.log('✅ Profile loaded with avatar_url:', data.avatar_url);
-        
-        // Test the URL directly
-        const testImg = new Image();
-        testImg.crossOrigin = 'anonymous';
-        testImg.onload = () => {
-          console.log('✅ Avatar URL test - Image loads successfully!');
-        };
-        testImg.onerror = (e) => {
-          console.error('❌ Avatar URL test - Image failed to load:', e);
-          console.error('❌ Trying without CORS...');
-          
-          // Test without CORS
-          const testImg2 = new Image();
-          testImg2.onload = () => {
-            console.log('✅ Avatar loads without CORS - CORS is the issue!');
-          };
-          testImg2.onerror = (e2) => {
-            console.error('❌ Avatar fails even without CORS:', e2);
-          };
-          testImg2.src = data.avatar_url;
-        };
-        testImg.src = data.avatar_url;
-        
-        // Add cache-busting parameter to prevent browser caching issues
-        const avatarUrl = data.avatar_url.includes('?') 
-          ? `${data.avatar_url}&t=${Date.now()}`
-          : `${data.avatar_url}?t=${Date.now()}`;
-        console.log('🔄 Setting readyPlayerMeUrl to:', avatarUrl);
-        setReadyPlayerMeUrl(avatarUrl);
+        setReadyPlayerMeUrl(data.avatar_url);
       } else {
-        console.log('❌ No avatar_url found in profile data:', data);
+        console.log('❌ No avatar found in profile data:', data);
       }
     } catch (error) {
       console.error('❌ Error loading profile:', error);
@@ -140,27 +157,41 @@ const Profile = () => {
           <div className="flex justify-center">
             {readyPlayerMeUrl ? (
               <div className="w-48 h-96 flex items-end justify-center relative border-2 border-dashed border-gray-300">
-                <img 
-                  src={readyPlayerMeUrl} 
-                  alt="Your Avatar"
-                  className="max-w-full max-h-full object-contain object-bottom filter drop-shadow-lg"
-                  style={{ display: 'block' }}
-                  onLoad={(e) => {
-                    console.log('✅ Profile avatar image loaded successfully:', readyPlayerMeUrl);
-                    const img = e.target as HTMLImageElement;
-                    console.log('📐 Image dimensions:', img.naturalWidth, 'x', img.naturalHeight);
-                  }}
-                  onError={(e) => {
-                    console.error('❌ Profile avatar image failed to load:', readyPlayerMeUrl);
-                    console.error('❌ Image error event:', e);
-                    // Show fallback
-                    const img = e.target as HTMLImageElement;
-                    img.style.display = 'none';
-                  }}
-                />
+                {readyPlayerMeUrl.endsWith('.glb') ? (
+                  // Render GLB file using Avatar3D component
+                  <div className="w-full h-full">
+                    <Avatar3D 
+                      avatarUrl={readyPlayerMeUrl} 
+                      width={192} 
+                      height={384}
+                      showControls={false}
+                      animate={false}
+                    />
+                  </div>
+                ) : (
+                  // Render PNG image
+                  <img 
+                    src={readyPlayerMeUrl} 
+                    alt="Your Avatar"
+                    className="max-w-full max-h-full object-contain object-bottom filter drop-shadow-lg"
+                    style={{ display: 'block' }}
+                    onLoad={(e) => {
+                      console.log('✅ Profile avatar image loaded successfully:', readyPlayerMeUrl);
+                      const img = e.target as HTMLImageElement;
+                      console.log('📐 Image dimensions:', img.naturalWidth, 'x', img.naturalHeight);
+                    }}
+                    onError={(e) => {
+                      console.error('❌ Profile avatar image failed to load:', readyPlayerMeUrl);
+                      console.error('❌ Image error event:', e);
+                      // Show fallback
+                      const img = e.target as HTMLImageElement;
+                      img.style.display = 'none';
+                    }}
+                  />
+                )}
                 {/* Debug info */}
-                <div className="absolute top-2 left-2 bg-black/70 text-white text-xs p-2 rounded z-10">
-                  Avatar URL: {readyPlayerMeUrl.substring(0, 50)}...
+                <div className="absolute top-2 left-2 bg-black/70 text-white text-xs p-2 rounded z-10 max-w-[180px] break-all">
+                  URL: {readyPlayerMeUrl.substring(0, 50)}...
                 </div>
               </div>
             ) : (

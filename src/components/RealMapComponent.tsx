@@ -614,13 +614,16 @@ export const RealMapComponent = () => {
       let finalAvatarUrl = avatarUrl;
       console.log('🔍 Initial avatar URL check:', avatarUrl, 'includes readyplayer.me:', avatarUrl?.includes('render.readyplayer.me'));
       
-      if (avatarUrl && !avatarUrl.includes('render.readyplayer.me')) {
+      if (avatarUrl && !avatarUrl.includes('render.readyplayer.me') && !avatarUrl.includes('models.readyplayer.me')) {
         // If it's not a Ready Player Me URL, try to extract avatar ID and convert
         const avatarId = extractAvatarIdFromUrl(avatarUrl);
         console.log('🔑 Extracted avatar ID:', avatarId);
         if (avatarId) {
-          finalAvatarUrl = `https://render.readyplayer.me/avatar/${avatarId}.png?pose=standing&quality=high&transparent=true`;
-          console.log('🔄 Converted to Ready Player Me URL:', finalAvatarUrl);
+          // Try multiple URL formats
+          const pngUrl1 = `https://render.readyplayer.me/avatar/${avatarId}.png?pose=A&quality=medium`;
+          const pngUrl2 = `https://models.readyplayer.me/${avatarId}.png?pose=A&quality=medium`;
+          finalAvatarUrl = pngUrl1; // Start with first format
+          console.log('🔄 Converted to Ready Player Me PNG URL:', finalAvatarUrl);
         }
       }
 

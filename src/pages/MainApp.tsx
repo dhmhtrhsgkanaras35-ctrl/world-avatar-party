@@ -19,14 +19,6 @@ const MainApp = () => {
   const [userProfile, setUserProfile] = useState<any>(null);
   const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
 
-  const handleEventCreated = (tempEventData: any) => {
-    console.log('handleEventCreated called with:', tempEventData);
-    // This will be passed to RealMapComponent to show temporary draggable event
-    window.dispatchEvent(new CustomEvent('tempEventCreated', { 
-      detail: tempEventData 
-    }));
-  };
-
   useEffect(() => {
     if (!user) {
       navigate('/auth');
@@ -152,7 +144,6 @@ const MainApp = () => {
             user={user} 
             userLocation={userLocation}
             userZone={userProfile?.zone_key}
-            onEventCreated={handleEventCreated}
           />
 
           <MessagesDialog user={user} />

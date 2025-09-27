@@ -170,6 +170,7 @@ export const createEventMarker3D = ({
       
       cancelButton.addEventListener('click', (e) => {
         e.stopPropagation();
+        console.log('Cancel button clicked for temp event:', event.id);
         if (onEventDelete) {
           onEventDelete(event.id);
         }
@@ -279,6 +280,7 @@ export const createEventMarker3D = ({
   if (event.isTemporary) {
     el.addEventListener('click', async (e) => {
       e.stopPropagation();
+      console.log('Temporary event clicked for placement:', event.id);
       
       if (onEventPlace) {
         onEventPlace(event.id, event.latitude, event.longitude);

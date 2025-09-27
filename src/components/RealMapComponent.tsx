@@ -378,13 +378,21 @@ export const RealMapComponent = () => {
 
     // Cleanup on unmount
     return () => {
+      // Clear debounce timer
+      if (debounceRef.current) {
+        clearTimeout(debounceRef.current);
+      }
+      
       // Cleanup user markers
       Object.values(markersRef.current).forEach(marker => marker.remove());
       markersRef.current = {};
       
-      // Cleanup event markers
+      // Cleanup ALL event markers (both permanent and temporary)
       Object.values(eventMarkersRef.current).forEach(marker => marker.remove());
       eventMarkersRef.current = {};
+      
+      // Clear temporary events
+      setTempEvents([]);
       
       if (map.current) {
         map.current.remove();
@@ -1054,7 +1062,7 @@ export const RealMapComponent = () => {
     markersRef.current[markerId] = marker;
   };
 
-  // Separate function to render temporary events
+  // Separate function to render temporary events with unique IDs
   const renderTempEvents = () => {
     if (!map.current) return;
     
@@ -1062,12 +1070,13 @@ export const RealMapComponent = () => {
     
     tempEvents.forEach((event) => {
       if (event.latitude && event.longitude && event.isTemporary) {
-        console.log('Creating temporary marker for:', event.title);
+        const tempEventId = `temp-${event.id}`;
+        console.log('Creating temporary marker for:', event.title, 'with ID:', tempEventId);
         
         // Remove existing temporary marker if it exists
-        if (eventMarkersRef.current[event.id]) {
-          eventMarkersRef.current[event.id].remove();
-          delete eventMarkersRef.current[event.id];
+        if (eventMarkersRef.current[tempEventId]) {
+          eventMarkersRef.current[tempEventId].remove();
+          delete eventMarkersRef.current[tempEventId];
         }
         
         const eventElement = createEventMarker3D({
@@ -1075,10 +1084,10 @@ export const RealMapComponent = () => {
           attendeeCount: 0,
           currentUserId: user?.id,
           onEventClick: () => {
-            // No click action needed, handled in marker itself
+            // No click action needed for temp events, handled in marker
           },
           onEventPlace: async (eventId, lat, lng) => {
-            console.log('Placing event:', eventId, 'at', lat, lng);
+            console.log('Placing temporary event:', eventId, 'at', lat, lng);
             
             try {
               const { id, isTemporary, ...eventData } = event;
@@ -1118,16 +1127,17 @@ export const RealMapComponent = () => {
                   });
               }
 
-              // Remove temporary event
+              // Remove temporary event and its marker
+              if (eventMarkersRef.current[tempEventId]) {
+                eventMarkersRef.current[tempEventId].remove();
+                delete eventMarkersRef.current[tempEventId];
+              }
               setTempEvents(prev => prev.filter(e => e.id !== id));
               
               toast({
                 title: "Event Created!",
                 description: `${event.title} has been placed successfully`,
               });
-
-              // Reload permanent events
-              loadNearbyEvents();
             } catch (error) {
               console.error('Error placing event:', error);
               toast({
@@ -1139,8 +1149,12 @@ export const RealMapComponent = () => {
           },
           onEventDelete: (eventId) => {
             console.log('Cancelling temporary event:', eventId);
-            // Remove from temp events
-            setTempEvents(prev => prev.filter(e => e.id !== eventId));
+            // Remove marker and temp event
+            if (eventMarkersRef.current[tempEventId]) {
+              eventMarkersRef.current[tempEventId].remove();
+              delete eventMarkersRef.current[tempEventId];
+            }
+            setTempEvents(prev => prev.filter(e => e.id !== event.id));
             toast({
               title: "Event Cancelled",
               description: "Event creation cancelled"
@@ -1157,8 +1171,8 @@ export const RealMapComponent = () => {
           .setLngLat([event.longitude, event.latitude])
           .addTo(map.current!);
 
-        eventMarkersRef.current[event.id] = marker;
-        console.log('Added temporary marker for:', event.title);
+        eventMarkersRef.current[tempEventId] = marker;
+        console.log('Added temporary marker with ID:', tempEventId);
       }
     });
   };
@@ -1179,7 +1193,7 @@ export const RealMapComponent = () => {
     }
   }, [mapLoaded, userLocation]);
 
-  // Load nearby events
+  // Load nearby events with proper cleanup
   const loadNearbyEvents = async () => {
     if (!userLocation || !map.current) return;
 
@@ -1201,15 +1215,20 @@ export const RealMapComponent = () => {
 
       setEvents(eventsData || []);
       
-      // Clear existing event markers
-      Object.values(eventMarkersRef.current).forEach(marker => marker.remove());
-      eventMarkersRef.current = {};
+      // Properly clear existing PERMANENT event markers only (preserve temp events)
+      Object.entries(eventMarkersRef.current).forEach(([eventId, marker]) => {
+        // Only remove permanent events (temp events have different IDs starting with temp-)
+        if (!eventId.startsWith('temp-')) {
+          marker.remove();
+          delete eventMarkersRef.current[eventId];
+        }
+      });
 
-      console.log('About to render events - tempEvents:', tempEvents.length, 'eventsData:', eventsData?.length || 0);
+      console.log('About to render permanent events - eventsData:', eventsData?.length || 0);
 
       // Render ONLY permanent events from database (not temp events here)
       eventsData?.forEach((event) => {
-        if (event.latitude && event.longitude) {
+        if (event.latitude && event.longitude && !eventMarkersRef.current[event.id]) {
           const attendeeCount = event.event_attendees?.[0]?.count || 0;
           console.log('Creating permanent marker for event:', event.title);
           
@@ -1223,31 +1242,6 @@ export const RealMapComponent = () => {
                 title: `Event: ${event.title}`,
                 description: `${event.event_type} event - Click to join!`,
               });
-            },
-            onEventMove: async (eventId, lat, lng) => {
-              try {
-                const { error } = await supabase
-                  .from('events')
-                  .update({ latitude: lat, longitude: lng })
-                  .eq('id', eventId);
-                
-                if (error) {
-                  console.error('Error updating event location:', error);
-                  toast({
-                    title: "Error",
-                    description: "Failed to move event",
-                    variant: "destructive"
-                  });
-                } else {
-                  toast({
-                    title: "Event Moved",
-                    description: "Event location updated successfully"
-                  });
-                  loadNearbyEvents();
-                }
-              } catch (error) {
-                console.error('Error moving event:', error);
-              }
             },
             onEventDelete: async (eventId) => {
               try {
@@ -1266,7 +1260,11 @@ export const RealMapComponent = () => {
                     title: "Event Deleted",
                     description: "Event removed successfully"
                   });
-                  loadNearbyEvents();
+                  // Remove marker immediately
+                  if (eventMarkersRef.current[eventId]) {
+                    eventMarkersRef.current[eventId].remove();
+                    delete eventMarkersRef.current[eventId];
+                  }
                 }
               } catch (error) {
                 console.error('Error deleting event:', error);
@@ -1277,36 +1275,10 @@ export const RealMapComponent = () => {
           const marker = new mapboxgl.Marker({
             element: eventElement,
             anchor: 'bottom',
-            draggable: user?.id === event.created_by // Only draggable for owner
+            draggable: false // Make permanent events non-draggable to avoid position conflicts
           })
             .setLngLat([event.longitude, event.latitude])
             .addTo(map.current!);
-
-          // Handle drag end for repositioning permanent events
-          if (user?.id === event.created_by) {
-            marker.on('dragend', () => {
-              const lngLat = marker.getLngLat();
-              supabase
-                .from('events')
-                .update({ latitude: lngLat.lat, longitude: lngLat.lng })
-                .eq('id', event.id)
-                .then(({ error }) => {
-                  if (error) {
-                    console.error('Error updating event location:', error);
-                    toast({
-                      title: "Error",
-                      description: "Failed to move event",
-                      variant: "destructive"
-                    });
-                  } else {
-                    toast({
-                      title: "Event Moved",
-                      description: "Event location updated successfully"
-                    });
-                  }
-                });
-            });
-          }
 
           eventMarkersRef.current[event.id] = marker;
         }
@@ -1319,7 +1291,21 @@ export const RealMapComponent = () => {
     }
   };
 
-  // Listen for new events
+  // Add debouncing for event updates to prevent excessive re-renders
+  const debounceRef = useRef<NodeJS.Timeout | null>(null);
+  
+  const debouncedLoadEvents = () => {
+    if (debounceRef.current) {
+      clearTimeout(debounceRef.current);
+    }
+    debounceRef.current = setTimeout(() => {
+      if (mapLoaded && userLocation) {
+        loadNearbyEvents();
+      }
+    }, 300); // 300ms debounce
+  };
+
+  // Listen for new events with debouncing
   useEffect(() => {
     if (!user) return;
 
@@ -1334,10 +1320,7 @@ export const RealMapComponent = () => {
         },
         (payload) => {
           console.log('New event created:', payload);
-          // Reload events when a new one is created
-          if (mapLoaded && userLocation) {
-            loadNearbyEvents();
-          }
+          debouncedLoadEvents();
         }
       )
       .on(
@@ -1346,13 +1329,10 @@ export const RealMapComponent = () => {
           event: 'UPDATE',
           schema: 'public',
           table: 'events'
-        },
+        },  
         (payload) => {
           console.log('Event updated:', payload);
-          // Reload events when one is updated
-          if (mapLoaded && userLocation) {
-            loadNearbyEvents();
-          }
+          debouncedLoadEvents();
         }
       )
       .on(
@@ -1364,15 +1344,15 @@ export const RealMapComponent = () => {
         },
         (payload) => {
           console.log('Event deleted:', payload);
-          // Reload events when one is deleted
-          if (mapLoaded && userLocation) {
-            loadNearbyEvents();
-          }
+          debouncedLoadEvents();
         }
       )
       .subscribe();
 
     return () => {
+      if (debounceRef.current) {
+        clearTimeout(debounceRef.current);
+      }
       supabase.removeChannel(channel);
     };
   }, [user, mapLoaded, userLocation]);

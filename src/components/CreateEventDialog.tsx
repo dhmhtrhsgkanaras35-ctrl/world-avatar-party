@@ -15,10 +15,9 @@ interface CreateEventDialogProps {
   user: User | null;
   userLocation?: { lat: number; lng: number } | null;
   userZone?: string | null;
-  onEventCreated?: (eventData: any) => void;
 }
 
-export const CreateEventDialog = ({ user, userLocation, userZone, onEventCreated }: CreateEventDialogProps) => {
+export const CreateEventDialog = ({ user, userLocation, userZone }: CreateEventDialogProps) => {
   const { toast } = useToast();
   const [isOpen, setIsOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -86,15 +85,16 @@ export const CreateEventDialog = ({ user, userLocation, userZone, onEventCreated
 
       console.log('Creating temporary event for placement:', tempEventData);
 
-      // Call the callback to show temporary event on map
-      if (onEventCreated) {
-        onEventCreated(tempEventData);
-      }
+      // Dispatch custom event for temporary event creation
+      const customEvent = new CustomEvent('tempEventCreated', { 
+        detail: tempEventData 
+      });
+      window.dispatchEvent(customEvent);
 
       // Show instruction toast
       toast({
         title: "Click to Place Event!",
-        description: `Click the transparent ${formData.title} on the map to place it permanently`,
+        description: `Click the pulsing ${formData.title} on the map to place it permanently`,
       });
 
       // Reset form and close dialog

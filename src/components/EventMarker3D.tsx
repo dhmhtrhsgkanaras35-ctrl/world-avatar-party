@@ -12,11 +12,14 @@ interface EventMarker3DProps {
     start_time?: string;
     max_attendees?: number;
     created_by: string;
+    isDragging?: boolean;
+    isTemporary?: boolean;
   };
   attendeeCount?: number;
   onEventClick?: (eventId: string) => void;
   onEventMove?: (eventId: string, lat: number, lng: number) => void;
   onEventDelete?: (eventId: string) => void;
+  onEventPlace?: (eventId: string, lat: number, lng: number) => void;
   currentUserId?: string;
 }
 
@@ -26,19 +29,35 @@ export const createEventMarker3D = ({
   onEventClick,
   onEventMove,
   onEventDelete,
+  onEventPlace,
   currentUserId
 }: EventMarker3DProps) => {
   const el = document.createElement('div');
   el.className = 'event-marker-3d-container';
   el.style.cssText = `
     position: relative;
-    cursor: ${currentUserId === event.created_by ? 'grab' : 'pointer'};
+    cursor: ${currentUserId === event.created_by || event.isTemporary ? 'grab' : 'pointer'};
     transition: transform 0.3s ease;
+    opacity: ${event.isDragging || event.isTemporary ? '0.6' : '1'};
+    filter: ${event.isDragging || event.isTemporary ? 'brightness(1.2) saturate(1.5)' : 'none'};
+    animation: ${event.isTemporary ? 'pulse 1.5s infinite' : 'none'};
   `;
 
-  // Make it draggable if user owns the event
-  if (currentUserId === event.created_by) {
+  // Make it draggable if user owns the event or it's temporary
+  if (currentUserId === event.created_by || event.isTemporary) {
     el.draggable = true;
+  }
+
+  // Add pulsing animation for temporary events
+  if (event.isTemporary) {
+    const style = document.createElement('style');
+    style.textContent = `
+      @keyframes pulse {
+        0%, 100% { opacity: 0.6; transform: scale(1); }
+        50% { opacity: 0.8; transform: scale(1.05); }
+      }
+    `;
+    document.head.appendChild(style);
   }
 
   // Create container for 3D stage or regular marker
@@ -85,6 +104,37 @@ export const createEventMarker3D = ({
     `;
     infoOverlay.textContent = `🎉 ${event.title}`;
     el.appendChild(infoOverlay);
+
+    // Add placement hint for temporary events
+    if (event.isTemporary) {
+      const placementHint = document.createElement('div');
+      placementHint.style.cssText = `
+        position: absolute;
+        bottom: -25px;
+        left: 50%;
+        transform: translateX(-50%);
+        background: rgba(59, 130, 246, 0.9);
+        color: white;
+        padding: 4px 8px;
+        border-radius: 12px;
+        font-size: 9px;
+        font-weight: 600;
+        white-space: nowrap;
+        animation: bounce 2s infinite;
+      `;
+      placementHint.textContent = 'Drop to place!';
+      el.appendChild(placementHint);
+
+      // Add bounce animation
+      const bounceStyle = document.createElement('style');
+      bounceStyle.textContent = `
+        @keyframes bounce {
+          0%, 100% { transform: translateX(-50%) translateY(0); }
+          50% { transform: translateX(-50%) translateY(-3px); }
+        }
+      `;
+      document.head.appendChild(bounceStyle);
+    }
     
     // Add attendee count badge if > 0
     if (attendeeCount > 0) {
@@ -183,20 +233,27 @@ export const createEventMarker3D = ({
     el.style.zIndex = '100';
   });
 
-  // Add drag and drop handlers for event owner
-  if (currentUserId === event.created_by && onEventMove) {
+  // Add drag and drop handlers for event owner or temporary events
+  if ((currentUserId === event.created_by || event.isTemporary) && (onEventMove || onEventPlace)) {
     let isDragging = false;
     
     el.addEventListener('dragstart', (e) => {
       isDragging = true;
       el.style.cursor = 'grabbing';
-      el.style.opacity = '0.7';
+      el.style.opacity = '0.4';
+      el.style.transform = 'scale(1.1)';
+      
+      // Add visual feedback
+      document.body.style.cursor = 'grabbing';
     });
     
     el.addEventListener('dragend', (e) => {
       isDragging = false;
-      el.style.cursor = 'grab';
-      el.style.opacity = '1';
+      el.style.cursor = event.isTemporary ? 'grab' : (currentUserId === event.created_by ? 'grab' : 'pointer');
+      el.style.opacity = event.isTemporary ? '0.6' : '1';
+      el.style.transform = 'scale(1)';
+      
+      document.body.style.cursor = 'default';
       
       // Get the drop coordinates from the map
       const mapContainer = document.querySelector('.mapboxgl-canvas-container');
@@ -205,9 +262,14 @@ export const createEventMarker3D = ({
         const x = e.clientX - rect.left;
         const y = e.clientY - rect.top;
         
-        // Convert pixel coordinates to lat/lng (this will be handled by the map component)
+        // Dispatch custom event for coordinate conversion
         el.dispatchEvent(new CustomEvent('eventDrop', {
-          detail: { eventId: event.id, x, y }
+          detail: { 
+            eventId: event.id, 
+            x, 
+            y, 
+            isTemporary: event.isTemporary 
+          }
         }));
       }
     });

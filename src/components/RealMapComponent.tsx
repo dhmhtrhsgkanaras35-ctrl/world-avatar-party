@@ -48,9 +48,32 @@ export const RealMapComponent = () => {
   const [mapLoaded, setMapLoaded] = useState(false);
   const [mapboxToken, setMapboxToken] = useState<string | null>(null);
   const [showZoneNote, setShowZoneNote] = useState(true);
+  const [tempEvents, setTempEvents] = useState<any[]>([]);
   const markersRef = useRef<{ [key: string]: mapboxgl.Marker }>({});
   const eventMarkersRef = useRef<{ [key: string]: mapboxgl.Marker }>({});
   const zonesRef = useRef<Set<string>>(new Set());
+
+  // Listen for temporary event creation from dialog
+  useEffect(() => {
+    const handleTempEventCreated = (event: any) => {
+      const tempEventData = event.detail;
+      setTempEvents(prev => [...prev, tempEventData]);
+      
+      // Fly to the event location for better UX
+      if (map.current) {
+        map.current.flyTo({
+          center: [tempEventData.longitude, tempEventData.latitude],
+          zoom: 16,
+          duration: 1000
+        });
+      }
+    };
+
+    window.addEventListener('tempEventCreated', handleTempEventCreated);
+    return () => {
+      window.removeEventListener('tempEventCreated', handleTempEventCreated);
+    };
+  }, []);
 
   // Get Mapbox token from Supabase Edge Function
   useEffect(() => {
@@ -1060,7 +1083,9 @@ export const RealMapComponent = () => {
       eventMarkersRef.current = {};
 
       // Add event markers to map
-      eventsData?.forEach((event) => {
+      const allEvents = [...(eventsData || []), ...tempEvents];
+      
+      allEvents.forEach((event) => {
         if (event.latitude && event.longitude) {
           const attendeeCount = event.event_attendees?.[0]?.count || 0;
           
@@ -1069,8 +1094,8 @@ export const RealMapComponent = () => {
             attendeeCount,
             currentUserId: user?.id,
             onEventClick: (eventId) => {
+              if (event.isTemporary) return; // Don't allow clicking temporary events
               console.log('Event clicked:', eventId);
-              // Handle event click - could open event details dialog
               toast({
                 title: `Event: ${event.title}`,
                 description: `${event.event_type} event - Click to join!`,
@@ -1095,25 +1120,79 @@ export const RealMapComponent = () => {
                     title: "Event Moved",
                     description: "Event location updated successfully"
                   });
-                  loadNearbyEvents(); // Reload events to show updated position
+                  loadNearbyEvents();
                 }
               } catch (error) {
                 console.error('Error moving event:', error);
               }
             },
+            onEventPlace: async (eventId, lat, lng) => {
+              if (event.isTemporary) {
+                try {
+                  // Create the actual event in database
+                  const { id, isTemporary, isDragging, ...eventData } = event;
+                  const finalEventData = {
+                    ...eventData,
+                    latitude: lat,
+                    longitude: lng
+                  };
+
+                  const { data: newEvent, error } = await supabase
+                    .from('events')
+                    .insert(finalEventData)
+                    .select()
+                    .single();
+
+                  if (error) {
+                    console.error('Error creating event:', error);
+                    toast({
+                      title: "Error",
+                      description: "Failed to create event",
+                      variant: "destructive"
+                    });
+                    return;
+                  }
+
+                  // Auto-join the event
+                  if (newEvent) {
+                    await supabase
+                      .from('event_attendees')
+                      .insert({
+                        event_id: newEvent.id,
+                        user_id: user!.id,
+                        status: 'going'
+                      });
+                  }
+
+                  // Remove temporary event
+                  setTempEvents(prev => prev.filter(e => e.id !== eventId));
+
+                  toast({
+                    title: "Event Created!",
+                    description: `${event.title} has been placed successfully`,
+                  });
+
+                  // Reload events to show the new permanent event
+                  loadNearbyEvents();
+                } catch (error) {
+                  console.error('Error placing event:', error);
+                }
+              }
+            },
             onEventDelete: async (eventId) => {
+              if (event.isTemporary) {
+                // Just remove from temp events
+                setTempEvents(prev => prev.filter(e => e.id !== eventId));
+                toast({
+                  title: "Event Cancelled",
+                  description: "Event creation cancelled"
+                });
+                return;
+              }
+
               try {
-                // Delete event attendees first
-                await supabase
-                  .from('event_attendees')
-                  .delete()
-                  .eq('event_id', eventId);
-                
-                // Delete the event
-                const { error } = await supabase
-                  .from('events')
-                  .delete()
-                  .eq('id', eventId);
+                await supabase.from('event_attendees').delete().eq('event_id', eventId);
+                const { error } = await supabase.from('events').delete().eq('id', eventId);
                 
                 if (error) {
                   console.error('Error deleting event:', error);
@@ -1127,7 +1206,7 @@ export const RealMapComponent = () => {
                     title: "Event Deleted",
                     description: "Event removed successfully"
                   });
-                  loadNearbyEvents(); // Reload events to remove from map
+                  loadNearbyEvents();
                 }
               } catch (error) {
                 console.error('Error deleting event:', error);
@@ -1138,35 +1217,112 @@ export const RealMapComponent = () => {
           const marker = new mapboxgl.Marker({
             element: eventElement,
             anchor: 'bottom',
-            draggable: user?.id === event.created_by
+            draggable: user?.id === event.created_by || event.isTemporary
           })
             .setLngLat([event.longitude, event.latitude])
             .addTo(map.current!);
 
           // Handle drag end for repositioning events
-          if (user?.id === event.created_by) {
+          if (user?.id === event.created_by || event.isTemporary) {
             marker.on('dragend', () => {
               const lngLat = marker.getLngLat();
-              // Update event location directly
-              supabase
-                .from('events')
-                .update({ latitude: lngLat.lat, longitude: lngLat.lng })
-                .eq('id', event.id)
-                .then(({ error }) => {
-                  if (error) {
-                    console.error('Error updating event location:', error);
+              
+              if (event.isTemporary) {
+                // Handle temporary event placement
+                eventElement.dispatchEvent(new CustomEvent('eventPlace', {
+                  detail: { eventId: event.id, lat: lngLat.lat, lng: lngLat.lng }
+                }));
+              } else {
+                // Handle regular event move
+                supabase
+                  .from('events')
+                  .update({ latitude: lngLat.lat, longitude: lngLat.lng })
+                  .eq('id', event.id)
+                  .then(({ error }) => {
+                    if (error) {
+                      console.error('Error updating event location:', error);
+                      toast({
+                        title: "Error",
+                        description: "Failed to move event",
+                        variant: "destructive"
+                      });
+                    } else {
+                      toast({
+                        title: "Event Moved",
+                        description: "Event location updated successfully"
+                      });
+                    }
+                  });
+              }
+            });
+
+            // Listen for custom drop events
+            eventElement.addEventListener('eventDrop', (e: any) => {
+              const { eventId, x, y, isTemporary } = e.detail;
+              if (map.current) {
+                const lngLat = map.current.unproject([x, y]);
+                marker.setLngLat(lngLat);
+                
+                if (isTemporary) {
+                  // Trigger placement for temporary events
+                  eventElement.dispatchEvent(new CustomEvent('eventPlace', {
+                    detail: { eventId, lat: lngLat.lat, lng: lngLat.lng }
+                  }));
+                }
+              }
+            });
+
+            // Listen for placement events
+            eventElement.addEventListener('eventPlace', (e: any) => {
+              const { eventId, lat, lng } = e.detail;
+              if (event.isTemporary) {
+                // Handle temporary event placement directly
+                (async () => {
+                  try {
+                    const { id, isTemporary, isDragging, ...eventData } = event;
+                    const finalEventData = {
+                      ...eventData,
+                      latitude: lat,
+                      longitude: lng
+                    };
+
+                    const { data: newEvent, error } = await supabase
+                      .from('events')
+                      .insert(finalEventData)
+                      .select()
+                      .single();
+
+                    if (error) {
+                      console.error('Error creating event:', error);
+                      toast({
+                        title: "Error",
+                        description: "Failed to create event",
+                        variant: "destructive"
+                      });
+                      return;
+                    }
+
+                    if (newEvent) {
+                      await supabase
+                        .from('event_attendees')
+                        .insert({
+                          event_id: newEvent.id,
+                          user_id: user!.id,
+                          status: 'going'
+                        });
+                    }
+
+                    setTempEvents(prev => prev.filter(e => e.id !== eventId));
                     toast({
-                      title: "Error",
-                      description: "Failed to move event",
-                      variant: "destructive"
+                      title: "Event Created!",
+                      description: `${event.title} has been placed successfully`,
                     });
-                  } else {
-                    toast({
-                      title: "Event Moved",
-                      description: "Event location updated successfully"
-                    });
+                    loadNearbyEvents();
+                  } catch (error) {
+                    console.error('Error placing event:', error);
                   }
-                });
+                })();
+              }
             });
           }
 

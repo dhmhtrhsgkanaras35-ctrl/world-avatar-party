@@ -15,9 +15,10 @@ interface CreateEventDialogProps {
   user: User | null;
   userLocation?: { lat: number; lng: number } | null;
   userZone?: string | null;
+  onEventCreated?: (eventData: any) => void;
 }
 
-export const CreateEventDialog = ({ user, userLocation, userZone }: CreateEventDialogProps) => {
+export const CreateEventDialog = ({ user, userLocation, userZone, onEventCreated }: CreateEventDialogProps) => {
   const { toast } = useToast();
   const [isOpen, setIsOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -45,7 +46,8 @@ export const CreateEventDialog = ({ user, userLocation, userZone }: CreateEventD
     setIsLoading(true);
 
     try {
-      const eventData = {
+      const tempEventData = {
+        id: 'temp-' + Date.now(),
         title: formData.title,
         description: formData.description || null,
         event_type: formData.event_type,
@@ -56,46 +58,21 @@ export const CreateEventDialog = ({ user, userLocation, userZone }: CreateEventD
         latitude: userLocation.lat,
         longitude: userLocation.lng,
         created_by: user.id,
-        address: `Zone: ${userZone || 'Unknown'}`
+        address: `Zone: ${userZone || 'Unknown'}`,
+        isDragging: true, // Mark as dragging initially
+        isTemporary: true // Mark as temporary
       };
 
-      const { error } = await supabase
-        .from('events')
-        .insert(eventData);
-
-      if (error) {
-        console.error('Error creating event:', error);
-        toast({
-          title: "Error",
-          description: "Failed to create event",
-          variant: "destructive"
-        });
-        return;
-      }
-
-      // Auto-join the event
-      const { data: eventData2 } = await supabase
-        .from('events')
-        .select('id')
-        .eq('created_by', user.id)
-        .order('created_at', { ascending: false })
-        .limit(1)
-        .single();
-
-      if (eventData2) {
-        await supabase
-          .from('event_attendees')
-          .insert({
-            event_id: eventData2.id,
-            user_id: user.id,
-            status: 'going'
-          });
-      }
-
+      // Show drag and drop preview
       toast({
-        title: "Event Created!",
-        description: `${formData.title} has been created in your zone`,
+        title: "Drag to Place Event!",
+        description: `Drag the transparent ${formData.title} event to your desired location on the map`,
       });
+
+      // Call the callback to show draggable event on map
+      if (onEventCreated) {
+        onEventCreated(tempEventData);
+      }
 
       setFormData({
         title: '',

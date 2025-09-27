@@ -143,30 +143,52 @@ export const createEventMarker3D = ({
       el.appendChild(placementHint);
     }
     
-    // Add cancel button for temporary events
+    // Add cancel button for temporary events - HIGHLY VISIBLE
     if (event.isTemporary) {
       const cancelButton = document.createElement('div');
       cancelButton.style.cssText = `
         position: absolute;
-        top: -10px;
-        right: -10px;
+        top: -12px;
+        right: -12px;
         background: #ef4444;
         color: white;
         border-radius: 50%;
-        width: 24px;
-        height: 24px;
+        width: 28px;
+        height: 28px;
         display: flex;
         align-items: center;
         justify-content: center;
-        font-size: 16px;
+        font-size: 18px;
         font-weight: bold;
         cursor: pointer;
         z-index: 1002;
-        border: 2px solid white;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+        border: 3px solid white;
+        box-shadow: 0 4px 12px rgba(239, 68, 68, 0.6);
+        opacity: 1;
+        transition: all 0.2s ease;
+        animation: pulse 2s infinite;
       `;
       cancelButton.innerHTML = '×';
       cancelButton.title = 'Cancel Event Creation';
+      
+      // Add pulsing animation for better visibility
+      const pulseStyle = document.createElement('style');
+      if (!document.getElementById('cancel-button-pulse')) {
+        pulseStyle.id = 'cancel-button-pulse';
+        pulseStyle.textContent = `
+          @keyframes pulse {
+            0%, 100% { 
+              transform: scale(1);
+              box-shadow: 0 4px 12px rgba(239, 68, 68, 0.6);
+            }
+            50% { 
+              transform: scale(1.1);
+              box-shadow: 0 6px 16px rgba(239, 68, 68, 0.8);
+            }
+          }
+        `;
+        document.head.appendChild(pulseStyle);
+      }
       
       cancelButton.addEventListener('click', (e) => {
         e.stopPropagation();
@@ -174,6 +196,16 @@ export const createEventMarker3D = ({
         if (onEventDelete) {
           onEventDelete(event.id);
         }
+      });
+      
+      cancelButton.addEventListener('mouseenter', () => {
+        cancelButton.style.transform = 'scale(1.2)';
+        cancelButton.style.boxShadow = '0 6px 20px rgba(239, 68, 68, 0.8)';
+      });
+      
+      cancelButton.addEventListener('mouseleave', () => {
+        cancelButton.style.transform = 'scale(1)';
+        cancelButton.style.boxShadow = '0 4px 12px rgba(239, 68, 68, 0.6)';
       });
       
       el.appendChild(cancelButton);
@@ -220,7 +252,7 @@ export const createEventMarker3D = ({
     el.appendChild(markerContainer);
   }
 
-  // Add delete button for permanent event owners
+  // Add delete button for permanent event owners - ALWAYS VISIBLE
   if (currentUserId === event.created_by && !event.isTemporary) {
     const deleteButton = document.createElement('div');
     deleteButton.style.cssText = `
@@ -230,18 +262,19 @@ export const createEventMarker3D = ({
       background: #ef4444;
       color: white;
       border-radius: 50%;
-      width: 20px;
-      height: 20px;
+      width: 24px;
+      height: 24px;
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 12px;
+      font-size: 16px;
       font-weight: bold;
       cursor: pointer;
       z-index: 1001;
       border: 2px solid white;
-      opacity: 0;
-      transition: opacity 0.2s ease;
+      opacity: 0.9;
+      transition: all 0.2s ease;
+      box-shadow: 0 2px 8px rgba(239, 68, 68, 0.4);
     `;
     deleteButton.innerHTML = '×';
     deleteButton.title = 'Delete Event';
@@ -256,13 +289,17 @@ export const createEventMarker3D = ({
     
     el.appendChild(deleteButton);
     
-    // Show delete button on hover for permanent events
-    el.addEventListener('mouseenter', () => {
+    // Enhanced hover effects for delete button
+    deleteButton.addEventListener('mouseenter', () => {
       deleteButton.style.opacity = '1';
+      deleteButton.style.transform = 'scale(1.1)';
+      deleteButton.style.boxShadow = '0 4px 12px rgba(239, 68, 68, 0.6)';
     });
     
-    el.addEventListener('mouseleave', () => {
-      deleteButton.style.opacity = '0';
+    deleteButton.addEventListener('mouseleave', () => {
+      deleteButton.style.opacity = '0.9';
+      deleteButton.style.transform = 'scale(1)';
+      deleteButton.style.boxShadow = '0 2px 8px rgba(239, 68, 68, 0.4)';
     });
   }
 

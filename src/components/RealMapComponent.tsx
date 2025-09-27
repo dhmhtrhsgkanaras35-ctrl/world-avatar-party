@@ -749,39 +749,126 @@ export const RealMapComponent = () => {
       }
 
       function createEnhancedFallback() {
-        console.log('🎭 Creating enhanced fallback avatar');
+        console.log('🎭 Creating enhanced Snapchat-style character');
         
-        // Simple but effective fallback that indicates it's a Ready Player Me avatar
-        const fallback = document.createElement('div');
-        fallback.style.cssText = `
-          width: 40px;
-          height: 40px;
-          background: ${isCurrentUser ? '#3b82f6' : (inSameZone ? markerColor : '#6366f1')};
+        // Create a full character avatar similar to Snapchat
+        const characterContainer = document.createElement('div');
+        characterContainer.style.cssText = `
+          width: 50px;
+          height: 80px;
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          position: relative;
+          cursor: pointer;
+          transition: transform 0.3s ease;
+        `;
+        
+        // Character body with 3D effect
+        const characterBody = document.createElement('div');
+        characterBody.style.cssText = `
+          width: 42px;
+          height: 68px;
+          background: linear-gradient(135deg, ${isCurrentUser ? '#3b82f6' : (inSameZone ? markerColor : '#6366f1')}, ${isCurrentUser ? '#1d4ed8' : (inSameZone ? '#047857' : '#4338ca')});
+          border-radius: 50% 50% 50% 50% / 35% 35% 65% 65%;
+          border: 2px solid white;
+          position: relative;
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: flex-start;
+          padding-top: 8px;
+          box-shadow: 0 4px 8px rgba(0,0,0,0.3), inset 0 1px 2px rgba(255,255,255,0.3);
+        `;
+        
+        // Face
+        const face = document.createElement('div');
+        face.style.cssText = `
+          width: 22px;
+          height: 22px;
+          background: linear-gradient(135deg, #fef3c7, #fde68a);
           border-radius: 50%;
           display: flex;
           align-items: center;
           justify-content: center;
-          font-size: 20px;
-          border: 3px solid white;
-          box-shadow: 0 2px 6px rgba(0,0,0,0.15);
-          margin-bottom: 8px;
-          position: relative;
-          cursor: pointer;
+          font-size: 10px;
+          font-weight: bold;
+          margin-bottom: 3px;
+          border: 1px solid rgba(255,255,255,0.4);
+          box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+          color: #374151;
+        `;
+        face.textContent = name.charAt(0).toUpperCase();
+        
+        // Body/torso
+        const torso = document.createElement('div');
+        torso.style.cssText = `
+          width: 16px;
+          height: 18px;
+          background: linear-gradient(135deg, rgba(255,255,255,0.95), rgba(255,255,255,0.8));
+          border-radius: 40% 40% 60% 60%;
+          margin-top: 1px;
+          box-shadow: inset 0 1px 2px rgba(0,0,0,0.1);
         `;
         
-        fallback.textContent = name.charAt(0).toUpperCase();
-        fallback.style.color = 'white';
-        fallback.title = `${name} (Ready Player Me Avatar)`;
-        
-        // Add Ready Player Me indicator
-        const indicator = document.createElement('div');
-        indicator.style.cssText = `
+        // Left arm
+        const leftArm = document.createElement('div');
+        leftArm.style.cssText = `
           position: absolute;
-          top: -2px;
-          right: -2px;
-          width: 12px;
-          height: 12px;
-          background: #10b981;
+          top: 28px;
+          left: -6px;
+          width: 10px;
+          height: 3px;
+          background: linear-gradient(135deg, #fef3c7, #fde68a);
+          border-radius: 50%;
+          transform: rotate(-15deg);
+          box-shadow: 0 1px 2px rgba(0,0,0,0.2);
+        `;
+        
+        // Right arm
+        const rightArm = document.createElement('div');
+        rightArm.style.cssText = `
+          position: absolute;
+          top: 28px;
+          right: -6px;
+          width: 10px;
+          height: 3px;
+          background: linear-gradient(135deg, #fef3c7, #fde68a);
+          border-radius: 50%;
+          transform: rotate(15deg);
+          box-shadow: 0 1px 2px rgba(0,0,0,0.2);
+        `;
+        
+        // Assemble character
+        characterBody.appendChild(face);
+        characterBody.appendChild(torso);
+        characterBody.appendChild(leftArm);
+        characterBody.appendChild(rightArm);
+        
+        // Location pin/feet
+        const locationPin = document.createElement('div');
+        locationPin.style.cssText = `
+          position: absolute;
+          bottom: -3px;
+          left: 50%;
+          transform: translateX(-50%);
+          width: 0;
+          height: 0;
+          border-left: 8px solid transparent;
+          border-right: 8px solid transparent;
+          border-top: 12px solid white;
+          filter: drop-shadow(0 2px 4px rgba(0,0,0,0.2));
+        `;
+        
+        // Ready Player Me indicator
+        const rpmIndicator = document.createElement('div');
+        rpmIndicator.style.cssText = `
+          position: absolute;
+          top: -4px;
+          right: -4px;
+          width: 14px;
+          height: 14px;
+          background: linear-gradient(135deg, #10b981, #059669);
           border-radius: 50%;
           border: 2px solid white;
           font-size: 6px;
@@ -790,19 +877,25 @@ export const RealMapComponent = () => {
           justify-content: center;
           color: white;
           font-weight: bold;
+          box-shadow: 0 2px 4px rgba(0,0,0,0.2);
         `;
-        indicator.textContent = 'RPM';
-        fallback.appendChild(indicator);
+        rpmIndicator.innerHTML = '3D';
         
-        // Add hover animation
-        fallback.addEventListener('mouseenter', () => {
-          fallback.style.transform = 'scale(1.05)';
+        // Assemble complete character
+        characterContainer.appendChild(characterBody);
+        characterContainer.appendChild(locationPin);
+        characterContainer.appendChild(rpmIndicator);
+        
+        // Add hover animations
+        characterContainer.addEventListener('mouseenter', () => {
+          characterContainer.style.transform = 'scale(1.1) translateY(-2px)';
         });
-        fallback.addEventListener('mouseleave', () => {
-          fallback.style.transform = 'scale(1)';
+        characterContainer.addEventListener('mouseleave', () => {
+          characterContainer.style.transform = 'scale(1) translateY(0)';
         });
         
-        el.appendChild(fallback);
+        characterContainer.title = `${name} (3D Avatar Character)`;
+        el.appendChild(characterContainer);
       }
 
       // Add zone name badge

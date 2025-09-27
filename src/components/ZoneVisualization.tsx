@@ -96,59 +96,60 @@ export const ZoneVisualization = () => {
   const usersInMyZone = nearbyZones.find(zone => zone.zone_key === currentZone);
 
   return (
-    <Card className="fixed bottom-32 right-4 max-w-xs shadow-lg z-20 bg-background/95 backdrop-blur-sm">
-      <CardHeader className="pb-2">
-        <CardTitle className="text-sm flex items-center gap-2">
-          🌍 Zone Activity
-          <Badge variant="secondary" className="text-xs">
-            {currentZone}
-          </Badge>
-        </CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-3">
-        {/* Current Zone */}
+    <Card className="fixed bottom-32 right-4 max-w-xs shadow-lg z-20 bg-background/95 backdrop-blur-sm rounded-full p-4">
+      <CardContent className="space-y-3 p-0">
+        <div className="text-center mb-3">
+          <div className="text-sm font-medium text-foreground flex items-center justify-center gap-2">
+            🌍 Zone
+            <Badge variant="secondary" className="text-xs rounded-full">
+              {currentZone}
+            </Badge>
+          </div>
+        </div>
+        {/* Current Zone - Circular Display */}
         {usersInMyZone && usersInMyZone.user_count > 0 && (
-          <div className="border rounded-lg p-2 bg-green-50 dark:bg-green-950">
-            <div className="flex justify-between items-center mb-1">
-              <span className="text-xs font-medium text-green-700 dark:text-green-300">
-                Your Zone
-              </span>
-              <Badge variant="default" className="text-xs bg-green-600">
-                {usersInMyZone.user_count} 🤝
-              </Badge>
+          <div className="text-center">
+            <div className="w-16 h-16 mx-auto mb-2 rounded-full bg-gradient-to-br from-primary to-primary-glow flex items-center justify-center text-white font-bold text-lg shadow-party">
+              {usersInMyZone.user_count}
             </div>
-            <div className="text-xs text-green-600 dark:text-green-400">
-              Can send friend requests to {usersInMyZone.user_count} users
+            <div className="text-xs text-primary font-medium">
+              🤝 Friends nearby
             </div>
           </div>
         )}
 
-        {/* Other Active Zones */}
+        {/* Other Active Zones - Circular indicators */}
         {nearbyZones.filter(zone => zone.zone_key !== currentZone).length > 0 && (
-          <div className="space-y-2">
-            <div className="text-xs font-medium text-muted-foreground">Nearby Zones</div>
+          <div className="flex justify-center gap-2 mt-3">
             {nearbyZones
               .filter(zone => zone.zone_key !== currentZone)
               .slice(0, 3)
               .map((zone) => (
-                <div key={zone.zone_key} className="flex justify-between items-center text-xs">
-                  <span className="text-muted-foreground">Zone {zone.zone_key}</span>
-                  <Badge variant="outline" className="text-xs">
-                    {zone.user_count} 👥
-                  </Badge>
+                <div key={zone.zone_key} className="text-center">
+                  <div className="w-10 h-10 rounded-full bg-gradient-to-br from-secondary to-accent flex items-center justify-center text-white text-xs font-bold">
+                    {zone.user_count}
+                  </div>
+                  <div className="text-xs text-muted-foreground mt-1">
+                    {zone.zone_key}
+                  </div>
                 </div>
               ))}
           </div>
         )}
 
         {nearbyZones.length === 0 && (
-          <div className="text-xs text-muted-foreground text-center py-2">
-            No other users nearby
+          <div className="text-center">
+            <div className="w-16 h-16 mx-auto mb-2 rounded-full bg-gradient-to-br from-muted to-muted-foreground/20 flex items-center justify-center text-muted-foreground text-xs">
+              0
+            </div>
+            <div className="text-xs text-muted-foreground">
+              No users nearby
+            </div>
           </div>
         )}
 
-        <div className="text-xs text-muted-foreground pt-2 border-t">
-          💡 Move to zones with users to make friends
+        <div className="text-xs text-muted-foreground text-center pt-2 border-t">
+          💡 Move to zones with users
         </div>
       </CardContent>
     </Card>

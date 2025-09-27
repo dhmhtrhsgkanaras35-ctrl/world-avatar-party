@@ -1067,6 +1067,7 @@ export const RealMapComponent = () => {
           const eventElement = createEventMarker3D({
             event,
             attendeeCount,
+            currentUserId: user?.id,
             onEventClick: (eventId) => {
               console.log('Event clicked:', eventId);
               // Handle event click - could open event details dialog
@@ -1074,15 +1075,100 @@ export const RealMapComponent = () => {
                 title: `Event: ${event.title}`,
                 description: `${event.event_type} event - Click to join!`,
               });
+            },
+            onEventMove: async (eventId, lat, lng) => {
+              try {
+                const { error } = await supabase
+                  .from('events')
+                  .update({ latitude: lat, longitude: lng })
+                  .eq('id', eventId);
+                
+                if (error) {
+                  console.error('Error updating event location:', error);
+                  toast({
+                    title: "Error",
+                    description: "Failed to move event",
+                    variant: "destructive"
+                  });
+                } else {
+                  toast({
+                    title: "Event Moved",
+                    description: "Event location updated successfully"
+                  });
+                  loadNearbyEvents(); // Reload events to show updated position
+                }
+              } catch (error) {
+                console.error('Error moving event:', error);
+              }
+            },
+            onEventDelete: async (eventId) => {
+              try {
+                // Delete event attendees first
+                await supabase
+                  .from('event_attendees')
+                  .delete()
+                  .eq('event_id', eventId);
+                
+                // Delete the event
+                const { error } = await supabase
+                  .from('events')
+                  .delete()
+                  .eq('id', eventId);
+                
+                if (error) {
+                  console.error('Error deleting event:', error);
+                  toast({
+                    title: "Error",
+                    description: "Failed to delete event",
+                    variant: "destructive"
+                  });
+                } else {
+                  toast({
+                    title: "Event Deleted",
+                    description: "Event removed successfully"
+                  });
+                  loadNearbyEvents(); // Reload events to remove from map
+                }
+              } catch (error) {
+                console.error('Error deleting event:', error);
+              }
             }
           });
 
           const marker = new mapboxgl.Marker({
             element: eventElement,
-            anchor: 'bottom'
+            anchor: 'bottom',
+            draggable: user?.id === event.created_by
           })
             .setLngLat([event.longitude, event.latitude])
             .addTo(map.current!);
+
+          // Handle drag end for repositioning events
+          if (user?.id === event.created_by) {
+            marker.on('dragend', () => {
+              const lngLat = marker.getLngLat();
+              // Update event location directly
+              supabase
+                .from('events')
+                .update({ latitude: lngLat.lat, longitude: lngLat.lng })
+                .eq('id', event.id)
+                .then(({ error }) => {
+                  if (error) {
+                    console.error('Error updating event location:', error);
+                    toast({
+                      title: "Error",
+                      description: "Failed to move event",
+                      variant: "destructive"
+                    });
+                  } else {
+                    toast({
+                      title: "Event Moved",
+                      description: "Event location updated successfully"
+                    });
+                  }
+                });
+            });
+          }
 
           eventMarkersRef.current[event.id] = marker;
         }
@@ -1111,6 +1197,36 @@ export const RealMapComponent = () => {
         (payload) => {
           console.log('New event created:', payload);
           // Reload events when a new one is created
+          if (mapLoaded && userLocation) {
+            loadNearbyEvents();
+          }
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'events'
+        },
+        (payload) => {
+          console.log('Event updated:', payload);
+          // Reload events when one is updated
+          if (mapLoaded && userLocation) {
+            loadNearbyEvents();
+          }
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: 'DELETE',
+          schema: 'public',
+          table: 'events'
+        },
+        (payload) => {
+          console.log('Event deleted:', payload);
+          // Reload events when one is deleted
           if (mapLoaded && userLocation) {
             loadNearbyEvents();
           }

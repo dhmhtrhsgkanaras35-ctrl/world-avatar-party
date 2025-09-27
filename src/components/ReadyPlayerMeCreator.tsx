@@ -83,23 +83,27 @@ export const ReadyPlayerMeCreator = ({
       
       if (event.origin !== 'https://demo.readyplayer.me') return;
 
-      let avatarUrl: string | null = null;
+      let avatarGlbUrl: string | null = null;
 
       // Check if event data is the avatar URL string directly
       if (typeof event.data === 'string' && (event.data.endsWith('.glb') || event.data.endsWith('.vrm'))) {
-        avatarUrl = event.data;
+        avatarGlbUrl = event.data;
       }
       // Check if it's the structured event format
       else if (event.data?.eventName === 'v1.avatar.exported' && event.data?.data?.url) {
-        avatarUrl = event.data.data.url;
+        avatarGlbUrl = event.data.data.url;
       }
 
-      if (avatarUrl) {
-        console.log('Avatar URL captured:', avatarUrl);
-        // Generate PNG snapshot from GLB model
-        const pngUrl = await generateAvatarPNG(avatarUrl);
-        if (pngUrl) {
+      if (avatarGlbUrl) {
+        console.log('Avatar GLB URL captured:', avatarGlbUrl);
+        // Extract avatar ID from GLB URL and create Ready Player Me PNG URL
+        const avatarId = extractAvatarIdFromUrl(avatarGlbUrl);
+        if (avatarId) {
+          const pngUrl = `https://render.readyplayer.me/avatar/${avatarId}.png?pose=standing&quality=high&transparent=true`;
+          console.log('Ready Player Me PNG URL:', pngUrl);
           await saveAvatarUrl(pngUrl);
+        } else {
+          console.error('Could not extract avatar ID from URL:', avatarGlbUrl);
         }
         cleanup();
       }
@@ -124,223 +128,20 @@ export const ReadyPlayerMeCreator = ({
     document.body.appendChild(overlay);
   };
 
-  // Generate PNG snapshot from GLB model with natural idle animation
-  const generateAvatarPNG = async (glbUrl: string): Promise<string | null> => {
-    console.log('Generating natural idle pose PNG from GLB:', glbUrl);
-    
-    return new Promise((resolve) => {
-      const canvas = document.createElement('canvas');
-      canvas.width = 500;
-      canvas.height = 800; // Wider aspect ratio to include hands
-      const renderer = new THREE.WebGLRenderer({ 
-        canvas, 
-        alpha: true, 
-        antialias: true,
-        preserveDrawingBuffer: true 
-      });
-      renderer.setSize(500, 800);
-      renderer.setClearColor(0x000000, 0); // Transparent background
-      
-      const scene = new THREE.Scene();
-      const camera = new THREE.PerspectiveCamera(35, 500/800, 0.1, 1000); // Wider FOV
-      
-      // Camera positioned for natural standing view (slightly elevated, front-facing)
-      camera.position.set(0, 1.2, 4.5); // Moved camera back slightly
-      camera.lookAt(0, 0.9, 0); // Look at upper torso for natural framing
-      
-      // Soft, even lighting setup for clean cutout appearance
-      const ambientLight = new THREE.AmbientLight(0xffffff, 1.2);
-      scene.add(ambientLight);
-      
-      // Front key light
-      const keyLight = new THREE.DirectionalLight(0xffffff, 0.8);
-      keyLight.position.set(0, 2, 3);
-      scene.add(keyLight);
-      
-      // Gentle fill lights from sides to eliminate harsh shadows
-      const fillLeft = new THREE.DirectionalLight(0xffffff, 0.4);
-      fillLeft.position.set(-2, 1, 1);
-      scene.add(fillLeft);
-      
-      const fillRight = new THREE.DirectionalLight(0xffffff, 0.4);
-      fillRight.position.set(2, 1, 1);
-      scene.add(fillRight);
-      
-      // Animation mixer for handling animations
-      let mixer: THREE.AnimationMixer | null = null;
-      
-      // Load GLB model
-      const loader = new GLTFLoader();
-      loader.load(glbUrl, 
-        (gltf) => {
-          const model = gltf.scene;
-          
-          // Check for animations in the model
-          if (gltf.animations && gltf.animations.length > 0) {
-            mixer = new THREE.AnimationMixer(model);
-            
-            // Look for idle animation or use the first available animation
-            const idleAnimation = gltf.animations.find(animation => 
-              animation.name.toLowerCase().includes('idle') || 
-              animation.name.toLowerCase().includes('breathing') ||
-              animation.name.toLowerCase().includes('stand')
-            ) || gltf.animations[0];
-            
-            if (idleAnimation) {
-              const idleAction = mixer.clipAction(idleAnimation);
-              idleAction.setLoop(THREE.LoopRepeat, Infinity);
-              idleAction.play();
-              
-              // Let animation play for a moment to settle into natural pose
-              setTimeout(() => renderFrame(), 200);
-            } else {
-              applyManualIdlePose(model);
-              renderFrame();
-            }
-          } else {
-            // No animations found, apply manual idle pose
-            applyManualIdlePose(model);
-            renderFrame();
-          }
-          
-          function applyManualIdlePose(model: THREE.Group) {
-            // Apply natural relaxed idle pose with arms hanging down
-            model.traverse((child) => {
-              if (child.type === 'Bone' || (child as any).isBone) {
-                const boneName = child.name.toLowerCase();
-                
-                // Natural arm positioning - arms hanging naturally at sides
-                if (boneName.includes('leftarm') || boneName.includes('l_upperarm') || boneName.includes('leftupperarm')) {
-                  child.rotation.x = 0.15;  // More natural forward hang
-                  child.rotation.z = 0.1;   // Closer to body
-                  child.rotation.y = 0.08;  // Slight outward rotation
-                }
-                if (boneName.includes('rightarm') || boneName.includes('r_upperarm') || boneName.includes('rightupperarm')) {
-                  child.rotation.x = 0.15;  // More natural forward hang
-                  child.rotation.z = -0.1;  // Closer to body
-                  child.rotation.y = -0.08; // Slight outward rotation
-                }
-                
-                // Natural forearm - completely relaxed hanging
-                if (boneName.includes('leftforearm') || boneName.includes('l_forearm') || boneName.includes('leftlowerarm')) {
-                  child.rotation.x = 0.4;   // Natural hanging down
-                  child.rotation.z = 0.05;  // Slight inward curve
-                  child.rotation.y = 0.02;  // Natural twist
-                }
-                if (boneName.includes('rightforearm') || boneName.includes('r_forearm') || boneName.includes('rightlowerarm')) {
-                  child.rotation.x = 0.4;   // Natural hanging down
-                  child.rotation.z = -0.05; // Slight inward curve
-                  child.rotation.y = -0.02; // Natural twist
-                }
-                
-                // Natural hand positioning - completely relaxed
-                if (boneName.includes('lefthand') || boneName.includes('l_hand')) {
-                  child.rotation.x = 0.15;  // Slight forward curl
-                  child.rotation.y = 0.05;  // Natural position
-                  child.rotation.z = 0.02;  // Relaxed
-                }
-                if (boneName.includes('righthand') || boneName.includes('r_hand')) {
-                  child.rotation.x = 0.15;  // Slight forward curl
-                  child.rotation.y = -0.05; // Natural position
-                  child.rotation.z = -0.02; // Relaxed
-                }
-                
-                // Subtle weight shift for natural stance
-                if (boneName.includes('hips') || boneName.includes('pelvis')) {
-                  child.rotation.z = 0.02; // Very slight lean
-                  child.rotation.x = 0.01; // Slight forward tilt
-                }
-                if (boneName.includes('spine') || boneName.includes('chest')) {
-                  child.rotation.z = -0.01; // Counter hip lean
-                  child.rotation.x = -0.005; // Slight counter-tilt
-                }
-                
-                // Natural head position - alert but relaxed
-                if (boneName.includes('head') || boneName.includes('neck')) {
-                  child.rotation.x = 0.02;  // Very slight chin down
-                  child.rotation.z = -0.01; // Minimal tilt
-                  child.rotation.y = 0.01;  // Slight turn
-                }
-                
-                // Natural leg positioning - balanced stance
-                if (boneName.includes('leftupperleg') || boneName.includes('leftthigh') || boneName.includes('l_thigh')) {
-                  child.rotation.x = 0.03;  // Slight forward
-                  child.rotation.z = -0.01; // Weight-bearing leg
-                }
-                if (boneName.includes('rightupperleg') || boneName.includes('rightthigh') || boneName.includes('r_thigh')) {
-                  child.rotation.x = 0.02;  // Slightly less weight
-                  child.rotation.z = 0.02;  // Relaxed leg
-                }
-              }
-            });
-          }
-          
-          function renderFrame() {
-            // Position and scale for full body cutout with feet aligned to bottom
-            const box = new THREE.Box3().setFromObject(model);
-            const center = box.getCenter(new THREE.Vector3());
-            const size = box.getSize(new THREE.Vector3());
-            
-            // Center horizontally, align feet to bottom of frame
-            model.position.x = -center.x;
-            model.position.y = -box.min.y; // Feet at ground level (y=0)
-            model.position.z = -center.z;
-            
-            // Scale to fit both height and width with margin for hands
-            const scaleForHeight = 1.7 / size.y; // Slightly smaller to ensure full body fits
-            const scaleForWidth = 1.6 / size.x;  // Ensure arms/hands don't get cut off
-            const finalScale = Math.min(scaleForHeight, scaleForWidth); // Use smaller scale
-            model.scale.setScalar(finalScale);
-            
-            scene.add(model);
-            
-            // Update animation if available
-            if (mixer) {
-              mixer.update(0.016); // Simulate 60fps frame
-            }
-            
-            // Render multiple times to ensure proper lighting
-            renderer.render(scene, camera);
-            
-            // Small delay to ensure rendering is complete
-            setTimeout(() => {
-              renderer.render(scene, camera);
-              
-              // Convert to PNG blob and create URL
-              canvas.toBlob((blob) => {
-                if (blob) {
-                  const url = URL.createObjectURL(blob);
-                  console.log('Generated natural idle PNG:', url);
-                  resolve(url);
-                } else {
-                  console.error('Failed to create PNG blob');
-                  resolve(null);
-                }
-              }, 'image/png', 1.0);
-              
-              // Cleanup
-              renderer.dispose();
-              scene.clear();
-            }, 100);
-          }
-        },
-        (progress) => {
-          console.log('Avatar loading progress:', progress);
-        },
-        (error) => {
-          console.error('Error loading GLB for PNG generation:', error);
-          renderer.dispose();
-          resolve(null);
-        }
-      );
-    });
+  // Extract avatar ID from Ready Player Me URL
+  const extractAvatarIdFromUrl = (url: string): string | null => {
+    // Extract avatar ID from URLs like:
+    // https://models.readyplayer.me/64bfa597e1b8ff9c4e5b4a7d/avatar.glb
+    // https://api.readyplayer.me/v1/avatars/64bfa597e1b8ff9c4e5b4a7d.glb
+    const matches = url.match(/([a-f0-9]{24})/);
+    return matches ? matches[1] : null;
   };
 
-  const saveAvatarUrl = async (avatarUrl: string) => {
+  const saveAvatarUrl = async (avatarPngUrl: string) => {
     setIsSaving(true);
     try {
       console.log('=== AVATAR SAVE DEBUG ===');
-      console.log('Avatar PNG Blob URL:', avatarUrl);
+      console.log('Ready Player Me PNG URL:', avatarPngUrl);
       console.log('User ID:', userId);
       
       // Check if user is authenticated
@@ -355,53 +156,6 @@ export const ReadyPlayerMeCreator = ({
       if (user.id !== userId) {
         console.warn('User ID mismatch:', { authenticated: user.id, provided: userId });
       }
-
-      // Convert blob URL to file for upload
-      const response = await fetch(avatarUrl);
-      const blob = await response.blob();
-      const timestamp = Date.now();
-      const fileName = `${userId}/avatar_${timestamp}.png`;
-      
-      console.log('Uploading avatar PNG to storage:', fileName);
-      
-      // Check if avatar already exists and delete old ones
-      const { data: existingFiles } = await supabase.storage
-        .from('avatars')
-        .list(userId);
-        
-      if (existingFiles && existingFiles.length > 0) {
-        console.log('Removing old avatar files');
-        const filesToDelete = existingFiles.map(file => `${userId}/${file.name}`);
-        const { error: deleteError } = await supabase.storage
-          .from('avatars')
-          .remove(filesToDelete);
-        if (deleteError) {
-          console.warn('Error deleting old avatars:', deleteError);
-        }
-      }
-      
-      // Upload new avatar PNG to Supabase storage
-      const { data: uploadData, error: uploadError } = await supabase.storage
-        .from('avatars')
-        .upload(fileName, blob, {
-          cacheControl: '3600',
-          upsert: true,
-          contentType: 'image/png'
-        });
-
-      if (uploadError) {
-        console.error('Storage upload error:', uploadError);
-        throw uploadError;
-      }
-
-      console.log('Avatar uploaded to storage:', uploadData);
-
-      // Get public URL for the uploaded avatar
-      const { data: { publicUrl } } = supabase.storage
-        .from('avatars')
-        .getPublicUrl(fileName);
-        
-      console.log('Avatar public URL:', publicUrl);
       
       // First, try to get existing profile
       const { data: existingProfile, error: fetchError } = await supabase
@@ -413,11 +167,11 @@ export const ReadyPlayerMeCreator = ({
       console.log('Existing profile:', existingProfile);
       console.log('Fetch error:', fetchError);
       
-      // Prepare the profile data with storage URL
+      // Prepare the profile data with Ready Player Me PNG URL
       let profileData: any = {
         user_id: userId,
-        avatar_url: publicUrl,
-        pose: 'idle', // Default pose for all avatars
+        avatar_url: avatarPngUrl, // Store the Ready Player Me PNG URL directly
+        pose: 'standing', // Default pose for Ready Player Me avatars
         updated_at: new Date().toISOString()
       };
       
@@ -445,17 +199,14 @@ export const ReadyPlayerMeCreator = ({
         throw error;
       }
 
-      console.log('Avatar saved successfully to storage:', data);
+      console.log('Avatar URL saved successfully:', data);
       
       toast({
         title: "Avatar Created!",
         description: "Your Ready Player Me avatar has been saved successfully.",
       });
 
-      // Clean up the blob URL
-      URL.revokeObjectURL(avatarUrl);
-
-      onAvatarCreated?.(publicUrl);
+      onAvatarCreated?.(avatarPngUrl);
     } catch (error: any) {
       console.error('=== SAVE AVATAR ERROR ===');
       console.error('Error details:', error);

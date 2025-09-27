@@ -347,21 +347,38 @@ export const RealMapComponent = () => {
       console.log('Location sharing enabled event:', event.detail);
       const { latitude, longitude } = event.detail;
       
-      // Immediately add the user marker
-      if (map.current) {
-        console.log('Adding user marker from location sharing event');
-        addUserMarker(
-          longitude,
-          latitude,
-          user.id,
-          user.user_metadata?.display_name || 'You',
-          true,
-          user.user_metadata?.avatar_url,
-          false,
-          null, // Will be set after blur calculation
-          false,
-          '#3b82f6'
-        );
+      // Re-fetch user's avatar from Supabase and add marker
+      if (map.current && user) {
+        console.log('Re-fetching user avatar for location sharing');
+        // Get user's avatar from profile and add marker with cache-busting
+        supabase
+          .from('profiles')
+          .select('avatar_url, display_name')
+          .eq('user_id', user.id)
+          .maybeSingle()
+          .then(({ data: userProfile }) => {
+            console.log('User profile for marker:', userProfile);
+            let avatarUrl = userProfile?.avatar_url;
+            
+            // Add cache-busting to avatar URL
+            if (avatarUrl) {
+              const separator = avatarUrl.includes('?') ? '&' : '?';
+              avatarUrl = `${avatarUrl}${separator}t=${Date.now()}`;
+            }
+            
+            addUserMarker(
+              longitude,
+              latitude,
+              user.id,
+              userProfile?.display_name || user.user_metadata?.display_name || 'You',
+              true,
+              avatarUrl,
+              false,
+              null, // Will be set after blur calculation
+              false,
+              '#3b82f6'
+            );
+          });
       }
     };
 
@@ -542,6 +559,16 @@ export const RealMapComponent = () => {
     );
   };
 
+  // Helper function to extract avatar ID from various URL formats
+  const extractAvatarIdFromUrl = (url: string): string | null => {
+    // Extract avatar ID from URLs like:
+    // https://models.readyplayer.me/64bfa597e1b8ff9c4e5b4a7d/avatar.glb
+    // https://api.readyplayer.me/v1/avatars/64bfa597e1b8ff9c4e5b4a7d.glb
+    // https://d1a370nemizbjq.cloudfront.net/64bfa597e1b8ff9c4e5b4a7d.glb
+    const matches = url.match(/([a-f0-9]{24})/);
+    return matches ? matches[1] : null;
+  };
+
   const addUserMarker = (
     lng: number, 
     lat: number, 
@@ -581,78 +608,111 @@ export const RealMapComponent = () => {
       transform-origin: center bottom;
     `;
 
-    console.log('Creating marker element for user:', userId);
+      console.log('Creating marker element for user:', userId);
 
-    if (avatarUrl) {
-      // Snapchat-style full-body avatar PNG with zone-based border
-      const avatarImg = document.createElement('img');
-      avatarImg.src = avatarUrl;
-      avatarImg.style.cssText = `
-        width: 48px;
-        height: 96px;
-        object-fit: contain;
-        object-position: center bottom;
-        filter: drop-shadow(0 1px 3px rgba(0,0,0,0.2));
-        border-radius: 8px;
-        ${isCurrentUser ? 'border: 3px solid #3b82f6;' : ''}
-        ${inSameZone && !isCurrentUser ? `border: 2px solid ${markerColor};` : ''}
-        ${isFriend ? 'border: 2px solid #10b981;' : ''}
-        transition: transform 0.2s ease;
-      `;
-      
-    // Add zone name badge
-    if (zoneKey) {
-      const zoneName = getZoneName(zoneKey);
-      const zoneIndicator = document.createElement('div');
-      zoneIndicator.style.cssText = `
-        position: absolute;
-        top: -8px;
-        left: 50%;
-        transform: translateX(-50%);
-        background: ${inSameZone ? '#10b981' : '#6366f1'};
-        color: white;
-        border-radius: 8px;
-        padding: 2px 6px;
-        font-size: 10px;
-        font-weight: 600;
-        white-space: nowrap;
-        box-shadow: 0 1px 3px rgba(0,0,0,0.2);
-        border: 1px solid white;
-      `;
-      zoneIndicator.textContent = zoneName;
-      el.appendChild(zoneIndicator);
-    }
-      
-      // Add hover animation
-      avatarImg.addEventListener('mouseenter', () => {
-        avatarImg.style.transform = 'scale(1.05)';
-      });
-      avatarImg.addEventListener('mouseleave', () => {
-        avatarImg.style.transform = 'scale(1)';
-      });
-      
-      el.appendChild(avatarImg);
-    } else {
-      // Fallback with zone-based styling
-      const fallback = document.createElement('div');
-      fallback.style.cssText = `
-        width: 40px;
-        height: 40px;
-        background: ${isCurrentUser ? '#3b82f6' : (inSameZone ? markerColor : '#6b7280')};
-        border-radius: 50%;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 20px;
-        border: 3px solid white;
-        box-shadow: 0 2px 6px rgba(0,0,0,0.15);
-        margin-bottom: 8px;
-      `;
-      fallback.textContent = isCurrentUser ? '📍' : (inSameZone ? '🤝' : name.charAt(0).toUpperCase());
-      el.appendChild(fallback);
-    }
+      // Check if avatar URL is Ready Player Me format
+      let finalAvatarUrl = avatarUrl;
+      if (avatarUrl && !avatarUrl.includes('render.readyplayer.me')) {
+        // If it's not a Ready Player Me URL, try to extract avatar ID and convert
+        const avatarId = extractAvatarIdFromUrl(avatarUrl);
+        if (avatarId) {
+          finalAvatarUrl = `https://render.readyplayer.me/avatar/${avatarId}.png?pose=standing&quality=high&transparent=true`;
+        }
+      }
 
-    console.log('Adding zone-based avatar marker for:', name, 'Zone:', zoneKey, 'Same zone:', inSameZone);
+      // Add cache-busting parameter to prevent browser caching issues
+      if (finalAvatarUrl && finalAvatarUrl.includes('render.readyplayer.me')) {
+        const separator = finalAvatarUrl.includes('?') ? '&' : '?';
+        finalAvatarUrl = `${finalAvatarUrl}${separator}t=${Date.now()}`;
+      }
+
+      console.log('Final avatar URL for marker:', finalAvatarUrl);
+
+      if (finalAvatarUrl) {
+        // Snapchat-style full-body avatar PNG with zone-based border
+        const avatarImg = document.createElement('img');
+        avatarImg.src = finalAvatarUrl;
+        avatarImg.style.cssText = `
+          width: 48px;
+          height: 96px;
+          object-fit: contain;
+          object-position: center bottom;
+          filter: drop-shadow(0 1px 3px rgba(0,0,0,0.2));
+          border-radius: 8px;
+          ${isCurrentUser ? 'border: 3px solid #3b82f6;' : ''}
+          ${inSameZone && !isCurrentUser ? `border: 2px solid ${markerColor};` : ''}
+          ${isFriend ? 'border: 2px solid #10b981;' : ''}
+          transition: transform 0.2s ease;
+        `;
+
+        // Handle image load errors
+        avatarImg.onerror = (e: Event) => {
+          console.error('Avatar image failed to load:', finalAvatarUrl);
+          // Replace with fallback dot
+          const target = e.target as HTMLImageElement;
+          target?.remove();
+          addFallbackDot();
+        };
+
+        // Add hover animation
+        avatarImg.addEventListener('mouseenter', () => {
+          avatarImg.style.transform = 'scale(1.05)';
+        });
+        avatarImg.addEventListener('mouseleave', () => {
+          avatarImg.style.transform = 'scale(1)';
+        });
+        
+        el.appendChild(avatarImg);
+      } else {
+        addFallbackDot();
+      }
+
+      // Function to add fallback dot when no avatar is available
+      function addFallbackDot() {
+        // Fallback dot with zone-based styling (only when no avatar is set)
+        const fallback = document.createElement('div');
+        fallback.style.cssText = `
+          width: 40px;
+          height: 40px;
+          background: ${isCurrentUser ? '#3b82f6' : (inSameZone ? markerColor : '#6b7280')};
+          border-radius: 50%;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-size: 20px;
+          border: 3px solid white;
+          box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+          margin-bottom: 8px;
+        `;
+        fallback.textContent = name.charAt(0).toUpperCase();
+        fallback.style.color = 'white';
+        el.appendChild(fallback);
+      }
+
+      // Add zone name badge
+      if (zoneKey) {
+        const zoneName = getZoneName(zoneKey);
+        const zoneIndicator = document.createElement('div');
+        zoneIndicator.style.cssText = `
+          position: absolute;
+          top: -8px;
+          left: 50%;
+          transform: translateX(-50%);
+          background: ${inSameZone ? '#10b981' : '#6366f1'};
+          color: white;
+          border-radius: 8px;
+          padding: 2px 6px;
+          font-size: 10px;
+          font-weight: 600;
+          white-space: nowrap;
+          box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+          border: 1px solid white;
+        `;
+        zoneIndicator.textContent = zoneName;
+        el.appendChild(zoneIndicator);
+      }
+
+      console.log('Adding zone-based avatar marker for:', name, 'Zone:', zoneKey, 'Same zone:', inSameZone);
 
     // Create enhanced popup with zone-based friend request functionality
     const zoneName = zoneKey ? getZoneName(zoneKey) : 'Unknown';
@@ -660,7 +720,7 @@ export const RealMapComponent = () => {
       <div class="p-3 bg-white rounded-lg shadow-lg min-w-[200px]">
         <h3 class="font-semibold text-gray-900 mb-1">${name}</h3>
         <p class="text-sm text-gray-600 mb-2">${isCurrentUser ? 'Your zone' : (isFriend ? 'Friend nearby' : 'Person nearby')}</p>
-        <p class="text-xs text-gray-500">${avatarUrl ? '✨ Full Body Avatar' : '🎭 Default Avatar'}</p>
+        <p class="text-xs text-gray-500">${finalAvatarUrl ? '✨ Ready Player Me Avatar' : '🎭 Default Avatar'}</p>
         <p class="text-xs text-blue-600 mt-1">🏠 Zone: ${zoneName}</p>`;
 
     // Add friend request button only for non-friends in the SAME zone (real users only)

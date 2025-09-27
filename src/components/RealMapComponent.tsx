@@ -492,7 +492,7 @@ export const RealMapComponent = () => {
       },
       {
         enableHighAccuracy: true,
-        timeout: 10000,
+        timeout: 30000, // Increased timeout
         maximumAge: 60000
       }
     );

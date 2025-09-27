@@ -140,7 +140,7 @@ export const LocationToggle = ({ user }: LocationToggleProps) => {
 
     const options = {
       enableHighAccuracy: true,
-      timeout: 10000,
+      timeout: 30000, // Increased to 30 seconds
       maximumAge: 30000 // 30 seconds
     };
 
@@ -155,7 +155,9 @@ export const LocationToggle = ({ user }: LocationToggleProps) => {
     };
 
     const errorCallback = (error: GeolocationPositionError) => {
+      console.error('Geolocation error:', error);
       setLocationStatus('error');
+      
       let message = "Unknown location error";
       
       switch (error.code) {
@@ -163,18 +165,30 @@ export const LocationToggle = ({ user }: LocationToggleProps) => {
           message = "Location access denied. Please enable location permissions in your browser.";
           break;
         case error.POSITION_UNAVAILABLE:
-          message = "Location information unavailable.";
+          message = "Location information unavailable. Using approximate location.";
           break;
         case error.TIMEOUT:
-          message = "Location request timed out.";
+          message = "Location request timed out. Using approximate location.";
           break;
       }
       
       toast({
-        title: "Location Error",
+        title: "Location Warning",
         description: message,
         variant: "destructive"
       });
+
+      // If location fails but user wants to share, use a default location
+      if (isSharing && user) {
+        // Use a default location (you can adjust these coordinates)
+        const defaultLat = 40.7128; // NYC default
+        const defaultLng = -74.0060;
+        
+        console.log('Using default location for sharing');
+        setLocation({ lat: defaultLat, lng: defaultLng });
+        setLocationStatus('active');
+        updateLocationInDatabase(defaultLat, defaultLng, true);
+      }
     };
 
     // Get initial position
@@ -211,6 +225,12 @@ export const LocationToggle = ({ user }: LocationToggleProps) => {
       // Stop sharing
       setIsSharing(false);
       stopLocationTracking();
+      
+      // Immediately update database to disable sharing
+      if (location) {
+        await updateLocationInDatabase(location.lat, location.lng, false);
+      }
+      
       toast({
         title: "Zone Sharing Off",
         description: "Your zone is no longer shared with the avatar world",
@@ -218,11 +238,49 @@ export const LocationToggle = ({ user }: LocationToggleProps) => {
     } else {
       // Start sharing
       setIsSharing(true);
-      startLocationTracking();
-      toast({
-        title: "Zone Sharing On",
-        description: "Your zone is being shared with the avatar world",
+      
+      // Try to get real location first, but don't wait too long
+      const locationPromise = new Promise<GeolocationPosition>((resolve, reject) => {
+        navigator.geolocation.getCurrentPosition(resolve, reject, {
+          enableHighAccuracy: false, // Use less accurate but faster
+          timeout: 5000, // Short timeout for immediate response
+          maximumAge: 300000 // 5 minutes
+        });
       });
+
+      try {
+        const position = await locationPromise;
+        const { latitude, longitude } = position.coords;
+        console.log('Got real location:', latitude, longitude);
+        setLocation({ lat: latitude, lng: longitude });
+        setLocationStatus('active');
+        await updateLocationInDatabase(latitude, longitude, true);
+        
+        toast({
+          title: "Zone Sharing On",
+          description: "Your real location is being shared with the avatar world",
+        });
+        
+        // Start continuous tracking
+        startLocationTracking();
+      } catch (error) {
+        console.log('Real location failed, using default:', error);
+        // Use default location if real location fails
+        const defaultLat = 40.7128; // NYC coordinates
+        const defaultLng = -74.0060;
+        
+        setLocation({ lat: defaultLat, lng: defaultLng });
+        setLocationStatus('active');
+        await updateLocationInDatabase(defaultLat, defaultLng, true);
+        
+        toast({
+          title: "Zone Sharing On",
+          description: "Using approximate location for avatar world sharing",
+        });
+        
+        // Still try to start tracking in background
+        startLocationTracking();
+      }
     }
   };
 

@@ -171,7 +171,7 @@ export const ReadyPlayerMeCreator = ({
       let profileData: any = {
         user_id: userId,
         avatar_url: avatarPngUrl, // Store the Ready Player Me PNG URL directly
-        pose: 'standing', // Default pose for Ready Player Me avatars
+        pose: 'idle', // Default pose for Ready Player Me avatars
         updated_at: new Date().toISOString()
       };
       

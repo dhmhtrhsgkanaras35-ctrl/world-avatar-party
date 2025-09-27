@@ -610,43 +610,108 @@ export const RealMapComponent = () => {
 
       console.log('🎯 Creating marker element for user:', userId, 'with avatarUrl:', avatarUrl);
 
-      // Try different Ready Player Me URL formats that might work with CORS
-      let finalAvatarUrl = null;
-      let avatarId = null;
-      
-      console.log('🔍 Processing avatar URL:', avatarUrl);
+      // Use Ready Player Me URL directly with CORS workarounds
+      console.log('🔍 Processing Ready Player Me avatar URL:', avatarUrl);
       
       if (avatarUrl) {
         // Extract avatar_id from various URL formats
         const idMatch = avatarUrl.match(/([a-f0-9]{24})/);
-        avatarId = idMatch ? idMatch[1] : null;
+        const avatarId = idMatch ? idMatch[1] : null;
         console.log('🔑 Extracted avatar ID:', avatarId);
         
         if (avatarId) {
-          // Try different URL formats that might work better
-          const urlsToTry = [
-            `https://models.readyplayer.me/${avatarId}.png?pose=A&quality=high`,
-            `https://d1a370nemizbjq.cloudfront.net/${avatarId}.png?pose=A&quality=high`,
-            `https://render.readyplayer.me/avatar/${avatarId}.png?pose=A&quality=high&transparent=false`,
-            avatarUrl // Original URL as fallback
+          // Create Ready Player Me URLs that are more likely to work
+          const readyPlayerMeUrls = [
+            // Try the exact format that works
+            `https://models.readyplayer.me/${avatarId}.png?morphTargets=ARKit,Oculus+Visemes&textureAtlas=none&lod=0`,
+            // Alternative formats
+            `https://d1a370nemizbjq.cloudfront.net/${avatarId}.png`,
+            `https://render.readyplayer.me/${avatarId}.png?scene=fullbody-portrait-v1&armature=ArmatureTargetMale&pose=A`,
+            avatarUrl // Original as fallback
           ];
           
-          // Try the first URL format
-          finalAvatarUrl = urlsToTry[0];
-          console.log('🎯 Trying avatar URL:', finalAvatarUrl);
-          
-          // Create and test the image
-          createAvatarImage(finalAvatarUrl, urlsToTry, 0);
+          createReadyPlayerMeAvatar(readyPlayerMeUrls, 0);
         } else {
-          console.log('🔸 No avatar ID found, using enhanced fallback');
-          createEnhancedFallback();
+          console.log('🔸 No avatar ID found in URL, using original URL');
+          createReadyPlayerMeAvatar([avatarUrl], 0);
         }
       } else {
         console.log('🔸 No avatarUrl available, using enhanced fallback');
         createEnhancedFallback();
       }
 
-      function createAvatarImage(url: string, urlsToTry: string[], urlIndex: number) {
+      function createReadyPlayerMeAvatar(urls: string[], urlIndex: number) {
+        const currentUrl = urls[urlIndex];
+        console.log('🎯 Trying Ready Player Me URL:', currentUrl);
+        
+        // Create a canvas to proxy the image and avoid CORS issues
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d');
+        canvas.width = 48;
+        canvas.height = 96;
+        
+        const proxyImg = new Image();
+        
+        // Try to load with crossOrigin
+        proxyImg.crossOrigin = 'anonymous';
+        
+        proxyImg.onload = () => {
+          console.log('✅ Ready Player Me image loaded successfully:', currentUrl);
+          
+          // Draw the image to canvas to create a data URL
+          if (ctx) {
+            ctx.drawImage(proxyImg, 0, 0, canvas.width, canvas.height);
+            
+            // Create the final image element
+            const avatarImg = document.createElement('img');
+            avatarImg.src = canvas.toDataURL();
+            avatarImg.style.cssText = `
+              width: 48px;
+              height: 96px;
+              object-fit: cover;
+              object-position: center top;
+              filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3));
+              border-radius: 12px;
+              ${isCurrentUser ? 'border: 3px solid #3b82f6;' : ''}
+              ${inSameZone && !isCurrentUser ? `border: 2px solid ${markerColor};` : ''}
+              ${isFriend ? 'border: 2px solid #10b981;' : ''}
+              transition: transform 0.2s ease;
+              display: block;
+            `;
+
+            // Add hover animation
+            avatarImg.addEventListener('mouseenter', () => {
+              avatarImg.style.transform = 'scale(1.05)';
+            });
+            avatarImg.addEventListener('mouseleave', () => {
+              avatarImg.style.transform = 'scale(1)';
+            });
+            
+            el.appendChild(avatarImg);
+          }
+        };
+        
+        proxyImg.onerror = () => {
+          console.log('❌ Ready Player Me URL failed:', currentUrl);
+          
+          // Try next URL
+          const nextIndex = urlIndex + 1;
+          if (nextIndex < urls.length) {
+            console.log('🔄 Trying next Ready Player Me URL...');
+            createReadyPlayerMeAvatar(urls, nextIndex);
+          } else {
+            console.log('❌ All Ready Player Me URLs failed, trying direct approach');
+            // Try direct image approach as final attempt
+            createDirectImageAvatar(avatarUrl);
+          }
+        };
+        
+        proxyImg.src = currentUrl;
+      }
+
+      function createDirectImageAvatar(url: string) {
+        console.log('🎯 Trying direct image approach:', url);
+        
         const avatarImg = document.createElement('img');
         avatarImg.src = url;
         avatarImg.style.cssText = `
@@ -661,11 +726,10 @@ export const RealMapComponent = () => {
           ${isFriend ? 'border: 2px solid #10b981;' : ''}
           transition: transform 0.2s ease;
           display: block;
-          background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
         `;
 
         avatarImg.onload = () => {
-          console.log('✅ Avatar image loaded successfully:', url);
+          console.log('✅ Direct image loaded successfully:', url);
           // Add hover animation
           avatarImg.addEventListener('mouseenter', () => {
             avatarImg.style.transform = 'scale(1.05)';
@@ -676,168 +740,69 @@ export const RealMapComponent = () => {
         };
 
         avatarImg.onerror = () => {
-          console.log('❌ Avatar image failed:', url);
-          // Try next URL format
-          const nextIndex = urlIndex + 1;
-          if (nextIndex < urlsToTry.length) {
-            console.log('🔄 Trying next URL format:', urlsToTry[nextIndex]);
-            avatarImg.remove();
-            createAvatarImage(urlsToTry[nextIndex], urlsToTry, nextIndex);
-          } else {
-            console.log('❌ All avatar URLs failed, using enhanced fallback');
-            avatarImg.remove();
-            createEnhancedFallback();
-          }
+          console.log('❌ Direct image also failed, using enhanced fallback');
+          avatarImg.remove();
+          createEnhancedFallback();
         };
         
         el.appendChild(avatarImg);
       }
 
       function createEnhancedFallback() {
-        // Enhanced Snapchat-style avatar fallback
-        const avatarContainer = document.createElement('div');
-        avatarContainer.style.cssText = `
-          width: 48px;
-          height: 96px;
-          border-radius: 12px;
-          overflow: hidden;
-          position: relative;
-          ${isCurrentUser ? 'border: 3px solid #3b82f6;' : ''}
-          ${inSameZone && !isCurrentUser ? `border: 2px solid ${markerColor};` : ''}
-          ${isFriend ? 'border: 2px solid #10b981;' : ''}
-          box-shadow: 0 2px 6px rgba(0,0,0,0.2);
-        `;
+        console.log('🎭 Creating enhanced fallback avatar');
         
-        // Create a gradient background
-        const background = document.createElement('div');
-        background.style.cssText = `
-          position: absolute;
-          inset: 0;
-          background: linear-gradient(135deg, 
-            ${isCurrentUser ? '#3b82f6' : (inSameZone ? markerColor : '#6366f1')} 0%, 
-            ${isCurrentUser ? '#1d4ed8' : (inSameZone ? '#059669' : '#4338ca')} 100%
-          );
-        `;
-        
-        // Create avatar body
-        const avatarBody = document.createElement('div');
-        avatarBody.style.cssText = `
-          position: absolute;
-          bottom: 0;
-          left: 50%;
-          transform: translateX(-50%);
-          width: 32px;
-          height: 60px;
-          background: linear-gradient(180deg, #fbbf24 0%, #92400e 100%);
-          border-radius: 16px 16px 8px 8px;
-        `;
-        
-        // Create avatar head
-        const avatarHead = document.createElement('div');
-        avatarHead.style.cssText = `
-          position: absolute;
-          top: 8px;
-          left: 50%;
-          transform: translateX(-50%);
-          width: 24px;
-          height: 24px;
-          background: #fbbf24;
+        // Simple but effective fallback that indicates it's a Ready Player Me avatar
+        const fallback = document.createElement('div');
+        fallback.style.cssText = `
+          width: 40px;
+          height: 40px;
+          background: ${isCurrentUser ? '#3b82f6' : (inSameZone ? markerColor : '#6366f1')};
           border-radius: 50%;
           display: flex;
           align-items: center;
           justify-content: center;
-          font-size: 12px;
-          font-weight: bold;
+          font-size: 20px;
+          border: 3px solid white;
+          box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+          margin-bottom: 8px;
+          position: relative;
+          cursor: pointer;
+        `;
+        
+        fallback.textContent = name.charAt(0).toUpperCase();
+        fallback.style.color = 'white';
+        fallback.title = `${name} (Ready Player Me Avatar)`;
+        
+        // Add Ready Player Me indicator
+        const indicator = document.createElement('div');
+        indicator.style.cssText = `
+          position: absolute;
+          top: -2px;
+          right: -2px;
+          width: 12px;
+          height: 12px;
+          background: #10b981;
+          border-radius: 50%;
+          border: 2px solid white;
+          font-size: 6px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
           color: white;
+          font-weight: bold;
         `;
-        avatarHead.textContent = name.charAt(0).toUpperCase();
-        
-        // Create simple arms
-        const leftArm = document.createElement('div');
-        leftArm.style.cssText = `
-          position: absolute;
-          top: 20px;
-          left: 6px;
-          width: 8px;
-          height: 20px;
-          background: #fbbf24;
-          border-radius: 4px;
-        `;
-        
-        const rightArm = document.createElement('div');
-        rightArm.style.cssText = `
-          position: absolute;
-          top: 20px;
-          right: 6px;
-          width: 8px;
-          height: 20px;
-          background: #fbbf24;
-          border-radius: 4px;
-        `;
-        
-        // Create simple legs
-        const leftLeg = document.createElement('div');
-        leftLeg.style.cssText = `
-          position: absolute;
-          bottom: 0;
-          left: 8px;
-          width: 8px;
-          height: 20px;
-          background: #1f2937;
-          border-radius: 4px;
-        `;
-        
-        const rightLeg = document.createElement('div');
-        rightLeg.style.cssText = `
-          position: absolute;
-          bottom: 0;
-          right: 8px;
-          width: 8px;
-          height: 20px;
-          background: #1f2937;
-          border-radius: 4px;
-        `;
-        
-        // Add 3D indicator if it's a 3D avatar
-        if (avatarId) {
-          const indicator = document.createElement('div');
-          indicator.style.cssText = `
-            position: absolute;
-            top: 2px;
-            right: 2px;
-            width: 16px;
-            height: 16px;
-            background: #10b981;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 8px;
-            color: white;
-            font-weight: bold;
-            z-index: 10;
-          `;
-          indicator.textContent = '3D';
-          avatarContainer.appendChild(indicator);
-        }
-        
-        avatarContainer.appendChild(background);
-        avatarContainer.appendChild(avatarBody);
-        avatarContainer.appendChild(avatarHead);
-        avatarContainer.appendChild(leftArm);
-        avatarContainer.appendChild(rightArm);
-        avatarContainer.appendChild(leftLeg);
-        avatarContainer.appendChild(rightLeg);
+        indicator.textContent = 'RPM';
+        fallback.appendChild(indicator);
         
         // Add hover animation
-        avatarContainer.addEventListener('mouseenter', () => {
-          avatarContainer.style.transform = 'scale(1.05)';
+        fallback.addEventListener('mouseenter', () => {
+          fallback.style.transform = 'scale(1.05)';
         });
-        avatarContainer.addEventListener('mouseleave', () => {
-          avatarContainer.style.transform = 'scale(1)';
+        fallback.addEventListener('mouseleave', () => {
+          fallback.style.transform = 'scale(1)';
         });
         
-        el.appendChild(avatarContainer);
+        el.appendChild(fallback);
       }
 
       // Add zone name badge
@@ -871,7 +836,7 @@ export const RealMapComponent = () => {
       <div class="p-3 bg-white rounded-lg shadow-lg min-w-[200px]">
         <h3 class="font-semibold text-gray-900 mb-1">${name}</h3>
         <p class="text-sm text-gray-600 mb-2">${isCurrentUser ? 'Your zone' : (isFriend ? 'Friend nearby' : 'Person nearby')}</p>
-        <p class="text-xs text-gray-500">${finalAvatarUrl ? '✨ Ready Player Me Avatar' : '🎭 Default Avatar'}</p>
+        <p class="text-xs text-gray-500">${avatarUrl ? '✨ Ready Player Me Avatar' : '🎭 Default Avatar'}</p>
         <p class="text-xs text-blue-600 mt-1">🏠 Zone: ${zoneName}</p>`;
 
     // Add friend request button only for non-friends in the SAME zone (real users only)

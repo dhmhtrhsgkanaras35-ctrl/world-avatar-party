@@ -1162,20 +1162,37 @@ export const RealMapComponent = () => {
           }
         });
 
-        // Create non-draggable marker for temporary events (prevent movement)
+        // Create completely stable marker for temporary events
         const marker = new mapboxgl.Marker({
           element: eventElement,
           anchor: 'bottom',
-          draggable: false  // Always false to prevent accidental movement
+          draggable: false  // Never draggable
         })
           .setLngLat([event.longitude, event.latitude])
           .addTo(map.current!);
 
-        // Disable any pointer events that might cause movement
+        // Make the entire element completely stable
         eventElement.style.pointerEvents = 'auto';
-        eventElement.addEventListener('dragstart', (e) => {
+        eventElement.style.userSelect = 'none';
+        eventElement.style.webkitUserSelect = 'none';
+        
+        // Prevent ALL drag/move events on the element
+        const preventMovement = (e) => {
           e.preventDefault();
           e.stopPropagation();
+        };
+        
+        ['dragstart', 'drag', 'dragend', 'dragover', 'dragenter', 'dragleave', 'drop'].forEach(eventType => {
+          eventElement.addEventListener(eventType, preventMovement);
+        });
+        
+        // Also prevent mouse/touch drag attempts
+        eventElement.addEventListener('mousedown', (e) => {
+          // Only prevent if not clicking on delete buttons
+          const target = e.target as Element;
+          if (!target.closest('[title*="Cancel"]') && !target.closest('[title*="Delete"]')) {
+            e.preventDefault();
+          }
         });
 
         eventMarkersRef.current[tempEventId] = marker;

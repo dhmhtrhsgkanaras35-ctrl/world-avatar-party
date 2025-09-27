@@ -44,7 +44,7 @@ export const createEventMarker3D = ({
     z-index: ${event.isTemporary ? '1000' : '100'};
   `;
 
-  // Add pulsing animation for temporary events
+  // Add pulsing animation for temporary events and delete buttons
   if (event.isTemporary) {
     const style = document.createElement('style');
     if (!document.getElementById('temp-event-styles')) {
@@ -65,6 +65,16 @@ export const createEventMarker3D = ({
         @keyframes tempEventBounce {
           0%, 100% { transform: translateY(0); }
           50% { transform: translateY(-8px); }
+        }
+        @keyframes pulse {
+          0%, 100% { 
+            transform: scale(1);
+            box-shadow: 0 6px 20px rgba(239, 68, 68, 0.6);
+          }
+          50% { 
+            transform: scale(1.05);
+            box-shadow: 0 8px 24px rgba(239, 68, 68, 0.8);
+          }
         }
       `;
       document.head.appendChild(style);
@@ -143,54 +153,51 @@ export const createEventMarker3D = ({
       el.appendChild(placementHint);
     }
     
-    // Add cancel button for temporary events - HIGHLY VISIBLE
+    // Add cancel button for temporary events - LARGE, STABLE OVERLAY
     if (event.isTemporary) {
-      const cancelButton = document.createElement('div');
-      cancelButton.style.cssText = `
+      // Create a large overlay area for easier clicking
+      const cancelOverlay = document.createElement('div');
+      cancelOverlay.style.cssText = `
         position: absolute;
-        top: -12px;
-        right: -12px;
-        background: #ef4444;
-        color: white;
+        top: -20px;
+        right: -20px;
+        width: 60px;
+        height: 60px;
+        background: rgba(239, 68, 68, 0.1);
         border-radius: 50%;
-        width: 28px;
-        height: 28px;
+        cursor: pointer;
+        z-index: 1003;
         display: flex;
         align-items: center;
         justify-content: center;
-        font-size: 18px;
+        pointer-events: auto;
+      `;
+      
+      const cancelButton = document.createElement('div');
+      cancelButton.style.cssText = `
+        background: #ef4444;
+        color: white;
+        border-radius: 50%;
+        width: 40px;
+        height: 40px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 24px;
         font-weight: bold;
         cursor: pointer;
-        z-index: 1002;
-        border: 3px solid white;
-        box-shadow: 0 4px 12px rgba(239, 68, 68, 0.6);
-        opacity: 1;
-        transition: all 0.2s ease;
+        border: 4px solid white;
+        box-shadow: 0 6px 20px rgba(239, 68, 68, 0.8);
         animation: pulse 2s infinite;
+        pointer-events: auto;
       `;
       cancelButton.innerHTML = '×';
       cancelButton.title = 'Cancel Event Creation';
       
-      // Add pulsing animation for better visibility
-      const pulseStyle = document.createElement('style');
-      if (!document.getElementById('cancel-button-pulse')) {
-        pulseStyle.id = 'cancel-button-pulse';
-        pulseStyle.textContent = `
-          @keyframes pulse {
-            0%, 100% { 
-              transform: scale(1);
-              box-shadow: 0 4px 12px rgba(239, 68, 68, 0.6);
-            }
-            50% { 
-              transform: scale(1.1);
-              box-shadow: 0 6px 16px rgba(239, 68, 68, 0.8);
-            }
-          }
-        `;
-        document.head.appendChild(pulseStyle);
-      }
+      cancelOverlay.appendChild(cancelButton);
       
-      cancelButton.addEventListener('click', (e) => {
+      // Add multiple event listeners to ensure we catch the click
+      const handleCancel = (e) => {
         e.stopPropagation();
         e.preventDefault();
         e.stopImmediatePropagation();
@@ -198,30 +205,29 @@ export const createEventMarker3D = ({
         if (onEventDelete) {
           onEventDelete(event.id);
         }
+      };
+      
+      // Add listeners to both overlay and button
+      cancelOverlay.addEventListener('click', handleCancel);
+      cancelButton.addEventListener('click', handleCancel);
+      
+      // Prevent all drag/move behavior
+      [cancelOverlay, cancelButton].forEach(element => {
+        element.addEventListener('mousedown', (e) => {
+          e.stopPropagation();
+          e.preventDefault();
+        });
+        element.addEventListener('touchstart', (e) => {
+          e.stopPropagation();
+          e.preventDefault();
+        });
+        element.addEventListener('dragstart', (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+        });
       });
       
-      // Prevent any dragging or moving on the cancel button
-      cancelButton.addEventListener('mousedown', (e) => {
-        e.stopPropagation();
-        e.preventDefault();
-      });
-      
-      cancelButton.addEventListener('touchstart', (e) => {
-        e.stopPropagation();
-        e.preventDefault();
-      });
-      
-      cancelButton.addEventListener('mouseenter', () => {
-        cancelButton.style.transform = 'scale(1.2)';
-        cancelButton.style.boxShadow = '0 6px 20px rgba(239, 68, 68, 0.8)';
-      });
-      
-      cancelButton.addEventListener('mouseleave', () => {
-        cancelButton.style.transform = 'scale(1)';
-        cancelButton.style.boxShadow = '0 4px 12px rgba(239, 68, 68, 0.6)';
-      });
-      
-      el.appendChild(cancelButton);
+      el.appendChild(cancelOverlay);
     }
     
     // Add attendee count badge if > 0
@@ -265,34 +271,52 @@ export const createEventMarker3D = ({
     el.appendChild(markerContainer);
   }
 
-  // Add delete button for permanent event owners - ALWAYS VISIBLE
+  // Add delete button for permanent event owners - LARGE, STABLE OVERLAY
   if (currentUserId === event.created_by && !event.isTemporary) {
-    const deleteButton = document.createElement('div');
-    deleteButton.style.cssText = `
+    // Create a large overlay area for easier clicking
+    const deleteOverlay = document.createElement('div');
+    deleteOverlay.style.cssText = `
       position: absolute;
-      top: -8px;
-      left: -8px;
-      background: #ef4444;
-      color: white;
+      top: -20px;
+      left: -20px;
+      width: 60px;
+      height: 60px;
+      background: rgba(239, 68, 68, 0.1);
       border-radius: 50%;
-      width: 24px;
-      height: 24px;
+      cursor: pointer;
+      z-index: 1003;
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 16px;
+      pointer-events: auto;
+    `;
+    
+    const deleteButton = document.createElement('div');
+    deleteButton.style.cssText = `
+      background: #ef4444;
+      color: white;
+      border-radius: 50%;
+      width: 32px;
+      height: 32px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 20px;
       font-weight: bold;
       cursor: pointer;
-      z-index: 1001;
-      border: 2px solid white;
+      border: 3px solid white;
+      box-shadow: 0 4px 16px rgba(239, 68, 68, 0.6);
       opacity: 0.9;
       transition: all 0.2s ease;
-      box-shadow: 0 2px 8px rgba(239, 68, 68, 0.4);
+      pointer-events: auto;
     `;
     deleteButton.innerHTML = '×';
     deleteButton.title = 'Delete Event';
     
-    deleteButton.addEventListener('click', (e) => {
+    deleteOverlay.appendChild(deleteButton);
+    
+    // Add multiple event listeners to ensure we catch the click
+    const handleDelete = (e) => {
       e.stopPropagation();
       e.preventDefault();
       e.stopImmediatePropagation();
@@ -300,33 +324,42 @@ export const createEventMarker3D = ({
       if (onEventDelete && confirm('Are you sure you want to delete this event?')) {
         onEventDelete(event.id);
       }
+    };
+    
+    // Add listeners to both overlay and button
+    deleteOverlay.addEventListener('click', handleDelete);
+    deleteButton.addEventListener('click', handleDelete);
+    
+    // Prevent all drag/move behavior
+    [deleteOverlay, deleteButton].forEach(element => {
+      element.addEventListener('mousedown', (e) => {
+        e.stopPropagation();
+        e.preventDefault();
+      });
+      element.addEventListener('touchstart', (e) => {
+        e.stopPropagation();
+        e.preventDefault();
+      });
+      element.addEventListener('dragstart', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+      });
     });
     
-    // Prevent any dragging or moving on the delete button
-    deleteButton.addEventListener('mousedown', (e) => {
-      e.stopPropagation();
-      e.preventDefault();
-    });
-    
-    deleteButton.addEventListener('touchstart', (e) => {
-      e.stopPropagation();
-      e.preventDefault();
-    });
-    
-    el.appendChild(deleteButton);
-    
-    // Enhanced hover effects for delete button
-    deleteButton.addEventListener('mouseenter', () => {
+    // Enhanced hover effects
+    deleteOverlay.addEventListener('mouseenter', () => {
       deleteButton.style.opacity = '1';
       deleteButton.style.transform = 'scale(1.1)';
-      deleteButton.style.boxShadow = '0 4px 12px rgba(239, 68, 68, 0.6)';
+      deleteButton.style.boxShadow = '0 6px 20px rgba(239, 68, 68, 0.8)';
     });
     
-    deleteButton.addEventListener('mouseleave', () => {
+    deleteOverlay.addEventListener('mouseleave', () => {
       deleteButton.style.opacity = '0.9';
       deleteButton.style.transform = 'scale(1)';
-      deleteButton.style.boxShadow = '0 2px 8px rgba(239, 68, 68, 0.4)';
+      deleteButton.style.boxShadow = '0 4px 16px rgba(239, 68, 68, 0.6)';
     });
+    
+    el.appendChild(deleteOverlay);
   }
 
   // Add hover effects

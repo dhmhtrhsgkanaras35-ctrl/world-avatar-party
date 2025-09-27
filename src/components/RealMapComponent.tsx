@@ -610,82 +610,37 @@ export const RealMapComponent = () => {
 
       console.log('🎯 Creating marker element for user:', userId, 'with avatarUrl:', avatarUrl);
 
-      // Check if avatar URL is Ready Player Me format
+      // Check if avatar URL is Ready Player Me format and try to use avatar_id
       let finalAvatarUrl = avatarUrl;
-      console.log('🔍 Initial avatar URL check:', avatarUrl, 'includes readyplayer.me:', avatarUrl?.includes('render.readyplayer.me'));
+      let avatarId = null;
       
-      if (avatarUrl && !avatarUrl.includes('render.readyplayer.me') && !avatarUrl.includes('models.readyplayer.me')) {
-        // If it's not a Ready Player Me URL, try to extract avatar ID and convert
-        const avatarId = extractAvatarIdFromUrl(avatarUrl);
+      console.log('🔍 Initial avatar URL check:', avatarUrl);
+      
+      if (avatarUrl) {
+        // Try to extract avatar_id from various URL formats
+        const idMatch = avatarUrl.match(/([a-f0-9]{24})/);
+        avatarId = idMatch ? idMatch[1] : null;
         console.log('🔑 Extracted avatar ID:', avatarId);
-        if (avatarId) {
-          // Try multiple URL formats
-          const pngUrl1 = `https://render.readyplayer.me/avatar/${avatarId}.png?pose=A&quality=medium`;
-          const pngUrl2 = `https://models.readyplayer.me/${avatarId}.png?pose=A&quality=medium`;
-          finalAvatarUrl = pngUrl1; // Start with first format
-          console.log('🔄 Converted to Ready Player Me PNG URL:', finalAvatarUrl);
-        }
-      }
-
-      // Add cache-busting parameter to prevent browser caching issues
-      if (finalAvatarUrl && finalAvatarUrl.includes('render.readyplayer.me')) {
-        const separator = finalAvatarUrl.includes('?') ? '&' : '?';
-        finalAvatarUrl = `${finalAvatarUrl}${separator}t=${Date.now()}`;
-        console.log('⏰ Added cache-busting to URL:', finalAvatarUrl);
-      }
-
-      console.log('✅ Final avatar URL for marker:', finalAvatarUrl);
-
-      if (finalAvatarUrl) {
-        // Snapchat-style full-body avatar PNG with zone-based border
-        const avatarImg = document.createElement('img');
-        avatarImg.src = finalAvatarUrl;
-        avatarImg.crossOrigin = 'anonymous'; // Add CORS support
-        avatarImg.style.cssText = `
-          width: 48px;
-          height: 96px;
-          object-fit: contain;
-          object-position: center bottom;
-          filter: drop-shadow(0 1px 3px rgba(0,0,0,0.2));
-          border-radius: 8px;
-          ${isCurrentUser ? 'border: 3px solid #3b82f6;' : ''}
-          ${inSameZone && !isCurrentUser ? `border: 2px solid ${markerColor};` : ''}
-          ${isFriend ? 'border: 2px solid #10b981;' : ''}
-          transition: transform 0.2s ease;
-          display: block;
-        `;
-
-        // Handle image load errors
-        avatarImg.onerror = (e: Event) => {
-          console.error('❌ Avatar image failed to load:', finalAvatarUrl, 'Error:', e);
-          // Replace with fallback dot
-          const target = e.target as HTMLImageElement;
-          target?.remove();
-          addFallbackDot();
-        };
-
-        // Handle successful image load
-        avatarImg.onload = () => {
-          console.log('✅ Avatar image loaded successfully:', finalAvatarUrl);
-        };
-
-        // Add hover animation
-        avatarImg.addEventListener('mouseenter', () => {
-          avatarImg.style.transform = 'scale(1.05)';
-        });
-        avatarImg.addEventListener('mouseleave', () => {
-          avatarImg.style.transform = 'scale(1)';
-        });
         
-        el.appendChild(avatarImg);
+        if (avatarId) {
+          // Since PNG URLs are failing due to CORS, we'll use GLB with a special marker for 3D rendering
+          const glbUrl = `https://models.readyplayer.me/${avatarId}.glb`;
+          console.log('🎭 Using GLB URL for 3D avatar:', glbUrl);
+          
+          // For now, we'll use the fallback dot and add a 3D indicator
+          addFallbackDot(true); // true indicates it's a 3D avatar
+        } else {
+          console.log('🔸 No avatar ID found, using standard fallback');
+          addFallbackDot(false);
+        }
       } else {
-        console.log('🔸 No finalAvatarUrl available, using fallback dot');
-        addFallbackDot();
+        console.log('🔸 No avatarUrl available, using fallback dot');
+        addFallbackDot(false);
       }
 
       // Function to add fallback dot when no avatar is available
-      function addFallbackDot() {
-        // Fallback dot with zone-based styling (only when no avatar is set)
+      function addFallbackDot(is3DAvatar = false) {
+        // Enhanced fallback with 3D avatar indicator
         const fallback = document.createElement('div');
         fallback.style.cssText = `
           width: 40px;
@@ -695,12 +650,43 @@ export const RealMapComponent = () => {
           display: flex;
           align-items: center;
           justify-content: center;
-          font-size: 20px;
+          font-size: ${is3DAvatar ? '16px' : '20px'};
           border: 3px solid white;
           box-shadow: 0 2px 6px rgba(0,0,0,0.15);
           margin-bottom: 8px;
+          position: relative;
         `;
-        fallback.textContent = name.charAt(0).toUpperCase();
+        
+        if (is3DAvatar) {
+          fallback.textContent = '🎭';
+          fallback.title = `${name} (3D Avatar)`;
+          
+          // Add a small 3D indicator
+          const indicator = document.createElement('div');
+          indicator.style.cssText = `
+            position: absolute;
+            top: -2px;
+            right: -2px;
+            width: 12px;
+            height: 12px;
+            background: #10b981;
+            border-radius: 50%;
+            border: 2px solid white;
+            font-size: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+          `;
+          indicator.textContent = '3D';
+          indicator.style.fontSize = '6px';
+          indicator.style.color = 'white';
+          indicator.style.fontWeight = 'bold';
+          fallback.appendChild(indicator);
+        } else {
+          fallback.textContent = name.charAt(0).toUpperCase();
+          fallback.title = name;
+        }
+        
         fallback.style.color = 'white';
         el.appendChild(fallback);
       }

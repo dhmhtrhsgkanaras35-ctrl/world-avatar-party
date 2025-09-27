@@ -67,9 +67,10 @@ export const CreateEventDialog = ({ user, userLocation, userZone, onEventCreated
     setIsLoading(true);
 
     try {
+      // Create temporary event data for click-and-place
       const tempEventData = {
         id: 'temp-' + Date.now(),
-        title: formData.title,
+        title: formData.title.trim(),
         description: formData.description || null,
         event_type: formData.event_type,
         start_time: formData.start_time || null,
@@ -80,36 +81,23 @@ export const CreateEventDialog = ({ user, userLocation, userZone, onEventCreated
         longitude: userLocation.lng,
         created_by: user.id,
         address: `Zone: ${userZone || 'Unknown'}`,
-        isDragging: true, // Mark as dragging initially
-        isTemporary: true // Mark as temporary
+        isTemporary: true // Mark as temporary for placement
       };
 
-      // Show drag and drop preview
-      console.log('Creating temporary event:', tempEventData);
-      toast({
-        title: "Drag to Place Event!",
-        description: `Drag the transparent ${formData.title} event to your desired location on the map`,
-      });
+      console.log('Creating temporary event for placement:', tempEventData);
 
-      // Call the callback to show draggable event on map
+      // Call the callback to show temporary event on map
       if (onEventCreated) {
-        console.log('Calling onEventCreated callback');
         onEventCreated(tempEventData);
-      } else {
-        console.log('No onEventCreated callback provided');
       }
 
-      setFormData({
-        title: '',
-        description: '',
-        event_type: 'party',
-        start_time: '',
-        end_time: '',
-        max_attendees: '',
-        is_public: true
+      // Show instruction toast
+      toast({
+        title: "Click to Place Event!",
+        description: `Click the transparent ${formData.title} on the map to place it permanently`,
       });
-      setIsOpen(false);
 
+      // Reset form and close dialog
       setFormData({
         title: '',
         description: '',
@@ -121,7 +109,7 @@ export const CreateEventDialog = ({ user, userLocation, userZone, onEventCreated
       });
       setIsOpen(false);
     } catch (error) {
-      console.error('Error creating event:', error);
+      console.error('Error creating temporary event:', error);
       toast({
         title: "Error",
         description: "Something went wrong",

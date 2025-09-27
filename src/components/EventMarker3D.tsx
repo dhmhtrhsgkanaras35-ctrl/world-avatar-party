@@ -36,28 +36,39 @@ export const createEventMarker3D = ({
   el.className = 'event-marker-3d-container';
   el.style.cssText = `
     position: relative;
-    cursor: ${currentUserId === event.created_by || event.isTemporary ? 'grab' : 'pointer'};
+    cursor: pointer;
     transition: transform 0.3s ease;
-    opacity: ${event.isDragging || event.isTemporary ? '0.6' : '1'};
-    filter: ${event.isDragging || event.isTemporary ? 'brightness(1.2) saturate(1.5)' : 'none'};
-    animation: ${event.isTemporary ? 'pulse 1.5s infinite' : 'none'};
+    opacity: ${event.isTemporary ? '0.7' : '1'};
+    filter: ${event.isTemporary ? 'brightness(1.3) saturate(1.2)' : 'none'};
+    animation: ${event.isTemporary ? 'tempEventPulse 2s infinite' : 'none'};
+    z-index: ${event.isTemporary ? '1000' : '100'};
   `;
-
-  // Make it draggable if user owns the event or it's temporary
-  if (currentUserId === event.created_by || event.isTemporary) {
-    el.draggable = true;
-  }
 
   // Add pulsing animation for temporary events
   if (event.isTemporary) {
     const style = document.createElement('style');
-    style.textContent = `
-      @keyframes pulse {
-        0%, 100% { opacity: 0.6; transform: scale(1); }
-        50% { opacity: 0.8; transform: scale(1.05); }
-      }
-    `;
-    document.head.appendChild(style);
+    if (!document.getElementById('temp-event-styles')) {
+      style.id = 'temp-event-styles';
+      style.textContent = `
+        @keyframes tempEventPulse {
+          0%, 100% { 
+            opacity: 0.5; 
+            transform: scale(1);
+            box-shadow: 0 0 20px rgba(59, 130, 246, 0.6);
+          }
+          50% { 
+            opacity: 0.9; 
+            transform: scale(1.05);
+            box-shadow: 0 0 30px rgba(59, 130, 246, 0.8);
+          }
+        }
+        @keyframes tempEventBounce {
+          0%, 100% { transform: translateY(0); }
+          50% { transform: translateY(-8px); }
+        }
+      `;
+      document.head.appendChild(style);
+    }
   }
 
   // Create container for 3D stage or regular marker
@@ -112,33 +123,59 @@ export const createEventMarker3D = ({
       const placementHint = document.createElement('div');
       placementHint.style.cssText = `
         position: absolute;
-        bottom: -35px;
+        bottom: -45px;
         left: 50%;
         transform: translateX(-50%);
-        background: rgba(59, 130, 246, 0.95);
+        background: linear-gradient(135deg, #3b82f6, #1d4ed8);
         color: white;
-        padding: 6px 12px;
-        border-radius: 16px;
-        font-size: 11px;
-        font-weight: 600;
+        padding: 8px 16px;
+        border-radius: 20px;
+        font-size: 12px;
+        font-weight: 700;
         white-space: nowrap;
-        animation: bounce 2s infinite;
+        animation: tempEventBounce 2s infinite;
         cursor: pointer;
-        border: 2px solid white;
-        box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+        border: 3px solid white;
+        box-shadow: 0 6px 20px rgba(0,0,0,0.3);
+        z-index: 1001;
       `;
-      placementHint.textContent = '👆 Click to place here!';
+      placementHint.innerHTML = '👆 <strong>CLICK TO PLACE!</strong>';
       el.appendChild(placementHint);
-
-      // Add bounce animation
-      const bounceStyle = document.createElement('style');
-      bounceStyle.textContent = `
-        @keyframes bounce {
-          0%, 100% { transform: translateX(-50%) translateY(0); }
-          50% { transform: translateX(-50%) translateY(-5px); }
-        }
+    }
+    
+    // Add cancel button for temporary events
+    if (event.isTemporary) {
+      const cancelButton = document.createElement('div');
+      cancelButton.style.cssText = `
+        position: absolute;
+        top: -10px;
+        right: -10px;
+        background: #ef4444;
+        color: white;
+        border-radius: 50%;
+        width: 24px;
+        height: 24px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 16px;
+        font-weight: bold;
+        cursor: pointer;
+        z-index: 1002;
+        border: 2px solid white;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.3);
       `;
-      document.head.appendChild(bounceStyle);
+      cancelButton.innerHTML = '×';
+      cancelButton.title = 'Cancel Event Creation';
+      
+      cancelButton.addEventListener('click', (e) => {
+        e.stopPropagation();
+        if (onEventDelete) {
+          onEventDelete(event.id);
+        }
+      });
+      
+      el.appendChild(cancelButton);
     }
     
     // Add attendee count badge if > 0
@@ -182,14 +219,14 @@ export const createEventMarker3D = ({
     el.appendChild(markerContainer);
   }
 
-  // Add delete button for event owner
-  if (currentUserId === event.created_by) {
+  // Add delete button for permanent event owners
+  if (currentUserId === event.created_by && !event.isTemporary) {
     const deleteButton = document.createElement('div');
     deleteButton.style.cssText = `
       position: absolute;
       top: -8px;
       left: -8px;
-      background: #ff4444;
+      background: #ef4444;
       color: white;
       border-radius: 50%;
       width: 20px;
@@ -217,7 +254,7 @@ export const createEventMarker3D = ({
     
     el.appendChild(deleteButton);
     
-    // Show delete button on hover
+    // Show delete button on hover for permanent events
     el.addEventListener('mouseenter', () => {
       deleteButton.style.opacity = '1';
     });
@@ -238,55 +275,24 @@ export const createEventMarker3D = ({
     el.style.zIndex = '100';
   });
 
-  // Add drag and drop handlers for event owner or temporary events
-  if ((currentUserId === event.created_by || event.isTemporary) && (onEventMove || onEventPlace)) {
-    let isDragging = false;
-    
-    el.addEventListener('dragstart', (e) => {
-      isDragging = true;
-      el.style.cursor = 'grabbing';
-      el.style.opacity = '0.4';
-      el.style.transform = 'scale(1.1)';
+  // Add click handler for temporary events (to place them)
+  if (event.isTemporary) {
+    el.addEventListener('click', async (e) => {
+      e.stopPropagation();
       
-      // Add visual feedback
-      document.body.style.cursor = 'grabbing';
+      if (onEventPlace) {
+        onEventPlace(event.id, event.latitude, event.longitude);
+      }
     });
-    
-    el.addEventListener('dragend', (e) => {
-      isDragging = false;
-      el.style.cursor = event.isTemporary ? 'grab' : (currentUserId === event.created_by ? 'grab' : 'pointer');
-      el.style.opacity = event.isTemporary ? '0.6' : '1';
-      el.style.transform = 'scale(1)';
-      
-      document.body.style.cursor = 'default';
-      
-      // Get the drop coordinates from the map
-      const mapContainer = document.querySelector('.mapboxgl-canvas-container');
-      if (mapContainer) {
-        const rect = mapContainer.getBoundingClientRect();
-        const x = e.clientX - rect.left;
-        const y = e.clientY - rect.top;
-        
-        // Dispatch custom event for coordinate conversion
-        el.dispatchEvent(new CustomEvent('eventDrop', {
-          detail: { 
-            eventId: event.id, 
-            x, 
-            y, 
-            isTemporary: event.isTemporary 
-          }
-        }));
+  } else {
+    // Regular click handler for permanent events
+    el.addEventListener('click', (e) => {
+      e.stopPropagation();
+      if (onEventClick) {
+        onEventClick(event.id);
       }
     });
   }
-
-  // Add click handler
-  el.addEventListener('click', (e) => {
-    e.stopPropagation();
-    if (onEventClick) {
-      onEventClick(event.id);
-    }
-  });
 
   return el;
 };

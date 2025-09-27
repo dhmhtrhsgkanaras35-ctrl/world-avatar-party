@@ -1060,27 +1060,85 @@ export const RealMapComponent = () => {
     
     console.log('Rendering temporary events:', tempEvents.length);
     
-    // Clear existing temp event markers
-    tempEvents.forEach(tempEvent => {
-      if (eventMarkersRef.current[tempEvent.id]) {
-        eventMarkersRef.current[tempEvent.id].remove();
-        delete eventMarkersRef.current[tempEvent.id];
-      }
-    });
-
-    // Add temp event markers
     tempEvents.forEach((event) => {
       if (event.latitude && event.longitude && event.isTemporary) {
         console.log('Creating temporary marker for:', event.title);
+        
+        // Remove existing temporary marker if it exists
+        if (eventMarkersRef.current[event.id]) {
+          eventMarkersRef.current[event.id].remove();
+          delete eventMarkersRef.current[event.id];
+        }
         
         const eventElement = createEventMarker3D({
           event,
           attendeeCount: 0,
           currentUserId: user?.id,
           onEventClick: () => {
-            // No click action for temporary events
+            // No click action needed, handled in marker itself
+          },
+          onEventPlace: async (eventId, lat, lng) => {
+            console.log('Placing event:', eventId, 'at', lat, lng);
+            
+            try {
+              const { id, isTemporary, ...eventData } = event;
+              const finalEventData = {
+                ...eventData,
+                start_time: eventData.start_time ? new Date(eventData.start_time).toISOString() : null,
+                end_time: eventData.end_time ? new Date(eventData.end_time).toISOString() : null,
+                latitude: lat,
+                longitude: lng
+              };
+
+              console.log('Creating permanent event:', finalEventData);
+
+              const { data: newEvent, error } = await supabase
+                .from('events')
+                .insert(finalEventData)
+                .select()
+                .single();
+
+              if (error) {
+                console.error('Error creating event:', error);
+                toast({
+                  title: "Error",
+                  description: "Failed to create event",
+                  variant: "destructive"
+                });
+                return;
+              }
+
+              if (newEvent) {
+                await supabase
+                  .from('event_attendees')
+                  .insert({
+                    event_id: newEvent.id,
+                    user_id: user!.id,
+                    status: 'going'
+                  });
+              }
+
+              // Remove temporary event
+              setTempEvents(prev => prev.filter(e => e.id !== id));
+              
+              toast({
+                title: "Event Created!",
+                description: `${event.title} has been placed successfully`,
+              });
+
+              // Reload permanent events
+              loadNearbyEvents();
+            } catch (error) {
+              console.error('Error placing event:', error);
+              toast({
+                title: "Error",
+                description: "Failed to create event",
+                variant: "destructive"
+              });
+            }
           },
           onEventDelete: (eventId) => {
+            console.log('Cancelling temporary event:', eventId);
             // Remove from temp events
             setTempEvents(prev => prev.filter(e => e.id !== eventId));
             toast({
@@ -1090,67 +1148,14 @@ export const RealMapComponent = () => {
           }
         });
 
-        // Create non-draggable marker that shows placement instructions
+        // Create non-draggable marker for temporary events
         const marker = new mapboxgl.Marker({
           element: eventElement,
           anchor: 'bottom',
-          draggable: false // Important: not draggable via mapbox
+          draggable: false
         })
           .setLngLat([event.longitude, event.latitude])
           .addTo(map.current!);
-
-        // Add click to place functionality
-        eventElement.addEventListener('click', async (e) => {
-          e.stopPropagation();
-          
-          try {
-            const { id, isTemporary, isDragging, ...eventData } = event;
-            const finalEventData = {
-              ...eventData,
-              start_time: eventData.start_time ? new Date(eventData.start_time).toISOString() : null,
-              end_time: eventData.end_time ? new Date(eventData.end_time).toISOString() : null,
-            };
-
-            const { data: newEvent, error } = await supabase
-              .from('events')
-              .insert(finalEventData)
-              .select()
-              .single();
-
-            if (error) {
-              console.error('Error creating event:', error);
-              toast({
-                title: "Error",
-                description: "Failed to create event",
-                variant: "destructive"
-              });
-              return;
-            }
-
-            if (newEvent) {
-              await supabase
-                .from('event_attendees')
-                .insert({
-                  event_id: newEvent.id,
-                  user_id: user!.id,
-                  status: 'going'
-                });
-            }
-
-            // Remove temporary event
-            setTempEvents(prev => prev.filter(e => e.id !== id));
-            
-            toast({
-              title: "Event Created!",
-              description: `${event.title} has been placed successfully`,
-            });
-
-            // Reload permanent events
-            loadNearbyEvents();
-          } catch (error) {
-            console.error('Error placing event:', error);
-          }
-        });
 
         eventMarkersRef.current[event.id] = marker;
         console.log('Added temporary marker for:', event.title);

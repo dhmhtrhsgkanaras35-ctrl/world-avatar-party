@@ -610,85 +610,234 @@ export const RealMapComponent = () => {
 
       console.log('🎯 Creating marker element for user:', userId, 'with avatarUrl:', avatarUrl);
 
-      // Check if avatar URL is Ready Player Me format and try to use avatar_id
-      let finalAvatarUrl = avatarUrl;
+      // Try different Ready Player Me URL formats that might work with CORS
+      let finalAvatarUrl = null;
       let avatarId = null;
       
-      console.log('🔍 Initial avatar URL check:', avatarUrl);
+      console.log('🔍 Processing avatar URL:', avatarUrl);
       
       if (avatarUrl) {
-        // Try to extract avatar_id from various URL formats
+        // Extract avatar_id from various URL formats
         const idMatch = avatarUrl.match(/([a-f0-9]{24})/);
         avatarId = idMatch ? idMatch[1] : null;
         console.log('🔑 Extracted avatar ID:', avatarId);
         
         if (avatarId) {
-          // Since PNG URLs are failing due to CORS, we'll use GLB with a special marker for 3D rendering
-          const glbUrl = `https://models.readyplayer.me/${avatarId}.glb`;
-          console.log('🎭 Using GLB URL for 3D avatar:', glbUrl);
+          // Try different URL formats that might work better
+          const urlsToTry = [
+            `https://models.readyplayer.me/${avatarId}.png?pose=A&quality=high`,
+            `https://d1a370nemizbjq.cloudfront.net/${avatarId}.png?pose=A&quality=high`,
+            `https://render.readyplayer.me/avatar/${avatarId}.png?pose=A&quality=high&transparent=false`,
+            avatarUrl // Original URL as fallback
+          ];
           
-          // For now, we'll use the fallback dot and add a 3D indicator
-          addFallbackDot(true); // true indicates it's a 3D avatar
+          // Try the first URL format
+          finalAvatarUrl = urlsToTry[0];
+          console.log('🎯 Trying avatar URL:', finalAvatarUrl);
+          
+          // Create and test the image
+          createAvatarImage(finalAvatarUrl, urlsToTry, 0);
         } else {
-          console.log('🔸 No avatar ID found, using standard fallback');
-          addFallbackDot(false);
+          console.log('🔸 No avatar ID found, using enhanced fallback');
+          createEnhancedFallback();
         }
       } else {
-        console.log('🔸 No avatarUrl available, using fallback dot');
-        addFallbackDot(false);
+        console.log('🔸 No avatarUrl available, using enhanced fallback');
+        createEnhancedFallback();
       }
 
-      // Function to add fallback dot when no avatar is available
-      function addFallbackDot(is3DAvatar = false) {
-        // Enhanced fallback with 3D avatar indicator
-        const fallback = document.createElement('div');
-        fallback.style.cssText = `
-          width: 40px;
-          height: 40px;
-          background: ${isCurrentUser ? '#3b82f6' : (inSameZone ? markerColor : '#6b7280')};
+      function createAvatarImage(url: string, urlsToTry: string[], urlIndex: number) {
+        const avatarImg = document.createElement('img');
+        avatarImg.src = url;
+        avatarImg.style.cssText = `
+          width: 48px;
+          height: 96px;
+          object-fit: cover;
+          object-position: center top;
+          filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3));
+          border-radius: 12px;
+          ${isCurrentUser ? 'border: 3px solid #3b82f6;' : ''}
+          ${inSameZone && !isCurrentUser ? `border: 2px solid ${markerColor};` : ''}
+          ${isFriend ? 'border: 2px solid #10b981;' : ''}
+          transition: transform 0.2s ease;
+          display: block;
+          background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        `;
+
+        avatarImg.onload = () => {
+          console.log('✅ Avatar image loaded successfully:', url);
+          // Add hover animation
+          avatarImg.addEventListener('mouseenter', () => {
+            avatarImg.style.transform = 'scale(1.05)';
+          });
+          avatarImg.addEventListener('mouseleave', () => {
+            avatarImg.style.transform = 'scale(1)';
+          });
+        };
+
+        avatarImg.onerror = () => {
+          console.log('❌ Avatar image failed:', url);
+          // Try next URL format
+          const nextIndex = urlIndex + 1;
+          if (nextIndex < urlsToTry.length) {
+            console.log('🔄 Trying next URL format:', urlsToTry[nextIndex]);
+            avatarImg.remove();
+            createAvatarImage(urlsToTry[nextIndex], urlsToTry, nextIndex);
+          } else {
+            console.log('❌ All avatar URLs failed, using enhanced fallback');
+            avatarImg.remove();
+            createEnhancedFallback();
+          }
+        };
+        
+        el.appendChild(avatarImg);
+      }
+
+      function createEnhancedFallback() {
+        // Enhanced Snapchat-style avatar fallback
+        const avatarContainer = document.createElement('div');
+        avatarContainer.style.cssText = `
+          width: 48px;
+          height: 96px;
+          border-radius: 12px;
+          overflow: hidden;
+          position: relative;
+          ${isCurrentUser ? 'border: 3px solid #3b82f6;' : ''}
+          ${inSameZone && !isCurrentUser ? `border: 2px solid ${markerColor};` : ''}
+          ${isFriend ? 'border: 2px solid #10b981;' : ''}
+          box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+        `;
+        
+        // Create a gradient background
+        const background = document.createElement('div');
+        background.style.cssText = `
+          position: absolute;
+          inset: 0;
+          background: linear-gradient(135deg, 
+            ${isCurrentUser ? '#3b82f6' : (inSameZone ? markerColor : '#6366f1')} 0%, 
+            ${isCurrentUser ? '#1d4ed8' : (inSameZone ? '#059669' : '#4338ca')} 100%
+          );
+        `;
+        
+        // Create avatar body
+        const avatarBody = document.createElement('div');
+        avatarBody.style.cssText = `
+          position: absolute;
+          bottom: 0;
+          left: 50%;
+          transform: translateX(-50%);
+          width: 32px;
+          height: 60px;
+          background: linear-gradient(180deg, #fbbf24 0%, #92400e 100%);
+          border-radius: 16px 16px 8px 8px;
+        `;
+        
+        // Create avatar head
+        const avatarHead = document.createElement('div');
+        avatarHead.style.cssText = `
+          position: absolute;
+          top: 8px;
+          left: 50%;
+          transform: translateX(-50%);
+          width: 24px;
+          height: 24px;
+          background: #fbbf24;
           border-radius: 50%;
           display: flex;
           align-items: center;
           justify-content: center;
-          font-size: ${is3DAvatar ? '16px' : '20px'};
-          border: 3px solid white;
-          box-shadow: 0 2px 6px rgba(0,0,0,0.15);
-          margin-bottom: 8px;
-          position: relative;
+          font-size: 12px;
+          font-weight: bold;
+          color: white;
+        `;
+        avatarHead.textContent = name.charAt(0).toUpperCase();
+        
+        // Create simple arms
+        const leftArm = document.createElement('div');
+        leftArm.style.cssText = `
+          position: absolute;
+          top: 20px;
+          left: 6px;
+          width: 8px;
+          height: 20px;
+          background: #fbbf24;
+          border-radius: 4px;
         `;
         
-        if (is3DAvatar) {
-          fallback.textContent = '🎭';
-          fallback.title = `${name} (3D Avatar)`;
-          
-          // Add a small 3D indicator
+        const rightArm = document.createElement('div');
+        rightArm.style.cssText = `
+          position: absolute;
+          top: 20px;
+          right: 6px;
+          width: 8px;
+          height: 20px;
+          background: #fbbf24;
+          border-radius: 4px;
+        `;
+        
+        // Create simple legs
+        const leftLeg = document.createElement('div');
+        leftLeg.style.cssText = `
+          position: absolute;
+          bottom: 0;
+          left: 8px;
+          width: 8px;
+          height: 20px;
+          background: #1f2937;
+          border-radius: 4px;
+        `;
+        
+        const rightLeg = document.createElement('div');
+        rightLeg.style.cssText = `
+          position: absolute;
+          bottom: 0;
+          right: 8px;
+          width: 8px;
+          height: 20px;
+          background: #1f2937;
+          border-radius: 4px;
+        `;
+        
+        // Add 3D indicator if it's a 3D avatar
+        if (avatarId) {
           const indicator = document.createElement('div');
           indicator.style.cssText = `
             position: absolute;
-            top: -2px;
-            right: -2px;
-            width: 12px;
-            height: 12px;
+            top: 2px;
+            right: 2px;
+            width: 16px;
+            height: 16px;
             background: #10b981;
             border-radius: 50%;
-            border: 2px solid white;
-            font-size: 8px;
             display: flex;
             align-items: center;
             justify-content: center;
+            font-size: 8px;
+            color: white;
+            font-weight: bold;
+            z-index: 10;
           `;
           indicator.textContent = '3D';
-          indicator.style.fontSize = '6px';
-          indicator.style.color = 'white';
-          indicator.style.fontWeight = 'bold';
-          fallback.appendChild(indicator);
-        } else {
-          fallback.textContent = name.charAt(0).toUpperCase();
-          fallback.title = name;
+          avatarContainer.appendChild(indicator);
         }
         
-        fallback.style.color = 'white';
-        el.appendChild(fallback);
+        avatarContainer.appendChild(background);
+        avatarContainer.appendChild(avatarBody);
+        avatarContainer.appendChild(avatarHead);
+        avatarContainer.appendChild(leftArm);
+        avatarContainer.appendChild(rightArm);
+        avatarContainer.appendChild(leftLeg);
+        avatarContainer.appendChild(rightLeg);
+        
+        // Add hover animation
+        avatarContainer.addEventListener('mouseenter', () => {
+          avatarContainer.style.transform = 'scale(1.05)';
+        });
+        avatarContainer.addEventListener('mouseleave', () => {
+          avatarContainer.style.transform = 'scale(1)';
+        });
+        
+        el.appendChild(avatarContainer);
       }
 
       // Add zone name badge

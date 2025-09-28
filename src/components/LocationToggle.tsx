@@ -157,26 +157,6 @@ export const LocationToggle = ({ user }: LocationToggleProps) => {
     const errorCallback = (error: GeolocationPositionError) => {
       console.error('Geolocation error:', error);
       setLocationStatus('error');
-      
-      let message = "Unknown location error";
-      
-      switch (error.code) {
-        case error.PERMISSION_DENIED:
-          message = "Location access denied. Please enable location permissions in your browser.";
-          break;
-        case error.POSITION_UNAVAILABLE:
-          message = "Location information unavailable. Using approximate location.";
-          break;
-        case error.TIMEOUT:
-          message = "Location request timed out. Using approximate location.";
-          break;
-      }
-      
-      toast({
-        title: "Location Warning",
-        description: message,
-        variant: "destructive"
-      });
 
       // If location fails but user wants to share, use a default location
       if (isSharing && user) {

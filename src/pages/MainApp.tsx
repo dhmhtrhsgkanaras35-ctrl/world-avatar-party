@@ -33,6 +33,30 @@ const MainApp = () => {
       if (!user) return;
       
       try {
+        // Check rate limit first
+        const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000).toISOString();
+        const { data: rateLimitData, error: rateLimitError } = await supabase
+          .from('friend_request_limits')
+          .select('request_count')
+          .eq('user_id', user.id)
+          .gte('window_start', oneHourAgo)
+          .maybeSingle();
+
+        if (rateLimitError && rateLimitError.code !== 'PGRST116') {
+          console.error('Error checking rate limit:', rateLimitError);
+          return;
+        }
+
+        if (rateLimitData && rateLimitData.request_count >= 5) {
+          toast({
+            title: "Rate Limited",
+            description: "You can only send 5 friend requests per hour",
+            variant: "destructive"
+          });
+          return;
+        }
+
+        // Send friend request
         const { error } = await supabase
           .from('friendships')
           .insert({
@@ -59,12 +83,28 @@ const MainApp = () => {
           return;
         }
 
+        // Update rate limit
+        await supabase
+          .from('friend_request_limits')
+          .upsert({
+            user_id: user.id,
+            request_count: (rateLimitData?.request_count || 0) + 1,
+            window_start: rateLimitData ? undefined : new Date().toISOString()
+          }, {
+            onConflict: 'user_id'
+          });
+
         toast({
           title: "Friend Request Sent",
           description: "Your friend request has been sent!",
         });
       } catch (error) {
         console.error('Error sending friend request:', error);
+        toast({
+          title: "Error",
+          description: "Failed to send friend request",
+          variant: "destructive"
+        });
       }
     };
   }, [user, navigate, toast]);

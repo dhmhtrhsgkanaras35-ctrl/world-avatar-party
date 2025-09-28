@@ -765,20 +765,42 @@ export const RealMapComponent = ({ showEmojiPalette = false, userLocation: propU
     markerElement.className = 'marker-container';
     
     const avatarContainer = document.createElement('div');
+    const borderClass = isCurrentUser 
+      ? 'border-blue-500 ring-2 ring-blue-200' 
+      : isFriend 
+      ? 'border-green-500 ring-2 ring-green-200' 
+      : 'border-gray-400';
+    
+    const initials = displayName.charAt(0).toUpperCase();
+    
     avatarContainer.innerHTML = `
       <div class="relative">
-        <div class="w-12 h-12 rounded-full border-2 overflow-hidden bg-white shadow-xl flex items-center justify-center transition-transform hover:scale-110 ${
-          isCurrentUser ? 'border-blue-500 ring-2 ring-blue-200' : isFriend ? 'border-green-500 ring-2 ring-green-200' : 'border-gray-400'
-        }">
-          ${avatarUrl ? 
-            `<img src="${avatarUrl}" class="w-full h-full object-cover" alt="${displayName}" crossorigin="anonymous" onerror="this.style.display='none'; this.parentElement.innerHTML='<div class=\\"text-lg font-bold text-gray-700\\">${displayName.charAt(0).toUpperCase()}</div>';" />` : 
-            `<div class="text-lg font-bold text-gray-700">${displayName.charAt(0).toUpperCase()}</div>`
-          }
+        <div class="w-12 h-12 rounded-full border-2 overflow-hidden bg-white shadow-xl flex items-center justify-center transition-transform hover:scale-110 ${borderClass}">
+          <div class="text-lg font-bold text-gray-700" id="avatar-${userId}">${initials}</div>
         </div>
-        ${isCurrentUser ? `<div class="absolute -top-1 -right-1 w-4 h-4 bg-blue-500 rounded-full border-2 border-white shadow-lg"></div>` : ''}
-        ${isFriend && !isCurrentUser ? `<div class="absolute -top-1 -right-1 w-4 h-4 bg-green-500 rounded-full border-2 border-white shadow-lg"></div>` : ''}
+        ${isCurrentUser ? '<div class="absolute -top-1 -right-1 w-4 h-4 bg-blue-500 rounded-full border-2 border-white shadow-lg"></div>' : ''}
+        ${isFriend && !isCurrentUser ? '<div class="absolute -top-1 -right-1 w-4 h-4 bg-green-500 rounded-full border-2 border-white shadow-lg"></div>' : ''}
       </div>
     `;
+
+    // Try to load avatar image if available
+    if (avatarUrl) {
+      const img = new Image();
+      img.crossOrigin = 'anonymous';
+      
+      img.onload = () => {
+        const avatarEl = document.getElementById(`avatar-${userId}`);
+        if (avatarEl && avatarEl.parentElement) {
+          avatarEl.parentElement.innerHTML = `<img src="${avatarUrl}" class="w-full h-full object-cover" alt="${displayName}" />`;
+        }
+      };
+      
+      img.onerror = () => {
+        console.log(`Using initials for ${displayName} - avatar couldn't load`);
+      };
+      
+      img.src = avatarUrl;
+    }
     
     markerElement.appendChild(avatarContainer);
 

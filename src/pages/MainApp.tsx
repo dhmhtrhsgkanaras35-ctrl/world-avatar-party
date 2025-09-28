@@ -202,10 +202,10 @@ const MainApp = () => {
             userZone={userProfile?.zone_key}
           />
           
-          {/* Debug info for temporary events */}
+          {/* Debug info - moved to bottom corner */}
           {process.env.NODE_ENV === 'development' && (
-            <div className="absolute top-20 left-2 bg-black/80 text-white p-2 rounded text-xs z-50">
-              Debug: Check console logs for event creation
+            <div className="fixed bottom-4 left-4 bg-black/80 text-white p-2 rounded text-xs z-40 max-w-[200px]">
+              Debug: Check console logs for events
             </div>
           )}
           

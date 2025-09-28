@@ -19,9 +19,29 @@
     <meta name="twitter:site" content="@WorldMeApp" />
     <meta name="twitter:image" content="https://lovable.dev/opengraph-image-p98pqg.png" />
     
-    <!-- Mobile-specific optimizations -->
+    <!-- Critical inline CSS for fast first paint -->
     <style>
+      /* Critical CSS variables for immediate availability */
+      :root {
+        --background: 240 10% 3.9%;
+        --foreground: 0 0% 98%;
+        --card: 240 10% 3.9%;
+        --card-foreground: 0 0% 98%;
+        --primary: 270 95% 65%;
+        --primary-foreground: 0 0% 98%;
+        --border: 240 3.7% 15.9%;
+        --muted: 240 3.7% 15.9%;
+        --muted-foreground: 240 5% 64.9%;
+      }
+      
+      /* Critical layout styles */
+      * {
+        border-color: hsl(var(--border));
+      }
+      
       body {
+        background-color: hsl(var(--background));
+        color: hsl(var(--foreground));
         -webkit-touch-callout: none;
         -webkit-user-select: none;
         -webkit-tap-highlight-color: transparent;
@@ -30,6 +50,25 @@
         position: fixed;
         width: 100%;
         height: 100%;
+      }
+      
+      html {
+        height: 100%;
+        height: 100vh;
+        height: 100dvh;
+      }
+      
+      body {
+        height: 100%;
+        height: 100vh;
+        height: 100dvh;
+        overflow: hidden;
+      }
+      
+      #root {
+        height: 100%;
+        height: 100vh;
+        height: 100dvh;
       }
       
       /* Prevent zoom on input focus */

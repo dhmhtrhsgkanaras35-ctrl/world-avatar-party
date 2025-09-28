@@ -49,13 +49,19 @@ const EVENT_NAMES = {
   'study': 'Study Group'
 };
 
-export const RealMapComponent = () => {
+interface RealMapComponentProps {
+  showEmojiPalette?: boolean;
+  userLocation?: { lat: number; lng: number } | null;
+  userZone?: string | null;
+}
+
+export const RealMapComponent = ({ showEmojiPalette = false, userLocation: propUserLocation, userZone: propUserZone }: RealMapComponentProps = {}) => {
   const mapContainer = useRef<HTMLDivElement>(null);
   const map = useRef<mapboxgl.Map | null>(null);
   const { user } = useAuth();
   const { toast } = useToast();
   
-  const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
+  const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(propUserLocation || null);
   const [userProfiles, setUserProfiles] = useState<{[key: string]: any}>({});
   const [events, setEvents] = useState<Event[]>([]);
   const [mapLoaded, setMapLoaded] = useState(false);
@@ -602,16 +608,16 @@ export const RealMapComponent = () => {
     const avatarContainer = document.createElement('div');
     avatarContainer.innerHTML = `
       <div class="relative">
-        <div class="w-12 h-12 rounded-full border-2 overflow-hidden bg-white shadow-lg flex items-center justify-center ${
-          isCurrentUser ? 'border-blue-500' : isFriend ? 'border-green-500' : 'border-gray-300'
+        <div class="w-12 h-12 rounded-full border-3 overflow-hidden bg-white shadow-xl flex items-center justify-center transition-transform hover:scale-110 ${
+          isCurrentUser ? 'border-blue-500 ring-2 ring-blue-200' : isFriend ? 'border-green-500 ring-2 ring-green-200' : 'border-gray-400'
         }">
           ${avatarUrl ? 
             `<img src="${avatarUrl}" class="w-full h-full object-cover" alt="${displayName}" />` : 
-            `<div class="text-lg font-medium">${displayName.charAt(0).toUpperCase()}</div>`
+            `<div class="text-lg font-bold text-gray-700">${displayName.charAt(0).toUpperCase()}</div>`
           }
         </div>
-        ${isCurrentUser ? `<div class="absolute -top-1 -right-1 w-4 h-4 bg-blue-500 rounded-full border-2 border-white"></div>` : ''}
-        ${isFriend && !isCurrentUser ? `<div class="absolute -top-1 -right-1 w-4 h-4 bg-green-500 rounded-full border-2 border-white"></div>` : ''}
+        ${isCurrentUser ? `<div class="absolute -top-1 -right-1 w-4 h-4 bg-blue-500 rounded-full border-2 border-white shadow-lg"></div>` : ''}
+        ${isFriend && !isCurrentUser ? `<div class="absolute -top-1 -right-1 w-4 h-4 bg-green-500 rounded-full border-2 border-white shadow-lg"></div>` : ''}
       </div>
     `;
     
@@ -626,41 +632,41 @@ export const RealMapComponent = () => {
 
     // Create popup content
     let popupContent = `
-      <div class="p-3 min-w-[200px]">
-        <div class="flex items-center gap-3 mb-2">
+      <div class="p-4 min-w-[220px] bg-white rounded-lg shadow-lg">
+        <div class="flex items-center gap-3 mb-3">
           ${avatarUrl ? 
-            `<img src="${avatarUrl}" class="w-8 h-8 rounded-full object-cover" alt="${displayName}" />` :
-            `<div class="w-8 h-8 rounded-full bg-gray-300 flex items-center justify-center text-sm font-medium">${displayName.charAt(0).toUpperCase()}</div>`
+            `<img src="${avatarUrl}" class="w-10 h-10 rounded-full object-cover border-2 ${isCurrentUser ? 'border-blue-500' : isFriend ? 'border-green-500' : 'border-gray-300'}" alt="${displayName}" />` :
+            `<div class="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center text-lg font-bold text-gray-700 border-2 ${isCurrentUser ? 'border-blue-500' : isFriend ? 'border-green-500' : 'border-gray-300'}">${displayName.charAt(0).toUpperCase()}</div>`
           }
           <div>
-            <div class="font-medium text-gray-900">${displayName}</div>
-            ${isCurrentUser ? '<div class="text-xs text-blue-600">This is you</div>' : ''}
+            <div class="font-semibold text-gray-900 text-base">${displayName}</div>
+            ${isCurrentUser ? '<div class="text-xs text-blue-600 font-medium">This is you</div>' : ''}
           </div>
         </div>
     `;
 
     if (zoneKey) {
       popupContent += `
-        <div class="text-sm text-gray-600 mb-2">
+        <div class="text-sm text-gray-700 mb-3 bg-gray-50 p-2 rounded">
           <span class="font-medium">Zone:</span> ${getZoneName(zoneKey)}
         </div>`;
     }
 
     if (!isCurrentUser && !isFriend) {
       popupContent += `
-        <div class="mt-2 text-xs text-gray-500 bg-gray-50 p-2 rounded">
+        <div class="mt-2 text-xs text-amber-700 bg-amber-50 p-2 rounded border border-amber-200">
           🚶‍♂️ Only users in the same zone can send friend requests
         </div>`;
     }
 
     if (isFriend) {
       popupContent += `
-        <div class="mt-2 text-xs text-green-600 font-medium flex items-center gap-1">
-          <span>✓</span> Friend
+        <div class="mt-2 text-sm text-green-700 font-medium flex items-center gap-2 bg-green-50 p-2 rounded">
+          <span class="text-green-500">✓</span> Friend
         </div>`;
     } else if (!isCurrentUser) {
       popupContent += `
-        <div class="mt-2 text-xs text-gray-500 flex items-center gap-1">
+        <div class="mt-2 text-xs text-gray-600 flex items-center gap-1 bg-gray-50 p-2 rounded">
           <span>📍</span> Zone-based location (~100m)
         </div>`;
     }
@@ -718,20 +724,24 @@ export const RealMapComponent = () => {
       )}
 
       {/* Event Emoji Palette */}
-      <EventEmojiPalette 
-        user={user}
-        userLocation={userLocation}
-        userZone={userLocation ? getZoneName(`${Math.floor(userLocation.lat * 1000)}_${Math.floor(userLocation.lng * 1000)}`) : null}
-      />
+      {showEmojiPalette && (
+        <EventEmojiPalette 
+          user={user}
+          userLocation={userLocation}
+          userZone={propUserZone || (userLocation ? getZoneName(`${Math.floor(userLocation.lat * 1000)}_${Math.floor(userLocation.lng * 1000)}`) : null)}
+        />
+      )}
 
       {/* Instructions */}
-      <Card className="fixed bottom-4 right-4 z-50 bg-background/95 backdrop-blur-sm">
-        <CardContent className="p-3">
-          <div className="text-xs font-medium text-muted-foreground">
-            🎯 Drag emojis from palette to create events
-          </div>
-        </CardContent>
-      </Card>
+      {showEmojiPalette && (
+        <Card className="fixed bottom-4 right-4 z-50 bg-white/95 backdrop-blur-sm border shadow-lg">
+          <CardContent className="p-3">
+            <div className="text-xs font-medium text-gray-700">
+              🎯 Drag emojis from palette to create events
+            </div>
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 };

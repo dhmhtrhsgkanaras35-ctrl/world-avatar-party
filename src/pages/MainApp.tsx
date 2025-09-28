@@ -19,6 +19,7 @@ const MainApp = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [userProfile, setUserProfile] = useState<any>(null);
+  const [showEmojiPalette, setShowEmojiPalette] = useState(false);
   const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
   
   // Set up notifications
@@ -195,7 +196,11 @@ const MainApp = () => {
       <div className="flex flex-col h-screen overflow-hidden">
         {/* Map - takes remaining space after bottom nav */}
         <div className="flex-1 relative min-h-0">
-          <RealMapComponent />
+          <RealMapComponent 
+            showEmojiPalette={showEmojiPalette} 
+            userLocation={userLocation}
+            userZone={userProfile?.zone_key}
+          />
           
           {/* Debug info for temporary events */}
           {process.env.NODE_ENV === 'development' && (
@@ -228,11 +233,15 @@ const MainApp = () => {
       {/* Bottom Navigation - Mobile optimized */}
       <div className="bg-card border-t shadow-lg shrink-0 safe-area-inset-bottom">
         <div className="flex justify-around items-center px-2 py-3 max-w-full mx-auto min-h-[64px]">
-          <CreateEventDialog 
-            user={user} 
-            userLocation={userLocation}
-            userZone={userProfile?.zone_key}
-          />
+          <Button
+            variant="ghost"
+            size="sm"
+            className="flex flex-col items-center gap-1 h-auto py-2 px-2 min-w-0"
+            onClick={() => setShowEmojiPalette(!showEmojiPalette)}
+          >
+            <Plus className="h-5 w-5" />
+            <span className="text-xs">Create</span>
+          </Button>
 
           <MessagesDialog user={user} />
 

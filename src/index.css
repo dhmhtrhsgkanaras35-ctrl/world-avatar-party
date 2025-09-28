@@ -6,17 +6,17 @@
 
 @layer base {
   :root {
-    /* Base colors */
-    --background: 240 10% 3.9%;
-    --foreground: 0 0% 98%;
+    /* Light theme - better for maps and avatars */
+    --background: 0 0% 98%;
+    --foreground: 240 10% 3.9%;
 
-    /* Card colors */
-    --card: 240 10% 3.9%;
-    --card-foreground: 0 0% 98%;
+    /* Card colors - light theme */
+    --card: 0 0% 100%;
+    --card-foreground: 240 10% 3.9%;
 
-    /* Popover colors */
-    --popover: 240 10% 3.9%;
-    --popover-foreground: 0 0% 98%;
+    /* Popover colors - light theme */
+    --popover: 0 0% 100%;
+    --popover-foreground: 240 10% 3.9%;
 
     /* Brand colors - Ocean Blue Theme */
     --primary: 220 90% 60%;
@@ -33,9 +33,9 @@
     --event-purple: 230 85% 60%;
     --friend-green: 190 80% 55%;
 
-    /* Muted colors */
-    --muted: 240 15% 15%;
-    --muted-foreground: 240 10% 70%;
+    /* Muted colors - light theme */
+    --muted: 210 40% 98%;
+    --muted-foreground: 215.4 16.3% 46.9%;
 
     /* Accent - Ocean Blue */
     --accent: 200 85% 60%;
@@ -44,8 +44,9 @@
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 0 0% 98%;
 
-    --border: 240 15% 20%;
-    --input: 240 15% 20%;
+    /* Light theme borders */
+    --border: 214.3 31.8% 91.4%;
+    --input: 214.3 31.8% 91.4%;
     --ring: 270 95% 65%;
 
     /* Party Gradients */

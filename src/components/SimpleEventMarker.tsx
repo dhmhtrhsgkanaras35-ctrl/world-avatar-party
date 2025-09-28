@@ -19,6 +19,7 @@ interface SimpleEventMarkerProps {
   onClick?: (eventId: string) => void;
   onToggleEditMode?: (eventId: string) => void;
   onCloseEvent?: (eventId: string) => void;
+  onManageEvent?: (eventId: string) => void;
   editMode?: boolean;
 }
 
@@ -41,6 +42,7 @@ export const createSimpleEventMarker = ({
   onClick,
   onToggleEditMode,
   onCloseEvent,
+  onManageEvent,
   editMode = false
 }: SimpleEventMarkerProps) => {
   console.log('Creating simple event marker for:', event.title, 'type:', event.event_type);
@@ -68,7 +70,10 @@ export const createSimpleEventMarker = ({
       ">
         ${emoji}
         ${isCreator && !event.isTemporary ? `
-          <button class="close-event-btn absolute -top-1 -right-1 w-5 h-5 bg-red-500 hover:bg-red-600 text-white rounded-full text-xs font-bold flex items-center justify-center shadow-md transition-all duration-200 hover:scale-110" title="Close Event">
+          <button class="manage-event-btn absolute -top-1 -right-1 w-5 h-5 bg-blue-500 hover:bg-blue-600 text-white rounded-full text-xs font-bold flex items-center justify-center shadow-md transition-all duration-200 hover:scale-110" title="Manage Event">
+            ⋯
+          </button>
+          <button class="close-event-btn absolute -top-1 -right-2 w-5 h-5 bg-red-500 hover:bg-red-600 text-white rounded-full text-xs font-bold flex items-center justify-center shadow-md transition-all duration-200 hover:scale-110 translate-x-6" title="Close Event">
             ✕
           </button>
         ` : ''}
@@ -96,12 +101,24 @@ export const createSimpleEventMarker = ({
 
   // Add click handler for the main marker
   markerElement.addEventListener('click', (e) => {
+    const target = e.target as HTMLElement;
+    
     // Check if the click was on the close button
-    if ((e.target as HTMLElement).classList.contains('close-event-btn')) {
+    if (target.classList.contains('close-event-btn')) {
       e.stopPropagation();
       if (isCreator && onCloseEvent) {
         console.log('Closing event:', event.id);
         onCloseEvent(event.id);
+      }
+      return;
+    }
+
+    // Check if the click was on the manage button
+    if (target.classList.contains('manage-event-btn')) {
+      e.stopPropagation();
+      if (isCreator && onManageEvent) {
+        console.log('Managing event:', event.id);
+        onManageEvent(event.id);
       }
       return;
     }

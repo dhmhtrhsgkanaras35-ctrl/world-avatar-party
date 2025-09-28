@@ -11,6 +11,9 @@ import { useToast } from "@/hooks/use-toast";
 import { getZoneName } from "@/utils/zoneNames";
 import { createSimpleEventMarker } from "./SimpleEventMarker";
 import { EventEmojiPalette } from "./EventEmojiPalette";
+import { EventJoinDialog } from "./EventJoinDialog";
+import { EventManagementDialog } from "./EventManagementDialog";
+import { EventChatDialog } from "./EventChatDialog";
 
 interface UserLocation {
   user_id: string;
@@ -35,6 +38,7 @@ interface Event {
   max_attendees?: number;
   created_by: string;
   is_public: boolean;
+  description?: string;
 }
 
 const EVENT_NAMES = {
@@ -67,6 +71,12 @@ export const RealMapComponent = ({ showEmojiPalette = false, userLocation: propU
   const [mapLoaded, setMapLoaded] = useState(false);
   const [mapboxToken, setMapboxToken] = useState<string | null>(null);
   const [showZoneNote, setShowZoneNote] = useState(true);
+  const [selectedEventForJoin, setSelectedEventForJoin] = useState<Event | null>(null);
+  const [selectedEventForManagement, setSelectedEventForManagement] = useState<Event | null>(null);
+  const [selectedEventForChat, setSelectedEventForChat] = useState<Event | null>(null);
+  const [showJoinDialog, setShowJoinDialog] = useState(false);
+  const [showManagementDialog, setShowManagementDialog] = useState(false);
+  const [showChatDialog, setShowChatDialog] = useState(false);
   const markersRef = useRef<{ [key: string]: mapboxgl.Marker }>({});
   const eventMarkersRef = useRef<{ [key: string]: mapboxgl.Marker }>({});
   const zonesRef = useRef<Set<string>>(new Set());
@@ -535,12 +545,13 @@ export const RealMapComponent = ({ showEmojiPalette = false, userLocation: propU
             event,
             map: map.current!,
             currentUserId: user?.id, // Pass current user ID
-            onCloseEvent: handleCloseEvent, // Add close event handler
+            onCloseEvent: handleCloseEvent,
+            onManageEvent: handleManageEvent,
             onClick: (eventId) => {
-              toast({
-                title: `Event: ${event.title}`,
-                description: `${event.event_type} event - Click to join!`,
-              });
+              const clickedEvent = eventsData?.find(e => e.id === eventId);
+              if (clickedEvent) {
+                handleEventClick(clickedEvent);
+              }
             },
           });
 
@@ -550,6 +561,47 @@ export const RealMapComponent = ({ showEmojiPalette = false, userLocation: propU
     } catch (error) {
       console.error('Error loading events:', error);
     }
+  };
+
+  // Handle event click for joining
+  const handleEventClick = (event: Event) => {
+    if (event.created_by === user?.id) {
+      // If user is the creator, open management dialog
+      setSelectedEventForManagement(event);
+      setShowManagementDialog(true);
+    } else {
+      // If user is not the creator, open join dialog
+      setSelectedEventForJoin(event);
+      setShowJoinDialog(true);
+    }
+  };
+
+  // Handle event management
+  const handleManageEvent = (eventId: string) => {
+    const event = events.find(e => e.id === eventId);
+    if (event) {
+      setSelectedEventForManagement(event);
+      setShowManagementDialog(true);
+    }
+  };
+
+  // Handle joining an event
+  const handleJoinRequested = () => {
+    toast({
+      title: "Join Request Sent! 📩",
+      description: "The event organizer will review your request",
+    });
+  };
+
+  // Handle event updates
+  const handleEventUpdated = () => {
+    loadNearbyEvents(); // Reload events to get updated data
+  };
+
+  // Handle opening event chat
+  const handleOpenEventChat = (event: Event) => {
+    setSelectedEventForChat(event);
+    setShowChatDialog(true);
   };
 
   // Handle closing an event
@@ -843,6 +895,52 @@ export const RealMapComponent = ({ showEmojiPalette = false, userLocation: propU
           </CardContent>
         </Card>
       )}
+
+      {/* Event Chat Button */}
+      {!showEmojiPalette && (
+        <Button
+          onClick={() => {
+            const userEvent = events.find(e => e.created_by === user?.id);
+            if (userEvent) {
+              handleOpenEventChat(userEvent);
+            } else {
+              toast({
+                title: "No Event",
+                description: "You need to create or join an event to access chat",
+                variant: "destructive"
+              });
+            }
+          }}
+          className="fixed bottom-4 right-4 z-50 rounded-full w-12 h-12"
+          size="sm"
+        >
+          💬
+        </Button>
+      )}
+
+      {/* Event Dialogs */}
+      <EventJoinDialog
+        event={selectedEventForJoin}
+        user={user}
+        isOpen={showJoinDialog}
+        onClose={() => setShowJoinDialog(false)}
+        onJoinRequested={handleJoinRequested}
+      />
+
+      <EventManagementDialog
+        event={selectedEventForManagement}
+        user={user}
+        isOpen={showManagementDialog}
+        onClose={() => setShowManagementDialog(false)}
+        onEventUpdated={handleEventUpdated}
+      />
+
+      <EventChatDialog
+        event={selectedEventForChat}
+        user={user}
+        isOpen={showChatDialog}
+        onClose={() => setShowChatDialog(false)}
+      />
     </div>
   );
 };

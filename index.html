@@ -112,15 +112,17 @@
     <link rel="dns-prefetch" href="//models.readyplayer.me">
     <link rel="dns-prefetch" href="//render.readyplayer.me">
     
-    <!-- Preload critical Mapbox resources -->
+    <!-- Preload critical Mapbox resources and hero image -->
     <link rel="preload" href="https://api.mapbox.com/mapbox-gl-js/v3.15.0/mapbox-gl.css" as="style" onload="this.onload=null;this.rel='stylesheet'">
     <link rel="preload" href="https://api.mapbox.com/fonts/mapbox" as="font" type="font/woff2" crossorigin>
+    <link rel="preload" href="/src/assets/hero-party.jpg" as="image" fetchpriority="high">
     
     <!-- Preload critical JavaScript modules -->
     <link rel="modulepreload" href="/src/main.tsx">
     <link rel="modulepreload" href="/src/App.tsx">
     <link rel="modulepreload" href="/src/pages/MainApp.tsx">
     <link rel="modulepreload" href="/src/components/RealMapComponent.tsx">
+    <link rel="modulepreload" href="/src/components/HeroSection.tsx">
     
     <!-- Defer loading of non-critical resources -->
     <script>

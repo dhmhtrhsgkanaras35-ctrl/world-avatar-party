@@ -1,10 +1,12 @@
 import { Button } from "@/components/ui/button";
-import { Avatar } from "./Avatar";
-import { EventMarker } from "./EventMarker";
 import { useAuth } from "./AuthProvider";
 import { useNavigate } from "react-router-dom";
-import { AvatarDisplay } from "./AvatarDisplay";
 import heroPartyImage from "@/assets/hero-party.jpg";
+import { lazy, Suspense } from "react";
+
+// Lazy load heavy 3D components to prevent render blocking
+const AvatarDisplay = lazy(() => import("./AvatarDisplay").then(m => ({ default: m.AvatarDisplay })));
+const EventMarker = lazy(() => import("./EventMarker").then(m => ({ default: m.EventMarker })));
 
 export const HeroSection = () => {
   const { user } = useAuth();
@@ -23,64 +25,69 @@ export const HeroSection = () => {
         <div className="absolute inset-0 gradient-party opacity-30" />
       </div>
       
-      {/* Floating elements */}
+      {/* Floating elements - defer loading to improve LCP */}
       <div className="absolute inset-0 z-10 pointer-events-none">
-        {/* Floating avatars */}
-        <div className="absolute top-20 left-10 animate-float">
-          <AvatarDisplay 
-            avatarUrl="https://models.readyplayer.me/67054f9cfd50cc4cc0e4de18.glb"
-            size="medium"
-            showStatus={true}
-            status="online"
-          />
-        </div>
-        <div className="absolute top-40 right-20 animate-float" style={{ animationDelay: "0.5s" }}>
-          <AvatarDisplay 
-            avatarUrl="https://models.readyplayer.me/67054f9cfd50cc4cc0e4de19.glb"
-            size="medium"
-            showStatus={true}
-            status="online"
-          />
-        </div>
-        <div className="absolute bottom-40 left-20 animate-float" style={{ animationDelay: "1s" }}>
-          <AvatarDisplay 
-            avatarUrl={null}
-            size="medium"
-            showStatus={true}
-            status="online"
-          />
-        </div>
-        
-        {/* Floating event markers */}
-        <div className="absolute top-60 left-1/4 animate-float" style={{ animationDelay: "0.3s" }}>
-          <EventMarker 
-            type="house-party" 
-            title="Beach Party" 
-            attendees={12} 
-            distance="0.5km" 
-          />
-        </div>
-        <div className="absolute bottom-60 right-1/4 animate-float" style={{ animationDelay: "0.8s" }}>
-          <EventMarker 
-            type="concert" 
-            title="Summer Festival" 
-            attendees={150} 
-            distance="2.1km" 
-          />
-        </div>
+        <Suspense fallback={null}>
+          {/* Floating avatars */}
+          <div className="absolute top-20 left-10 animate-float">
+            <AvatarDisplay 
+              avatarUrl="https://models.readyplayer.me/67054f9cfd50cc4cc0e4de18.glb"
+              size="medium"
+              showStatus={true}
+              status="online"
+            />
+          </div>
+          <div className="absolute top-40 right-20 animate-float" style={{ animationDelay: "0.5s" }}>
+            <AvatarDisplay 
+              avatarUrl="https://models.readyplayer.me/67054f9cfd50cc4cc0e4de19.glb"
+              size="medium"
+              showStatus={true}
+              status="online"
+            />
+          </div>
+          <div className="absolute bottom-40 left-20 animate-float" style={{ animationDelay: "1s" }}>
+            <AvatarDisplay 
+              avatarUrl={null}
+              size="medium"
+              showStatus={true}
+              status="online"
+            />
+          </div>
+          
+          {/* Floating event markers */}
+          <div className="absolute top-60 left-1/4 animate-float" style={{ animationDelay: "0.3s" }}>
+            <EventMarker 
+              type="house-party" 
+              title="Beach Party" 
+              attendees={12} 
+              distance="0.5km" 
+            />
+          </div>
+          <div className="absolute bottom-60 right-1/4 animate-float" style={{ animationDelay: "0.8s" }}>
+            <EventMarker 
+              type="concert" 
+              title="Summer Festival" 
+              attendees={150} 
+              distance="2.1km" 
+            />
+          </div>
+        </Suspense>
       </div>
       
-      {/* Main content */}
+      {/* Main content - prioritize text rendering for LCP */}
       <div className="relative z-20 text-center max-w-4xl mx-auto px-6">
-        <h1 className="text-5xl md:text-7xl font-black text-foreground mb-6 leading-tight">
-          Meet Your 
-          <span className="gradient-party bg-clip-text text-transparent"> World</span>
-        </h1>
-        
-        <p className="text-xl md:text-2xl text-muted-foreground mb-8 max-w-2xl mx-auto leading-relaxed">
-          Connect with friends through animated avatars, discover epic parties nearby, 
-          and create unforgettable memories on the social map.
-        </p>
+        {/* Critical content optimized for LCP */}
+        <div className="will-change-auto">
+          <h1 className="text-5xl md:text-7xl font-black text-foreground mb-6 leading-tight">
+            Meet Your 
+            <span className="gradient-party bg-clip-text text-transparent"> World</span>
+          </h1>
+          
+          <p className="text-xl md:text-2xl text-muted-foreground mb-8 max-w-2xl mx-auto leading-relaxed">
+            Connect with friends through animated avatars, discover epic parties nearby, 
+            and create unforgettable memories on the social map.
+          </p>
+        </div>
         
         <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
           <Button 

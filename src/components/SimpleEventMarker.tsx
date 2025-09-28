@@ -15,8 +15,10 @@ interface SimpleEventMarkerProps {
     isTemporary?: boolean;
   };
   map: mapboxgl.Map;
+  currentUserId?: string;
   onClick?: (eventId: string) => void;
   onToggleEditMode?: (eventId: string) => void;
+  onCloseEvent?: (eventId: string) => void;
   editMode?: boolean;
 }
 
@@ -35,8 +37,10 @@ const EVENT_EMOJIS = {
 export const createSimpleEventMarker = ({
   event,
   map,
+  currentUserId,
   onClick,
   onToggleEditMode,
+  onCloseEvent,
   editMode = false
 }: SimpleEventMarkerProps) => {
   console.log('Creating simple event marker for:', event.title, 'type:', event.event_type);
@@ -46,6 +50,9 @@ export const createSimpleEventMarker = ({
   
   // Get emoji for event type
   const emoji = EVENT_EMOJIS[event.event_type as keyof typeof EVENT_EMOJIS] || '📍';
+  
+  // Check if current user is the creator
+  const isCreator = currentUserId === event.created_by;
   
   // Create the marker content
   markerElement.innerHTML = `
@@ -57,9 +64,14 @@ export const createSimpleEventMarker = ({
         ${event.isTemporary ? 'border-blue-400' : 'border-gray-200'}
         ${editMode ? 'border-red-400' : ''}
         hover:shadow-xl transition-all duration-200 hover:scale-110
-        flex items-center justify-center text-2xl
+        flex items-center justify-center text-2xl relative
       ">
         ${emoji}
+        ${isCreator && !event.isTemporary ? `
+          <button class="close-event-btn absolute -top-1 -right-1 w-5 h-5 bg-red-500 hover:bg-red-600 text-white rounded-full text-xs font-bold flex items-center justify-center shadow-md transition-all duration-200 hover:scale-110" title="Close Event">
+            ✕
+          </button>
+        ` : ''}
       </div>
       
       <!-- Tooltip -->
@@ -72,6 +84,7 @@ export const createSimpleEventMarker = ({
         ${event.title}
         ${event.isTemporary ? ' (Click to place)' : ''}
         ${editMode ? ' (Click to delete)' : ''}
+        ${isCreator && !event.isTemporary ? ' - You can close this event' : ''}
       </div>
 
       <!-- Pulse effect for temporary events -->
@@ -81,8 +94,18 @@ export const createSimpleEventMarker = ({
     </div>
   `;
 
-  // Add click handler
+  // Add click handler for the main marker
   markerElement.addEventListener('click', (e) => {
+    // Check if the click was on the close button
+    if ((e.target as HTMLElement).classList.contains('close-event-btn')) {
+      e.stopPropagation();
+      if (isCreator && onCloseEvent) {
+        console.log('Closing event:', event.id);
+        onCloseEvent(event.id);
+      }
+      return;
+    }
+    
     e.stopPropagation();
     console.log('Event marker clicked:', event.id);
     

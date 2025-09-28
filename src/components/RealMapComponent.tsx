@@ -514,6 +514,7 @@ export const RealMapComponent = ({ showEmojiPalette = false, userLocation: propU
           event_attendees(count)
         `)
         .eq('is_public', true)
+        .eq('is_closed', false) // Only show open events
         .limit(50);
 
       if (error) {
@@ -533,6 +534,8 @@ export const RealMapComponent = ({ showEmojiPalette = false, userLocation: propU
           const eventMarker = createSimpleEventMarker({
             event,
             map: map.current!,
+            currentUserId: user?.id, // Pass current user ID
+            onCloseEvent: handleCloseEvent, // Add close event handler
             onClick: (eventId) => {
               toast({
                 title: `Event: ${event.title}`,
@@ -546,6 +549,54 @@ export const RealMapComponent = ({ showEmojiPalette = false, userLocation: propU
       });
     } catch (error) {
       console.error('Error loading events:', error);
+    }
+  };
+
+  // Handle closing an event
+  const handleCloseEvent = async (eventId: string) => {
+    if (!user) return;
+
+    try {
+      const { error } = await supabase
+        .from('events')
+        .update({
+          is_closed: true,
+          closed_at: new Date().toISOString()
+        })
+        .eq('id', eventId)
+        .eq('created_by', user.id); // Make sure only creator can close
+
+      if (error) {
+        console.error('Error closing event:', error);
+        toast({
+          title: "Error",
+          description: "Failed to close event",
+          variant: "destructive"
+        });
+        return;
+      }
+
+      // Remove the event marker from map
+      if (eventMarkersRef.current[eventId]) {
+        eventMarkersRef.current[eventId].remove();
+        delete eventMarkersRef.current[eventId];
+      }
+
+      // Update local events state
+      setEvents(prev => prev.filter(event => event.id !== eventId));
+
+      toast({
+        title: "Event Closed! 🏁",
+        description: "Your event has been closed and removed from the map",
+      });
+
+    } catch (error) {
+      console.error('Error closing event:', error);
+      toast({
+        title: "Error", 
+        description: "Failed to close event",
+        variant: "destructive"
+      });
     }
   };
 

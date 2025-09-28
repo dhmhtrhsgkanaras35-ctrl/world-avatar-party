@@ -760,9 +760,14 @@ export const RealMapComponent = ({ showEmojiPalette = false, userLocation: propU
       delete markersRef.current[markerId];
     }
 
-    // Create marker element with avatar
+    // Create marker element with avatar (with proper layering)
     const markerElement = document.createElement('div');
-    markerElement.className = 'marker-container';
+    markerElement.className = 'marker-container relative';
+    
+    // Set z-index for proper layering: current user on top, then friends, then others
+    const zIndex = isCurrentUser ? 1000 : (isFriend ? 900 : 800);
+    markerElement.style.zIndex = zIndex.toString();
+    markerElement.style.position = 'relative';
     
     const avatarContainer = document.createElement('div');
     const borderClass = isCurrentUser 
@@ -773,12 +778,12 @@ export const RealMapComponent = ({ showEmojiPalette = false, userLocation: propU
     
     const initials = displayName.charAt(0).toUpperCase();
     
-    // Create container for full-body avatar display (much larger for visibility)
+    // Create container for full-body avatar display (much larger for visibility with proper depth)
     avatarContainer.innerHTML = `
-      <div class="relative">
-        <div id="map-avatar-${userId}" class="w-24 h-40 flex items-end justify-center bg-transparent"></div>
-        ${isCurrentUser ? '<div class="absolute -top-1 -right-1 w-4 h-4 bg-blue-500 rounded-full border-2 border-white shadow-lg"></div>' : ''}
-        ${isFriend && !isCurrentUser ? '<div class="absolute -top-1 -right-1 w-4 h-4 bg-green-500 rounded-full border-2 border-white shadow-lg"></div>' : ''}
+      <div class="relative" style="z-index: ${zIndex};">
+        <div id="map-avatar-${userId}" class="w-24 h-40 flex items-end justify-center bg-transparent relative" style="z-index: ${zIndex + 1};"></div>
+        ${isCurrentUser ? `<div class="absolute -top-1 -right-1 w-4 h-4 bg-blue-500 rounded-full border-2 border-white shadow-lg" style="z-index: ${zIndex + 2};"></div>` : ''}
+        ${isFriend && !isCurrentUser ? `<div class="absolute -top-1 -right-1 w-4 h-4 bg-green-500 rounded-full border-2 border-white shadow-lg" style="z-index: ${zIndex + 2};"></div>` : ''}
       </div>
     `;
     
@@ -831,7 +836,7 @@ export const RealMapComponent = ({ showEmojiPalette = false, userLocation: propU
                     height: 160,
                     animate: true, // Enable animations for map avatars
                     showControls: false,
-                    className: "filter drop-shadow-2xl hover:drop-shadow-3xl transition-all duration-300"
+                    className: `filter drop-shadow-2xl hover:drop-shadow-3xl transition-all duration-300 relative`
                   })
                 );
           console.log('✅ 3D full-body avatar rendered for', displayName);
@@ -845,7 +850,7 @@ export const RealMapComponent = ({ showEmojiPalette = false, userLocation: propU
         const container = document.getElementById(`map-avatar-${userId}`);
         if (container) {
           container.innerHTML = `
-            <div class="w-16 h-16 rounded-full border-2 overflow-hidden bg-white shadow-xl flex items-center justify-center ${borderClass}">
+            <div class="w-16 h-16 rounded-full border-2 overflow-hidden bg-white shadow-xl flex items-center justify-center ${borderClass}" style="z-index: ${zIndex + 10};">
               <div class="text-xl font-bold text-gray-700">${initials}</div>
             </div>
           `;

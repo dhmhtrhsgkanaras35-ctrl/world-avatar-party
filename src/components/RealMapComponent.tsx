@@ -824,16 +824,16 @@ export const RealMapComponent = ({ showEmojiPalette = false, userLocation: propU
         ]).then(([React, ReactDOM, { Avatar3D }]) => {
           console.log('📥 React modules loaded, creating root for', displayName);
           const root = ReactDOM.createRoot(container);
-          root.render(
-            React.createElement(Avatar3D, {
-              avatarUrl: glbUrl,
-              width: 96,
-              height: 160,
-              animate: false,
-              showControls: false,
-              className: "filter drop-shadow-lg"
-            })
-          );
+                root.render(
+                  React.createElement(Avatar3D, {
+                    avatarUrl: glbUrl,
+                    width: 96,
+                    height: 160,
+                    animate: true, // Enable animations for map avatars
+                    showControls: false,
+                    className: "filter drop-shadow-2xl hover:drop-shadow-3xl transition-all duration-300"
+                  })
+                );
           console.log('✅ 3D full-body avatar rendered for', displayName);
         }).catch(err => {
           console.error('❌ Failed to load Avatar3D component for', displayName, ':', err);

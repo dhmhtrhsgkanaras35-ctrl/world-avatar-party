@@ -21,15 +21,30 @@ const Avatar3DModel = ({ url, animate = false }: Avatar3DModelProps) => {
     console.log('Model bounds:', { size, center });
   }
 
+  // Enhanced animations with breathing and subtle movement
   useFrame((state) => {
-    if (meshRef.current && animate) {
-      meshRef.current.rotation.y = Math.sin(state.clock.elapsedTime * 0.5) * 0.3;
+    if (meshRef.current) {
+      if (animate) {
+        // Gentle swaying motion
+        meshRef.current.rotation.y = Math.sin(state.clock.elapsedTime * 0.5) * 0.1;
+        // Subtle breathing effect
+        const breathe = 1 + Math.sin(state.clock.elapsedTime * 2) * 0.02;
+        meshRef.current.scale.setScalar(breathe);
+      }
+      // Always add a very subtle floating animation
+      meshRef.current.position.y = -0.5 + Math.sin(state.clock.elapsedTime * 0.8) * 0.05;
     }
   });
 
   return (
     <group ref={meshRef}>
-      <primitive object={scene.clone()} scale={[1.0, 1.0, 1.0]} position={[0, -0.5, 0]} />
+      <primitive 
+        object={scene.clone()} 
+        scale={[1.0, 1.0, 1.0]} 
+        position={[0, -0.5, 0]}
+        castShadow
+        receiveShadow
+      />
     </group>
   );
 };
@@ -76,7 +91,7 @@ export const Avatar3D = ({
   }
 
   return (
-    <div className={`overflow-hidden ${className}`} style={{ width, height }}>
+    <div className={`overflow-hidden transition-all duration-300 hover:scale-105 ${className}`} style={{ width, height }}>
       <Canvas
         camera={{ position: [0, 0.8, 4], fov: 60 }}
         gl={{ 
@@ -88,24 +103,54 @@ export const Avatar3D = ({
         }}
         dpr={[2, 3]}
         style={{ background: 'transparent' }}
+        shadows
       >
         <Suspense fallback={null}>
-          <ambientLight intensity={0.8} />
-          <directionalLight position={[5, 10, 5]} intensity={1.2} />
-          <pointLight position={[-5, 5, -5]} intensity={0.6} />
-          <pointLight position={[5, -5, 5]} intensity={0.4} />
+          {/* Enhanced lighting setup */}
+          <ambientLight intensity={0.6} />
+          <directionalLight 
+            position={[10, 15, 10]} 
+            intensity={1.5} 
+            castShadow
+            shadow-mapSize-width={2048}
+            shadow-mapSize-height={2048}
+            shadow-camera-near={1}
+            shadow-camera-far={50}
+            shadow-camera-left={-10}
+            shadow-camera-right={10}
+            shadow-camera-top={10}
+            shadow-camera-bottom={-10}
+          />
+          <pointLight position={[-10, 8, -10]} intensity={0.8} color="#ffeaa7" />
+          <pointLight position={[10, -8, 10]} intensity={0.6} color="#74b9ff" />
+          <spotLight
+            position={[0, 15, 0]}
+            angle={0.3}
+            penumbra={1}
+            intensity={1}
+            castShadow
+          />
           
           <Avatar3DModel url={avatarUrl} animate={animate} />
           
-          <Environment preset="sunset" />
+          <Environment preset="city" />
+          
+          {/* Add a subtle ground plane for shadows */}
+          <mesh rotation-x={-Math.PI / 2} position={[0, -1.5, 0]} receiveShadow>
+            <planeGeometry args={[10, 10]} />
+            <shadowMaterial opacity={0.2} />
+          </mesh>
           
           {showControls && (
             <OrbitControls 
               enablePan={false}
               enableZoom={true}
-              maxDistance={4}
-              minDistance={1.5}
+              maxDistance={6}
+              minDistance={2}
               maxPolarAngle={Math.PI / 2}
+              autoRotate={false}
+              enableDamping={true}
+              dampingFactor={0.05}
             />
           )}
         </Suspense>

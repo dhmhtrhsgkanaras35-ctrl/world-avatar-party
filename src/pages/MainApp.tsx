@@ -11,6 +11,7 @@ import { Plus, Users, MessageCircle, User } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { CreateEventDialog } from "@/components/CreateEventDialog";
 import { MessagesDialog } from "@/components/MessagesDialog";
+import { useNotifications } from "@/hooks/useNotifications";
 
 const MainApp = () => {
   const { user, signOut } = useAuth();
@@ -18,6 +19,9 @@ const MainApp = () => {
   const { toast } = useToast();
   const [userProfile, setUserProfile] = useState<any>(null);
   const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
+  
+  // Set up notifications
+  const { notificationPermission, requestNotificationPermission } = useNotifications({ user });
 
   useEffect(() => {
     if (!user) {

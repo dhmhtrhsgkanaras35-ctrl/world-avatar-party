@@ -769,7 +769,7 @@ export const RealMapComponent = ({ showEmojiPalette = false, onToggleEmojiPalett
     const zIndex = isCurrentUser ? 1000 : (isFriend ? 900 : 800);
     markerElement.style.zIndex = zIndex.toString();
     markerElement.style.position = 'relative';
-    markerElement.style.pointerEvents = 'auto';
+    markerElement.style.pointerEvents = 'none'; // Disable all interactions with user markers
     
     const avatarContainer = document.createElement('div');
     const borderClass = isCurrentUser 

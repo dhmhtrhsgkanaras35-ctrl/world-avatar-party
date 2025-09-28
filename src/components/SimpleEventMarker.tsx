@@ -73,10 +73,10 @@ export const createSimpleEventMarker = ({
       </div>
       
       ${isCreator && !event.isTemporary ? `
-        <button class="manage-event-btn absolute -top-1 -right-8 w-5 h-5 bg-blue-500 hover:bg-blue-600 text-white rounded-full text-xs font-bold flex items-center justify-center shadow-lg transition-all duration-200 hover:scale-110 z-[100] cursor-pointer" title="Manage Event">
+        <button class="manage-event-btn absolute -top-2 -left-2 w-6 h-6 bg-blue-500 hover:bg-blue-600 text-white rounded-full text-xs font-bold flex items-center justify-center shadow-lg transition-all duration-200 hover:scale-110 z-50 cursor-pointer border-2 border-white" title="Manage Event">
           ⋯
         </button>
-        <button class="close-event-btn absolute -top-1 -right-1 w-5 h-5 bg-red-500 hover:bg-red-600 text-white rounded-full text-xs font-bold flex items-center justify-center shadow-lg transition-all duration-200 hover:scale-110 z-[100] cursor-pointer" title="Close Event">
+        <button class="close-event-btn absolute -top-2 -right-2 w-6 h-6 bg-red-500 hover:bg-red-600 text-white rounded-full text-xs font-bold flex items-center justify-center shadow-lg transition-all duration-200 hover:scale-110 z-50 cursor-pointer border-2 border-white" title="Close Event">
           ✕
         </button>
       ` : ''}

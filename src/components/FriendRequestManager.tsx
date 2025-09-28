@@ -3,11 +3,12 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { User } from '@supabase/supabase-js';
 import { AvatarDisplay } from "./AvatarDisplay";
-import { UserPlus, Check, X, Users } from "lucide-react";
+import { UserPlus, Check, X, Users, Search } from "lucide-react";
 
 interface FriendRequestManagerProps {
   user: User | null;
@@ -34,6 +35,8 @@ export const FriendRequestManager = ({ user }: FriendRequestManagerProps) => {
   const [pendingRequests, setPendingRequests] = useState<FriendRequest[]>([]);
   const [sentRequests, setSentRequests] = useState<FriendRequest[]>([]);
   const [friends, setFriends] = useState<FriendRequest[]>([]);
+  const [filteredFriends, setFilteredFriends] = useState<FriendRequest[]>([]);
+  const [searchQuery, setSearchQuery] = useState("");
   const [isOpen, setIsOpen] = useState(false);
 
   useEffect(() => {
@@ -41,6 +44,22 @@ export const FriendRequestManager = ({ user }: FriendRequestManagerProps) => {
       loadFriendRequests();
     }
   }, [user]);
+
+  // Filter friends based on search query
+  useEffect(() => {
+    if (!searchQuery.trim()) {
+      setFilteredFriends(friends);
+    } else {
+      const filtered = friends.filter(friend => {
+        const friendProfile = friend.requester_id === user?.id 
+          ? friend.recipient_profile 
+          : friend.requester_profile;
+        const displayName = friendProfile?.display_name?.toLowerCase() || '';
+        return displayName.includes(searchQuery.toLowerCase());
+      });
+      setFilteredFriends(filtered);
+    }
+  }, [friends, searchQuery, user?.id]);
 
   const loadFriendRequests = async () => {
     if (!user) return;
@@ -286,30 +305,48 @@ export const FriendRequestManager = ({ user }: FriendRequestManagerProps) => {
                   Friends
                   <Badge variant="secondary">{friends.length}</Badge>
                 </CardTitle>
+                {/* Friend Search */}
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    type="text"
+                    placeholder="Search friends..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="pl-9 h-8 text-sm"
+                  />
+                </div>
               </CardHeader>
-              <CardContent className="space-y-2">
-                {friends.map((friend) => {
-                  const friendProfile = friend.requester_id === user.id 
-                    ? friend.recipient_profile 
-                    : friend.requester_profile;
-                  
-                  return (
-                    <div key={friend.id} className="flex items-center gap-2 p-2 bg-muted rounded-lg">
-                      <AvatarDisplay 
-                        avatarUrl={friendProfile?.avatar_url}
-                        size="small"
-                        showStatus={true}
-                        status="online"
-                      />
-                      <span className="text-sm font-medium">
-                        {friendProfile?.display_name || 'Unknown User'}
-                      </span>
-                      <Badge variant="outline" className="ml-auto text-xs">
-                        Friend
-                      </Badge>
-                    </div>
-                  );
-                })}
+              <CardContent className="space-y-2 max-h-40 overflow-y-auto">
+                {filteredFriends.length > 0 ? (
+                  filteredFriends.map((friend) => {
+                    const friendProfile = friend.requester_id === user.id 
+                      ? friend.recipient_profile 
+                      : friend.requester_profile;
+                    
+                    return (
+                      <div key={friend.id} className="flex items-center gap-2 p-2 bg-muted rounded-lg">
+                        <AvatarDisplay 
+                          avatarUrl={friendProfile?.avatar_url}
+                          size="small"
+                          showStatus={true}
+                          status="online"
+                        />
+                        <span className="text-sm font-medium">
+                          {friendProfile?.display_name || 'Unknown User'}
+                        </span>
+                        <Badge variant="outline" className="ml-auto text-xs">
+                          Friend
+                        </Badge>
+                      </div>
+                    );
+                  })
+                ) : (
+                  <div className="text-center py-4 text-muted-foreground">
+                    <Search className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                    <p className="text-sm">No friends found matching "{searchQuery}"</p>
+                  </div>
+                )}
               </CardContent>
             </Card>
           )}

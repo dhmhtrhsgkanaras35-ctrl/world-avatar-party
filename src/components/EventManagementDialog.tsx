@@ -145,6 +145,9 @@ export const EventManagementDialog = ({ event, user, isOpen, onClose, onEventUpd
 
   const handleJoinRequest = async (requestId: string, action: 'accepted' | 'rejected') => {
     try {
+      // Get the request details before updating
+      const request = joinRequests.find(r => r.id === requestId);
+      
       const { error } = await supabase
         .from('event_join_requests')
         .update({ status: action })
@@ -156,15 +159,24 @@ export const EventManagementDialog = ({ event, user, isOpen, onClose, onEventUpd
       }
 
       // If accepted, add user to event attendees
-      if (action === 'accepted') {
-        const request = joinRequests.find(r => r.id === requestId);
-        if (request) {
+      if (action === 'accepted' && request) {
+        await supabase
+          .from('event_attendees')
+          .insert({
+            event_id: event!.id,
+            user_id: request.requester_id,
+            status: 'going'
+          });
+        
+        // Send notification to the user about acceptance
+        if (request.profile) {
           await supabase
-            .from('event_attendees')
+            .from('messages')
             .insert({
-              event_id: event!.id,
-              user_id: request.requester_id,
-              status: 'going'
+              sender_id: user!.id,
+              recipient_id: request.requester_id,
+              content: `Your request to join "${event!.title}" has been accepted! 🎉`,
+              message_type: 'system'
             });
         }
       }

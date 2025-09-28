@@ -63,12 +63,12 @@ export const createSimpleEventMarker = ({
       <div class="
         ${event.isTemporary ? 'animate-pulse' : ''}
         ${editMode ? 'animate-bounce' : ''}
-        bg-white rounded-full p-2 shadow-lg border-2 
+        bg-white rounded-full p-1.5 shadow-lg border-2 
         ${event.isTemporary ? 'border-blue-400' : 'border-gray-200'}
         ${editMode ? 'border-red-400' : ''}
         hover:shadow-xl transition-all duration-200 hover:scale-110
-        flex items-center justify-center text-2xl relative
-        min-w-[48px] min-h-[48px]
+        flex items-center justify-center text-lg relative
+        min-w-[36px] min-h-[36px]
       " data-event-main="true">
         ${emoji}
       </div>
@@ -76,8 +76,8 @@ export const createSimpleEventMarker = ({
       <!-- Action buttons for creators -->
       ${isCreator && !event.isTemporary ? `
         <button 
-          class="absolute -top-3 -left-3 w-7 h-7 bg-blue-500 hover:bg-blue-600 text-white rounded-full 
-                 flex items-center justify-center text-sm font-bold transition-all duration-150 
+          class="absolute -top-2 -left-2 w-6 h-6 bg-blue-500 hover:bg-blue-600 text-white rounded-full 
+                 flex items-center justify-center text-xs font-bold transition-all duration-150 
                  border-2 border-white shadow-lg hover:shadow-xl hover:scale-110 z-10"
           data-action="manage"
           title="Manage Event"
@@ -85,8 +85,8 @@ export const createSimpleEventMarker = ({
         >⋯</button>
         
         <button 
-          class="absolute -top-3 -right-3 w-7 h-7 bg-red-500 hover:bg-red-600 text-white rounded-full 
-                 flex items-center justify-center text-sm font-bold transition-all duration-150 
+          class="absolute -top-2 -right-2 w-6 h-6 bg-red-500 hover:bg-red-600 text-white rounded-full 
+                 flex items-center justify-center text-xs font-bold transition-all duration-150 
                  border-2 border-white shadow-lg hover:shadow-xl hover:scale-110 z-10"
           data-action="close"
           title="Close Event"

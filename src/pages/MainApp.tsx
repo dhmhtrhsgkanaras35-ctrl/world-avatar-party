@@ -206,17 +206,17 @@ const MainApp = () => {
   }
 
   return (
-      <div className="flex flex-col h-screen overflow-hidden">
-        {/* Map - takes remaining space after bottom nav */}
-        <div className="flex-1 relative min-h-0">
-          <Suspense fallback={<MapLoader />}>
-            <RealMapComponent 
-              showEmojiPalette={showEmojiPalette} 
-              onToggleEmojiPalette={() => setShowEmojiPalette(!showEmojiPalette)}
-              userLocation={userLocation}
-              userZone={userProfile?.zone_key}
-            />
-          </Suspense>
+    <div className="h-screen overflow-hidden">
+      {/* Map - takes remaining space after bottom nav */}
+      <div className="relative" style={{ height: 'calc(100vh - 50px)' }}>
+        <Suspense fallback={<MapLoader />}>
+          <RealMapComponent 
+            showEmojiPalette={showEmojiPalette} 
+            onToggleEmojiPalette={() => setShowEmojiPalette(!showEmojiPalette)}
+            userLocation={userLocation}
+            userZone={userProfile?.zone_key}
+          />
+        </Suspense>
           
           
           {/* Floating header - Mobile optimized */}
@@ -241,8 +241,8 @@ const MainApp = () => {
         </div>
 
       {/* Bottom Navigation - Mobile optimized with safe area */}
-      <div className="bg-card/95 backdrop-blur-sm border-t border-border/20 shadow-2xl shrink-0 safe-area-inset-bottom">
-        <div className="flex justify-around items-center px-2 py-1 max-w-full mx-auto min-h-[48px]">
+      <div className="absolute bottom-0 left-0 right-0 bg-card/95 backdrop-blur-sm border-t border-border/20 shadow-2xl safe-area-inset-bottom">
+        <div className="flex justify-around items-center px-2 py-1 max-w-full mx-auto h-[50px]">
           <Button
             variant="ghost"
             size="sm"

@@ -207,6 +207,26 @@ const MainApp = () => {
 
   return (
     <div className="flex flex-col h-screen overflow-hidden">
+      {/* Floating header - Mobile optimized */}
+      <header className="absolute top-2 left-2 right-2 bg-background/90 backdrop-blur-sm rounded-lg border px-3 py-2 flex items-center justify-between z-10 safe-area-inset-top">
+        <div className="flex items-center gap-2 flex-1 min-w-0">
+          <h1 className="text-sm font-bold gradient-party bg-clip-text text-transparent">
+            WorldMe
+          </h1>
+          <div className="text-xs text-muted-foreground truncate flex-1">
+            {userProfile?.display_name || user?.user_metadata?.display_name || 'User'}
+          </div>
+        </div>
+        
+        <NotificationBell 
+          notificationPermission={notificationPermission}
+          requestNotificationPermission={requestNotificationPermission}
+        />
+      </header>
+
+      {/* Location Toggle - Floating */}
+      <LocationToggle user={user} />
+
       {/* Map - takes remaining space after bottom nav */}
       <div className="flex-1 relative min-h-0">
         <Suspense fallback={<MapLoader />}>
@@ -217,28 +237,7 @@ const MainApp = () => {
             userZone={userProfile?.zone_key}
           />
         </Suspense>
-          
-          
-          {/* Floating header - Mobile optimized */}
-          <header className="absolute top-2 left-2 right-2 bg-background/90 backdrop-blur-sm rounded-lg border px-3 py-2 flex items-center justify-between z-10 safe-area-inset-top">
-            <div className="flex items-center gap-2 flex-1 min-w-0">
-              <h1 className="text-sm font-bold gradient-party bg-clip-text text-transparent">
-                WorldMe
-              </h1>
-              <div className="text-xs text-muted-foreground truncate flex-1">
-                {userProfile?.display_name || user?.user_metadata?.display_name || 'User'}
-              </div>
-            </div>
-            
-            <NotificationBell 
-              notificationPermission={notificationPermission}
-              requestNotificationPermission={requestNotificationPermission}
-            />
-          </header>
-
-          {/* Location Toggle - Floating - adjusted for smaller header */}
-          <LocationToggle user={user} />
-        </div>
+      </div>
 
       {/* Bottom Navigation - Mobile optimized with safe area */}
       <div className="bg-card/95 backdrop-blur-sm border-t border-border/20 shadow-2xl safe-area-inset-bottom">

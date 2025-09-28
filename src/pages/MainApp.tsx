@@ -151,9 +151,9 @@ const MainApp = () => {
   }
 
   return (
-      <div className="flex flex-col h-screen">
-        {/* Map - takes full screen */}
-        <div className="flex-1 relative">
+      <div className="flex flex-col h-screen overflow-hidden">
+        {/* Map - takes remaining space after bottom nav */}
+        <div className="flex-1 relative min-h-0">
           <RealMapComponent />
           
           {/* Debug info for temporary events */}
@@ -177,9 +177,9 @@ const MainApp = () => {
           <LocationToggle user={user} />
         </div>
 
-      {/* Bottom Navigation */}
-      <div className="bg-card border-t p-3 shadow-lg">
-        <div className="flex justify-around items-center max-w-full mx-auto">
+      {/* Bottom Navigation - Mobile optimized */}
+      <div className="bg-card border-t shadow-lg shrink-0 safe-area-inset-bottom">
+        <div className="flex justify-around items-center px-2 py-3 max-w-full mx-auto min-h-[64px]">
           <CreateEventDialog 
             user={user} 
             userLocation={userLocation}

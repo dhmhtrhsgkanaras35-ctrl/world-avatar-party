@@ -16,11 +16,26 @@ export default defineConfig(({ mode }) => ({
     },
   },
   build: {
-    cssCodeSplit: false, // Inline CSS to eliminate render-blocking
+    cssCodeSplit: true,
     rollupOptions: {
       output: {
-        manualChunks: undefined,
+        manualChunks: {
+          // Separate heavy libraries into their own chunks
+          'vendor-react': ['react', 'react-dom'],
+          'vendor-ui': ['@radix-ui/react-dialog', '@radix-ui/react-toast', '@radix-ui/react-avatar'],
+          'vendor-query': ['@tanstack/react-query'],
+          'vendor-three': ['three', '@react-three/fiber', '@react-three/drei'],
+          'vendor-map': ['mapbox-gl'],
+          'vendor-supabase': ['@supabase/supabase-js'],
+        },
       },
     },
+    // Optimize chunks for better loading
+    chunkSizeWarningLimit: 600,
+  },
+  // Optimize dependencies
+  optimizeDeps: {
+    include: ['react', 'react-dom', '@tanstack/react-query'],
+    exclude: ['three', '@react-three/fiber', '@react-three/drei', 'mapbox-gl'],
   },
 }));

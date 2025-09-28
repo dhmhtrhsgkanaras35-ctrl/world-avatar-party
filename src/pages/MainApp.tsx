@@ -1,8 +1,7 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, lazy, Suspense } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { RealMapComponent } from "@/components/RealMapComponent";
 import { FriendRequestManager } from "@/components/FriendRequestManager";
 import { LocationToggle } from "@/components/LocationToggle";
 import { NotificationBell } from "@/components/NotificationBell";
@@ -13,6 +12,20 @@ import { useToast } from "@/hooks/use-toast";
 import { CreateEventDialog } from "@/components/CreateEventDialog";
 import { MessagesDialog } from "@/components/MessagesDialog";
 import { useNotifications } from "@/hooks/useNotifications";
+
+// Lazy load heavy components to improve First Contentful Paint
+const RealMapComponent = lazy(() => import("@/components/RealMapComponent").then(module => ({ default: module.RealMapComponent })));
+
+// Loading component for the map
+const MapLoader = () => (
+  <div className="w-full h-full bg-gradient-party flex items-center justify-center">
+    <div className="text-center text-white">
+      <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-white mx-auto mb-4"></div>
+      <div className="text-lg font-semibold">Loading your world...</div>
+      <div className="text-sm opacity-80">Preparing the map experience</div>
+    </div>
+  </div>
+);
 
 const MainApp = () => {
   const { user, signOut } = useAuth();
@@ -196,12 +209,14 @@ const MainApp = () => {
       <div className="flex flex-col h-screen overflow-hidden">
         {/* Map - takes remaining space after bottom nav */}
         <div className="flex-1 relative min-h-0">
-          <RealMapComponent 
-            showEmojiPalette={showEmojiPalette} 
-            onToggleEmojiPalette={() => setShowEmojiPalette(!showEmojiPalette)}
-            userLocation={userLocation}
-            userZone={userProfile?.zone_key}
-          />
+          <Suspense fallback={<MapLoader />}>
+            <RealMapComponent 
+              showEmojiPalette={showEmojiPalette} 
+              onToggleEmojiPalette={() => setShowEmojiPalette(!showEmojiPalette)}
+              userLocation={userLocation}
+              userZone={userProfile?.zone_key}
+            />
+          </Suspense>
           
           
           {/* Floating header - Mobile optimized */}

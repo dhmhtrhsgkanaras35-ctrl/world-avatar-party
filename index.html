@@ -102,6 +102,36 @@
         background: transparent;
       }
     </style>
+    
+    <!-- Resource hints for performance optimization -->
+    <link rel="preconnect" href="https://api.mapbox.com" crossorigin>
+    <link rel="preconnect" href="https://fonts.googleapis.com" crossorigin>
+    <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+    <link rel="dns-prefetch" href="//cdn.supabase.com">
+    
+    <!-- Preload critical JavaScript modules -->
+    <link rel="modulepreload" href="/src/main.tsx">
+    <link rel="modulepreload" href="/src/App.tsx">
+    
+    <!-- Defer loading of non-critical resources -->
+    <script>
+      // Load main CSS asynchronously after critical styles
+      const loadCSS = (href) => {
+        const link = document.createElement('link');
+        link.rel = 'stylesheet';
+        link.href = href;
+        document.head.appendChild(link);
+      };
+      
+      // Load CSS after DOM is ready to prevent render blocking
+      if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', () => {
+          requestAnimationFrame(() => loadCSS('/src/index.css'));
+        });
+      } else {
+        requestAnimationFrame(() => loadCSS('/src/index.css'));
+      }
+    </script>
   </head>
 
   <body>

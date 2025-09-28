@@ -294,8 +294,8 @@
         // Pre-warm heavy libraries in idle time
         if (window.requestIdleCallback) {
           requestIdleCallback(() => {
-            // Pre-initialize Supabase modules (optional optimization)
-            import('./src/integrations/supabase/client').catch(() => {});
+            // Optional: Could pre-warm other heavy modules here
+            console.log('Browser idle time available for optimizations');
           }, { timeout: 2000 });
         }
       };

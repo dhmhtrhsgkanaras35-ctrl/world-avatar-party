@@ -775,28 +775,30 @@ export const RealMapComponent = ({ showEmojiPalette = false, userLocation: propU
     
     avatarContainer.innerHTML = `
       <div class="relative">
-        <div class="w-12 h-12 rounded-full border-2 overflow-hidden bg-white shadow-xl flex items-center justify-center transition-transform hover:scale-110 ${borderClass}">
-          <div class="text-lg font-bold text-gray-700" id="avatar-${userId}">${initials}</div>
+        <div class="w-16 h-20 flex items-center justify-center transition-transform hover:scale-110" id="avatar-container-${userId}">
+          <div class="w-12 h-12 rounded-full border-2 overflow-hidden bg-white shadow-xl flex items-center justify-center ${borderClass}">
+            <div class="text-lg font-bold text-gray-700" id="avatar-${userId}">${initials}</div>
+          </div>
         </div>
         ${isCurrentUser ? '<div class="absolute -top-1 -right-1 w-4 h-4 bg-blue-500 rounded-full border-2 border-white shadow-lg"></div>' : ''}
         ${isFriend && !isCurrentUser ? '<div class="absolute -top-1 -right-1 w-4 h-4 bg-green-500 rounded-full border-2 border-white shadow-lg"></div>' : ''}
       </div>
     `;
 
-    // Try to load avatar image if available
+    // Try to load ReadyPlayerMe avatar image if available
     if (avatarUrl) {
       const img = new Image();
-      // Don't use crossOrigin for ReadyPlayerMe URLs
       
       img.onload = () => {
-        const avatarEl = document.getElementById(`avatar-${userId}`);
-        if (avatarEl && avatarEl.parentElement) {
-          avatarEl.parentElement.innerHTML = `<img src="${avatarUrl}" class="w-full h-full object-cover" alt="${displayName}" />`;
+        const avatarContainer = document.getElementById(`avatar-container-${userId}`);
+        if (avatarContainer) {
+          // Replace with full ReadyPlayerMe character image
+          avatarContainer.innerHTML = `<img src="${avatarUrl}" class="w-16 h-20 object-contain filter drop-shadow-lg" alt="${displayName}" style="image-rendering: -webkit-optimize-contrast;" />`;
         }
       };
       
       img.onerror = () => {
-        // Silently fall back to initials - no console spam
+        // Keep the circular fallback with initials
       };
       
       img.src = avatarUrl;

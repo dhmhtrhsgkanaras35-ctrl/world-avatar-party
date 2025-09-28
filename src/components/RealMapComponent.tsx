@@ -768,7 +768,7 @@ export const RealMapComponent = ({ showEmojiPalette = false, userLocation: propU
     const zIndex = isCurrentUser ? 1000 : (isFriend ? 900 : 800);
     markerElement.style.zIndex = zIndex.toString();
     markerElement.style.position = 'relative';
-    markerElement.style.transform = 'translate(-50%, -100%)'; // Center horizontally, position above point
+    markerElement.style.pointerEvents = 'auto';
     
     const avatarContainer = document.createElement('div');
     const borderClass = isCurrentUser 
@@ -779,13 +779,13 @@ export const RealMapComponent = ({ showEmojiPalette = false, userLocation: propU
     
     const initials = displayName.charAt(0).toUpperCase();
     
-    // Create container for full-body avatar display (properly centered and positioned)
+    // Create container for full-body avatar display (perfectly centered and grounded)
     avatarContainer.innerHTML = `
-      <div class="relative flex flex-col items-center" style="z-index: ${zIndex};">
-        <div id="map-avatar-${userId}" class="w-24 h-40 flex items-end justify-center bg-transparent relative" style="z-index: ${zIndex + 1};"></div>
-        ${isCurrentUser ? `<div class="absolute -top-2 -right-2 w-5 h-5 bg-blue-500 rounded-full border-2 border-white shadow-lg flex items-center justify-center" style="z-index: ${zIndex + 2};"><span class="text-xs text-white">●</span></div>` : ''}
-        ${isFriend && !isCurrentUser ? `<div class="absolute -top-2 -right-2 w-5 h-5 bg-green-500 rounded-full border-2 border-white shadow-lg flex items-center justify-center" style="z-index: ${zIndex + 2};"><span class="text-xs text-white">✓</span></div>` : ''}
-        <div class="w-2 h-2 bg-primary rounded-full shadow-lg mt-1" style="z-index: ${zIndex};"></div>
+      <div class="relative flex flex-col items-center justify-end" style="z-index: ${zIndex};">
+        <div id="map-avatar-${userId}" class="w-24 h-40 flex items-end justify-center bg-transparent relative" style="z-index: ${zIndex + 1}; margin-bottom: -8px;"></div>
+        ${isCurrentUser ? `<div class="absolute -top-2 -right-2 w-5 h-5 bg-blue-500 rounded-full border-2 border-white shadow-lg flex items-center justify-center animate-pulse" style="z-index: ${zIndex + 2};"><span class="text-xs text-white font-bold">●</span></div>` : ''}
+        ${isFriend && !isCurrentUser ? `<div class="absolute -top-2 -right-2 w-5 h-5 bg-green-500 rounded-full border-2 border-white shadow-lg flex items-center justify-center" style="z-index: ${zIndex + 2};"><span class="text-xs text-white font-bold">✓</span></div>` : ''}
+        <div class="w-3 h-3 bg-gradient-to-br from-primary to-primary-glow rounded-full shadow-lg border-2 border-white" style="z-index: ${zIndex}; margin-top: 2px;"></div>
       </div>
     `;
     
@@ -852,8 +852,10 @@ export const RealMapComponent = ({ showEmojiPalette = false, userLocation: propU
         const container = document.getElementById(`map-avatar-${userId}`);
         if (container) {
           container.innerHTML = `
-            <div class="w-16 h-16 rounded-full border-2 overflow-hidden bg-white shadow-xl flex items-center justify-center ${borderClass} mx-auto" style="z-index: ${zIndex + 10};">
-              <div class="text-xl font-bold text-gray-700">${initials}</div>
+            <div class="flex flex-col items-center justify-end h-full">
+              <div class="w-16 h-16 rounded-full border-2 overflow-hidden bg-white shadow-xl flex items-center justify-center ${borderClass}" style="z-index: ${zIndex + 10}; margin-bottom: -4px;">
+                <div class="text-xl font-bold text-gray-700">${initials}</div>
+              </div>
             </div>
           `;
           console.log('🔄 Fallback avatar shown for', displayName);
@@ -865,8 +867,8 @@ export const RealMapComponent = ({ showEmojiPalette = false, userLocation: propU
     loadAvatarWithFallback();
     const marker = new mapboxgl.Marker({
       element: markerElement,
-      anchor: 'bottom', // Anchor at bottom so avatar sits on location point
-      offset: [0, 5] // Small offset to better align with map point
+      anchor: 'bottom', // Anchor at bottom for proper positioning
+      offset: [0, 2] // Small offset for perfect alignment
     })
     .setLngLat([lng, lat])
     .addTo(map.current);

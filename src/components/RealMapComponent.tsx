@@ -873,10 +873,17 @@ export const RealMapComponent = ({ showEmojiPalette = false, userLocation: propU
     .setLngLat([lng, lat])
     .addTo(map.current);
 
-    // Create popup content
+    // Create popup content with enhanced close functionality
     let popupContent = `
-      <div class="p-4 min-w-[220px] bg-white rounded-lg shadow-lg">
-        <div class="flex items-center gap-3 mb-3">
+      <div class="p-4 min-w-[220px] bg-white rounded-lg shadow-lg relative">
+        <button 
+          onclick="this.closest('.mapboxgl-popup').remove()" 
+          class="absolute top-2 right-2 w-6 h-6 bg-gray-100 hover:bg-gray-200 rounded-full flex items-center justify-center text-gray-500 hover:text-gray-700 transition-colors z-10"
+          aria-label="Close"
+        >
+          ×
+        </button>
+        <div class="flex items-center gap-3 mb-3 pr-6">
           ${avatarUrl ? 
             `<img src="${avatarUrl}" class="w-10 h-10 rounded-full object-cover border-2 ${isCurrentUser ? 'border-blue-500' : isFriend ? 'border-green-500' : 'border-gray-300'}" alt="${displayName}" crossorigin="anonymous" referrerpolicy="no-referrer" onerror="console.error('Failed to load popup avatar:', '${avatarUrl}'); this.style.display='none';" />` :
             `<div class="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center text-lg font-bold text-gray-700 border-2 ${isCurrentUser ? 'border-blue-500' : isFriend ? 'border-green-500' : 'border-gray-300'}">${displayName.charAt(0).toUpperCase()}</div>`
@@ -918,8 +925,10 @@ export const RealMapComponent = ({ showEmojiPalette = false, userLocation: propU
 
     const popup = new mapboxgl.Popup({ 
       offset: 25,
-      closeButton: true,
-      closeOnClick: false 
+      closeButton: true, // Keep original close button as backup
+      closeOnClick: false, // Don't close when clicking inside popup
+      closeOnMove: false, // Don't close when map moves
+      focusAfterOpen: false // Don't auto-focus
     }).setHTML(popupContent);
 
     marker.setPopup(popup);

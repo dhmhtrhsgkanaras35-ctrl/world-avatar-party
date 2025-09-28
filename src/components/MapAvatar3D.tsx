@@ -20,7 +20,7 @@ const Avatar3DModel = ({ url, animate = false }: Avatar3DModelProps) => {
 
   return (
     <group ref={meshRef}>
-      <primitive object={scene.clone()} scale={[0.9, 0.9, 0.9]} position={[0, -0.8, 0]} />
+      <primitive object={scene.clone()} scale={[0.6, 0.6, 0.6]} position={[0, -0.3, 0]} />
     </group>
   );
 };
@@ -123,7 +123,7 @@ export const MapAvatar3D = ({
         style={{ width: containerSize.width, height: containerSize.height }}
       >
         <Canvas
-          camera={{ position: [0, 1.2, 2.8], fov: 35 }}
+          camera={{ position: [0, 0.5, 3.5], fov: 45 }}
           gl={{ 
             alpha: true, 
             antialias: true,
@@ -134,10 +134,10 @@ export const MapAvatar3D = ({
           style={{ background: 'transparent' }}
         >
           <Suspense fallback={null}>
-            <ambientLight intensity={1.2} />
-            <directionalLight position={[2, 10, 2]} intensity={2.0} />
-            <pointLight position={[-2, 5, -2]} intensity={1.0} />
-            <pointLight position={[2, -2, 2]} intensity={0.6} />
+            <ambientLight intensity={1.0} />
+            <directionalLight position={[2, 8, 2]} intensity={1.8} />
+            <pointLight position={[-2, 4, -2]} intensity={0.8} />
+            <pointLight position={[2, -1, 2]} intensity={0.4} />
             
             <Avatar3DModel url={glbUrl} animate={false} />
             

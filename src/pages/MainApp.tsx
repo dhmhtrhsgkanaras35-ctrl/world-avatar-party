@@ -5,6 +5,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { RealMapComponent } from "@/components/RealMapComponent";
 import { FriendRequestManager } from "@/components/FriendRequestManager";
 import { LocationToggle } from "@/components/LocationToggle";
+import { NotificationBell } from "@/components/NotificationBell";
 import { useAuth } from "@/components/AuthProvider";
 import { supabase } from "@/integrations/supabase/client";
 import { Plus, Users, MessageCircle, User } from "lucide-react";
@@ -204,13 +205,20 @@ const MainApp = () => {
           )}
           
           {/* Floating header - very compact to avoid map controls */}
-          <header className="absolute top-2 left-2 right-16 bg-background/90 backdrop-blur-sm rounded-md border px-2 py-1 flex items-center justify-between z-10 max-w-[200px]">
-            <h1 className="text-xs font-bold gradient-party bg-clip-text text-transparent">
-              WorldMe
-            </h1>
-            <div className="text-xs text-muted-foreground truncate ml-2">
-              {userProfile?.display_name || user?.user_metadata?.display_name || 'User'}
+          <header className="absolute top-2 left-2 right-16 bg-background/90 backdrop-blur-sm rounded-md border px-2 py-1 flex items-center justify-between z-10 max-w-[300px]">
+            <div className="flex items-center gap-2">
+              <h1 className="text-xs font-bold gradient-party bg-clip-text text-transparent">
+                WorldMe
+              </h1>
+              <div className="text-xs text-muted-foreground truncate">
+                {userProfile?.display_name || user?.user_metadata?.display_name || 'User'}
+              </div>
             </div>
+            
+            <NotificationBell 
+              notificationPermission={notificationPermission}
+              requestNotificationPermission={requestNotificationPermission}
+            />
           </header>
 
           {/* Location Toggle - Floating - adjusted for smaller header */}

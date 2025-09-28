@@ -30,10 +30,52 @@ const MainApp = () => {
     
     // Set up global friend request handler
     (window as any).sendFriendRequest = async (recipientUserId: string) => {
-      if (!user) return;
+      if (!user) {
+        console.error('No user logged in for friend request');
+        return;
+      }
+
+      console.log('Sending friend request:', { from: user.id, to: recipientUserId });
+      
+      // Prevent sending friend request to yourself
+      if (user.id === recipientUserId) {
+        toast({
+          title: "Invalid Request",
+          description: "You cannot send a friend request to yourself",
+          variant: "destructive"
+        });
+        return;
+      }
       
       try {
-        // Check rate limit first
+        // Check if friendship already exists in any form
+        const { data: existingFriendship, error: checkError } = await supabase
+          .from('friendships')
+          .select('status')
+          .or(`and(requester_id.eq.${user.id},recipient_id.eq.${recipientUserId}),and(requester_id.eq.${recipientUserId},recipient_id.eq.${user.id})`)
+          .maybeSingle();
+
+        if (checkError) {
+          console.error('Error checking existing friendship:', checkError);
+        }
+
+        if (existingFriendship) {
+          let message = "A friendship already exists";
+          if (existingFriendship.status === 'pending') {
+            message = "A friend request is already pending";
+          } else if (existingFriendship.status === 'accepted') {
+            message = "You are already friends";
+          }
+          
+          toast({
+            title: "Already Connected",
+            description: message,
+            variant: "destructive"
+          });
+          return;
+        }
+
+        // Check rate limit
         const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000).toISOString();
         const { data: rateLimitData, error: rateLimitError } = await supabase
           .from('friend_request_limits')
@@ -44,7 +86,6 @@ const MainApp = () => {
 
         if (rateLimitError && rateLimitError.code !== 'PGRST116') {
           console.error('Error checking rate limit:', rateLimitError);
-          return;
         }
 
         if (rateLimitData && rateLimitData.request_count >= 5) {
@@ -59,27 +100,19 @@ const MainApp = () => {
         // Send friend request
         const { error } = await supabase
           .from('friendships')
-          .insert({
+          .insert([{
             requester_id: user.id,
             recipient_id: recipientUserId,
             status: 'pending'
-          } as any);
+          }] as any);
 
         if (error) {
-          if (error.code === '23505') {
-            toast({
-              title: "Already Requested",
-              description: "You've already sent a friend request to this person",
-              variant: "destructive"
-            });
-          } else {
-            console.error('Error sending friend request:', error);
-            toast({
-              title: "Error",
-              description: "Failed to send friend request",
-              variant: "destructive"
-            });
-          }
+          console.error('Database error sending friend request:', error);
+          toast({
+            title: "Database Error",
+            description: `Failed to send friend request: ${error.message}`,
+            variant: "destructive"
+          });
           return;
         }
 
@@ -94,15 +127,16 @@ const MainApp = () => {
             onConflict: 'user_id'
           });
 
+        console.log('Friend request sent successfully');
         toast({
           title: "Friend Request Sent",
           description: "Your friend request has been sent!",
         });
       } catch (error) {
-        console.error('Error sending friend request:', error);
+        console.error('Unexpected error sending friend request:', error);
         toast({
-          title: "Error",
-          description: "Failed to send friend request",
+          title: "Unexpected Error",
+          description: `Something went wrong: ${error instanceof Error ? error.message : 'Unknown error'}`,
           variant: "destructive"
         });
       }

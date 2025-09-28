@@ -1035,7 +1035,7 @@ export const RealMapComponent = () => {
     if (isFriend) {
       popupContent += `
         <div class="mt-2 text-xs text-green-600 font-medium flex items-center gap-1">
-          <span>✓</span> Friend - Precise location
+          <span>✓</span> Friend
         </div>`;
     } else if (!isCurrentUser) {
       popupContent += `

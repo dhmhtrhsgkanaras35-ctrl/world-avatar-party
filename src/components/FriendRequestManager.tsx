@@ -194,7 +194,7 @@ export const FriendRequestManager = ({ user }: FriendRequestManagerProps) => {
       toast({
         title: accept ? "Friend Request Accepted" : "Friend Request Rejected",
         description: accept 
-          ? "You are now friends! You can see each other's precise location."
+          ? "You are now friends! You can see each other on the map."
           : "Friend request has been rejected",
       });
 

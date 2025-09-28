@@ -19,6 +19,7 @@ const Auth = () => {
   const [loading, setLoading] = useState(false);
   const [showAvatarCreator, setShowAvatarCreator] = useState(false);
   const [newUserId, setNewUserId] = useState<string | null>(null);
+  const [verificationEmailSent, setVerificationEmailSent] = useState(false);
   const [formData, setFormData] = useState({
     email: '',
     password: '',
@@ -33,8 +34,19 @@ const Auth = () => {
         setSession(session);
         setUser(session?.user ?? null);
         
-        if (session?.user) {
-          // User is signed in, redirect to main app
+        // Handle email verification
+        if (event === 'SIGNED_IN' && session?.user?.email_confirmed_at) {
+          toast({
+            title: "Email verified!",
+            description: "Please sign in to continue.",
+          });
+          setVerificationEmailSent(false);
+          // Don't auto-redirect, let them sign in manually
+          return;
+        }
+        
+        if (session?.user && session?.user?.email_confirmed_at) {
+          // User is signed in and verified, redirect to main app
           setTimeout(() => {
             navigate('/app');
           }, 1000);
@@ -47,20 +59,20 @@ const Auth = () => {
       setSession(session);
       setUser(session?.user ?? null);
       
-      if (session?.user) {
+      if (session?.user && session?.user?.email_confirmed_at) {
         navigate('/app');
       }
     });
 
     return () => subscription.unsubscribe();
-  }, [navigate]);
+  }, [navigate, toast]);
 
   const signUp = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
 
     try {
-      const redirectUrl = `${window.location.origin}/`;
+      const redirectUrl = `${window.location.origin}/auth`;
       
       const { data, error } = await supabase.auth.signUp({
         email: formData.email,
@@ -85,13 +97,10 @@ const Auth = () => {
           throw error;
         }
       } else {
-        if (data.user) {
-          setNewUserId(data.user.id);
-          setShowAvatarCreator(true);
-        }
+        setVerificationEmailSent(true);
         toast({
-          title: "Account created!",
-          description: "Now create your avatar to complete setup.",
+          title: "Verification email sent!",
+          description: "Please check your email and click the verification link to continue.",
         });
       }
     } catch (error: any) {
@@ -160,6 +169,42 @@ const Auth = () => {
   const handleSkipAvatar = () => {
     navigate('/app');
   };
+
+  if (verificationEmailSent) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center p-6">
+        <Card className="w-full max-w-md">
+          <CardHeader className="text-center">
+            <CardTitle className="text-2xl">Check Your Email</CardTitle>
+            <CardDescription>We've sent you a verification link</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-6 text-center">
+            <div className="text-6xl">📧</div>
+            <div>
+              <p className="text-muted-foreground mb-4">
+                We've sent a verification email to:
+              </p>
+              <p className="font-medium">{formData.email}</p>
+            </div>
+            <div className="bg-muted/50 p-4 rounded-lg text-sm">
+              <p className="mb-2">Please check your email and click the verification link.</p>
+              <p className="text-muted-foreground">After verification, you'll be redirected back to sign in.</p>
+            </div>
+            <Button 
+              variant="outline" 
+              onClick={() => {
+                setVerificationEmailSent(false);
+                setFormData({ email: '', password: '', username: '', displayName: '' });
+              }}
+              className="w-full"
+            >
+              Back to Sign Up
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   if (showAvatarCreator && newUserId) {
     return (

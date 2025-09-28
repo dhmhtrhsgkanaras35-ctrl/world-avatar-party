@@ -63,12 +63,12 @@ export const createSimpleEventMarker = ({
       <div class="
         ${event.isTemporary ? 'animate-pulse' : ''}
         ${editMode ? 'animate-bounce' : ''}
-        bg-white rounded-full p-1.5 shadow-lg border-2 
+        bg-white rounded-full p-1 shadow-lg border-2 
         ${event.isTemporary ? 'border-blue-400' : 'border-gray-200'}
         ${editMode ? 'border-red-400' : ''}
         hover:shadow-xl transition-all duration-200 hover:scale-110
-        flex items-center justify-center text-lg relative
-        min-w-[36px] min-h-[36px]
+        flex items-center justify-center text-sm relative
+        min-w-[28px] min-h-[28px]
       " data-event-main="true">
         ${emoji}
       </div>
@@ -76,7 +76,7 @@ export const createSimpleEventMarker = ({
       <!-- Action buttons for creators -->
       ${isCreator && !event.isTemporary ? `
         <button 
-          class="absolute -top-2 -left-2 w-6 h-6 bg-blue-500 hover:bg-blue-600 text-white rounded-full 
+          class="absolute -top-1.5 -left-1.5 w-5 h-5 bg-blue-500 hover:bg-blue-600 text-white rounded-full 
                  flex items-center justify-center text-xs font-bold transition-all duration-150 
                  border-2 border-white shadow-lg hover:shadow-xl hover:scale-110 z-10"
           data-action="manage"
@@ -85,7 +85,7 @@ export const createSimpleEventMarker = ({
         >⋯</button>
         
         <button 
-          class="absolute -top-2 -right-2 w-6 h-6 bg-red-500 hover:bg-red-600 text-white rounded-full 
+          class="absolute -top-1.5 -right-1.5 w-5 h-5 bg-red-500 hover:bg-red-600 text-white rounded-full 
                  flex items-center justify-center text-xs font-bold transition-all duration-150 
                  border-2 border-white shadow-lg hover:shadow-xl hover:scale-110 z-10"
           data-action="close"

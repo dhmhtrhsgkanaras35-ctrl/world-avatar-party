@@ -773,10 +773,10 @@ export const RealMapComponent = ({ showEmojiPalette = false, userLocation: propU
     
     const initials = displayName.charAt(0).toUpperCase();
     
-    // Create container for full-body avatar display (larger for proper visibility)
+    // Create container for full-body avatar display (much larger for visibility)
     avatarContainer.innerHTML = `
       <div class="relative">
-        <div id="map-avatar-${userId}" class="w-20 h-32 flex items-end justify-center"></div>
+        <div id="map-avatar-${userId}" class="w-24 h-40 flex items-end justify-center bg-transparent"></div>
         ${isCurrentUser ? '<div class="absolute -top-1 -right-1 w-4 h-4 bg-blue-500 rounded-full border-2 border-white shadow-lg"></div>' : ''}
         ${isFriend && !isCurrentUser ? '<div class="absolute -top-1 -right-1 w-4 h-4 bg-green-500 rounded-full border-2 border-white shadow-lg"></div>' : ''}
       </div>
@@ -786,7 +786,10 @@ export const RealMapComponent = ({ showEmojiPalette = false, userLocation: propU
 
     // Smart avatar loading - use GLB directly since PNG URLs are failing
     const loadAvatarWithFallback = async () => {
-      if (!avatarUrl) return;
+      if (!avatarUrl) {
+        console.warn('❌ No avatarUrl provided for', displayName);
+        return;
+      }
 
       console.log('🎭 Loading full-body avatar for', displayName, 'with URL:', avatarUrl);
       
@@ -794,50 +797,59 @@ export const RealMapComponent = ({ showEmojiPalette = false, userLocation: propU
       const avatarIdMatch = avatarUrl.match(/avatar\/([a-f0-9]{24})|\/([a-f0-9]{24})\./);
       const avatarId = avatarIdMatch ? (avatarIdMatch[1] || avatarIdMatch[2]) : null;
       
-      const container = document.getElementById(`map-avatar-${userId}`);
-      if (!container) return;
+      if (!avatarId) {
+        console.warn('❌ Could not extract avatar ID from URL:', avatarUrl);
+        showFallbackAvatar();
+        return;
+      }
 
-      if (avatarId) {
-        // Skip PNG URLs since they're failing - go straight to GLB
-        console.log('🎯 Using GLB for full-body display:', displayName);
+      console.log('🎯 Extracted avatar ID:', avatarId, 'for', displayName);
+      
+      // Wait a bit to ensure container exists
+      setTimeout(() => {
+        const container = document.getElementById(`map-avatar-${userId}`);
+        if (!container) {
+          console.error('❌ Container not found for', displayName);
+          return;
+        }
+
+        console.log('📦 Container found, loading GLB for', displayName);
         const glbUrl = `https://models.readyplayer.me/${avatarId}.glb`;
         
         // Use React to render the 3D avatar component for full-body display
-        import('react').then(React => {
-          import('react-dom/client').then(ReactDOM => {
-            import('../components/Avatar3D').then(({ Avatar3D }) => {
-              if (container) {
-                const root = ReactDOM.createRoot(container);
-                root.render(
-                  React.createElement(Avatar3D, {
-                    avatarUrl: glbUrl,
-                    width: 80,
-                    height: 128,
-                    animate: false,
-                    showControls: false,
-                    className: "filter drop-shadow-lg"
-                  })
-                );
-                console.log('✅ 3D full-body avatar rendered for', displayName);
-              }
-            }).catch(err => {
-              console.error('❌ Failed to load Avatar3D component:', err);
-              showFallbackAvatar();
-            });
-          });
+        Promise.all([
+          import('react'),
+          import('react-dom/client'),
+          import('../components/Avatar3D')
+        ]).then(([React, ReactDOM, { Avatar3D }]) => {
+          console.log('📥 React modules loaded, creating root for', displayName);
+          const root = ReactDOM.createRoot(container);
+          root.render(
+            React.createElement(Avatar3D, {
+              avatarUrl: glbUrl,
+              width: 96,
+              height: 160,
+              animate: false,
+              showControls: false,
+              className: "filter drop-shadow-lg"
+            })
+          );
+          console.log('✅ 3D full-body avatar rendered for', displayName);
+        }).catch(err => {
+          console.error('❌ Failed to load Avatar3D component for', displayName, ':', err);
+          showFallbackAvatar();
         });
-      } else {
-        console.warn('❌ Could not extract avatar ID from URL:', avatarUrl);
-        showFallbackAvatar();
-      }
+      }, 100); // Small delay to ensure DOM is ready
 
       function showFallbackAvatar() {
+        const container = document.getElementById(`map-avatar-${userId}`);
         if (container) {
           container.innerHTML = `
-            <div class="w-12 h-12 rounded-full border-2 overflow-hidden bg-white shadow-xl flex items-center justify-center ${borderClass}">
-              <div class="text-lg font-bold text-gray-700">${initials}</div>
+            <div class="w-16 h-16 rounded-full border-2 overflow-hidden bg-white shadow-xl flex items-center justify-center ${borderClass}">
+              <div class="text-xl font-bold text-gray-700">${initials}</div>
             </div>
           `;
+          console.log('🔄 Fallback avatar shown for', displayName);
         }
       }
     };

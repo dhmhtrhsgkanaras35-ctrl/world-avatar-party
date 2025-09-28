@@ -38,6 +38,7 @@ interface Event {
   max_attendees?: number;
   created_by: string;
   is_public: boolean;
+  is_closed: boolean;
   description?: string;
 }
 
@@ -150,6 +151,80 @@ export const RealMapComponent = ({ showEmojiPalette = false, onToggleEmojiPalett
       });
     }
   }, [mapboxToken]);
+
+  // Real-time event updates
+  useEffect(() => {
+    if (!user) return;
+
+    // Subscribe to new events being created
+    const eventChannel = supabase
+      .channel('event-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'events',
+          filter: 'is_public=eq.true'
+        },
+        (payload) => {
+          console.log('🆕 New event created:', payload.new);
+          const newEvent = payload.new as Event;
+          
+          // Add the new event to the map if it's not temporary
+          if (newEvent.latitude && newEvent.longitude && !newEvent.is_closed) {
+            setEvents(prev => [...prev, newEvent]);
+            
+            // Create marker for the new event
+            if (map.current) {
+              const eventMarker = createSimpleEventMarker({
+                event: newEvent,
+                map: map.current,
+                currentUserId: user.id,
+                onCloseEvent: handleCloseEvent,
+                onManageEvent: handleManageEvent,
+                onClick: (eventId) => {
+                  const clickedEvent = events.find(e => e.id === eventId) || newEvent;
+                  if (clickedEvent) {
+                    handleEventClick(clickedEvent);
+                  }
+                },
+              });
+              
+              eventMarkersRef.current[newEvent.id] = eventMarker;
+            }
+          }
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'events'
+        },
+        (payload) => {
+          console.log('📝 Event updated:', payload.new);
+          const updatedEvent = payload.new as Event;
+          
+          // Update local events state
+          setEvents(prev => prev.map(event => 
+            event.id === updatedEvent.id ? updatedEvent : event
+          ));
+          
+          // If event was closed, remove its marker
+          if (updatedEvent.is_closed && eventMarkersRef.current[updatedEvent.id]) {
+            eventMarkersRef.current[updatedEvent.id].remove();
+            delete eventMarkersRef.current[updatedEvent.id];
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(eventChannel);
+    };
+  }, [user]);
 
   // Listen for profile updates (location sharing changes)
   useEffect(() => {

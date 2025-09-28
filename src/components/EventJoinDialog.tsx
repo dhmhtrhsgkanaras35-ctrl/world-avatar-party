@@ -99,7 +99,7 @@ export const EventJoinDialog = ({ event, user, isOpen, onClose, onJoinRequested 
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-md">
+      <DialogContent className="max-w-md z-[9999]">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Users className="h-5 w-5" />

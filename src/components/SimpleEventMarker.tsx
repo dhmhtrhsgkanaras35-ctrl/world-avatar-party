@@ -46,6 +46,8 @@ export const createSimpleEventMarker = ({
   editMode = false
 }: SimpleEventMarkerProps) => {
   console.log('Creating simple event marker for:', event.title, 'type:', event.event_type);
+  console.log('🔍 Debug info - currentUserId:', currentUserId, 'event.created_by:', event.created_by, 'isCreator:', currentUserId === event.created_by);
+  console.log('🔍 Event details:', { id: event.id, title: event.title, isTemporary: event.isTemporary });
 
   const markerElement = document.createElement('div');
   markerElement.className = 'event-marker-container';
@@ -55,6 +57,7 @@ export const createSimpleEventMarker = ({
   
   // Check if current user is the creator
   const isCreator = currentUserId === event.created_by;
+  console.log('🔍 isCreator check:', { currentUserId, eventCreatedBy: event.created_by, isCreator });
   
   // Create the marker content with improved close button functionality
   markerElement.innerHTML = `
@@ -95,118 +98,120 @@ export const createSimpleEventMarker = ({
 
   // Add buttons separately if user is creator
   if (isCreator && !event.isTemporary) {
-    console.log('Creating buttons for event creator:', event.id);
+    console.log('✅ Creating buttons for event creator:', event.id, 'user:', currentUserId);
     
-    // Create manage button as a completely separate element
-    const manageButton = document.createElement('div');
-    manageButton.style.cssText = `
-      position: absolute;
-      top: -12px;
-      left: -12px;
-      width: 24px;
-      height: 24px;
-      background-color: rgb(59, 130, 246);
-      color: white;
-      border-radius: 50%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 12px;
-      font-weight: bold;
-      cursor: pointer;
-      z-index: 999999;
-      pointer-events: auto;
-      border: 2px solid white;
-      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-    `;
-    manageButton.innerHTML = '⋯';
-    manageButton.setAttribute('data-event-id', event.id);
-    manageButton.setAttribute('data-button-type', 'manage');
-    
-    // Create close button as a completely separate element
-    const closeButton = document.createElement('div');
-    closeButton.style.cssText = `
-      position: absolute;
-      top: -12px;
-      right: -12px;
-      width: 24px;
-      height: 24px;
-      background-color: rgb(239, 68, 68);
-      color: white;
-      border-radius: 50%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 12px;
-      font-weight: bold;
-      cursor: pointer;
-      z-index: 999999;
-      pointer-events: auto;
-      border: 2px solid white;
-      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-    `;
-    closeButton.innerHTML = '✕';
-    closeButton.setAttribute('data-event-id', event.id);
-    closeButton.setAttribute('data-button-type', 'close');
-
-    // Add hover effects
-    const addHoverEffects = (button: HTMLElement, hoverColor: string) => {
-      button.addEventListener('mouseenter', () => {
-        button.style.backgroundColor = hoverColor;
-        button.style.transform = 'scale(1.1)';
-      });
-      button.addEventListener('mouseleave', () => {
-        button.style.backgroundColor = button === manageButton ? 'rgb(59, 130, 246)' : 'rgb(239, 68, 68)';
-        button.style.transform = 'scale(1)';
-      });
-    };
-    
-    addHoverEffects(manageButton, 'rgb(37, 99, 235)');
-    addHoverEffects(closeButton, 'rgb(220, 38, 38)');
-
-    // Add multiple event types for better compatibility
-    const addButtonEvents = (button: HTMLElement, callback: () => void, type: string) => {
-      console.log(`Adding event listeners for ${type} button`);
+    // Wait a tiny bit to ensure marker is fully rendered
+    setTimeout(() => {
+      // Create manage button as a completely separate element
+      const manageButton = document.createElement('div');
+      manageButton.style.cssText = `
+        position: fixed;
+        width: 28px;
+        height: 28px;
+        background-color: rgb(59, 130, 246);
+        color: white;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 14px;
+        font-weight: bold;
+        cursor: pointer;
+        z-index: 999999;
+        pointer-events: auto;
+        border: 2px solid white;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3);
+        user-select: none;
+      `;
+      manageButton.innerHTML = '⋯';
+      manageButton.setAttribute('data-event-id', event.id);
+      manageButton.setAttribute('data-button-type', 'manage');
+      manageButton.title = 'Manage Event';
       
-      ['mousedown', 'touchstart'].forEach(eventType => {
-        button.addEventListener(eventType, (e) => {
-          e.preventDefault();
-          e.stopPropagation();
-          e.stopImmediatePropagation();
-          console.log(`🎯 ${type.toUpperCase()} BUTTON ${eventType.toUpperCase()} for event:`, event.id);
-          callback();
-        }, { capture: true, passive: false });
-      });
+      // Create close button as a completely separate element
+      const closeButton = document.createElement('div');
+      closeButton.style.cssText = `
+        position: fixed;
+        width: 28px;
+        height: 28px;
+        background-color: rgb(239, 68, 68);
+        color: white;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 14px;
+        font-weight: bold;
+        cursor: pointer;
+        z-index: 999999;
+        pointer-events: auto;
+        border: 2px solid white;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3);
+        user-select: none;
+      `;
+      closeButton.innerHTML = '✕';
+      closeButton.setAttribute('data-event-id', event.id);
+      closeButton.setAttribute('data-button-type', 'close');
+      closeButton.title = 'Close Event';
 
-      // Also add click as fallback
-      button.addEventListener('click', (e) => {
+      // Position buttons relative to marker
+      const updateButtonPositions = () => {
+        const rect = markerElement.getBoundingClientRect();
+        manageButton.style.left = (rect.left - 14) + 'px';
+        manageButton.style.top = (rect.top - 14) + 'px';
+        closeButton.style.left = (rect.right - 14) + 'px';
+        closeButton.style.top = (rect.top - 14) + 'px';
+      };
+
+      // Add buttons to document body (not marker element)
+      document.body.appendChild(manageButton);
+      document.body.appendChild(closeButton);
+      
+      // Initial positioning
+      updateButtonPositions();
+
+      // Update positions when map moves
+      const updatePositions = () => {
+        requestAnimationFrame(updateButtonPositions);
+      };
+      
+      map.on('move', updatePositions);
+      map.on('zoom', updatePositions);
+
+      // Store button cleanup function
+      const cleanup = () => {
+        map.off('move', updatePositions);
+        map.off('zoom', updatePositions);
+        if (manageButton.parentNode) manageButton.remove();
+        if (closeButton.parentNode) closeButton.remove();
+      };
+
+      // Store cleanup function on marker element
+      (markerElement as any)._buttonCleanup = cleanup;
+
+      // Simple direct click handlers
+      manageButton.onclick = (e) => {
         e.preventDefault();
         e.stopPropagation();
-        e.stopImmediatePropagation();
-        console.log(`🎯 ${type.toUpperCase()} BUTTON CLICKED for event:`, event.id);
-        callback();
-      }, { capture: true });
-    };
+        console.log('🔧 MANAGE BUTTON CLICKED for event:', event.id);
+        if (onManageEvent) {
+          onManageEvent(event.id);
+        }
+      };
 
-    addButtonEvents(manageButton, () => {
-      console.log('🔧 CALLING onManageEvent for:', event.id);
-      if (onManageEvent) {
-        onManageEvent(event.id);
-      }
-    }, 'manage');
+      closeButton.onclick = (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        console.log('🔥 CLOSE BUTTON CLICKED for event:', event.id);
+        if (onCloseEvent) {
+          onCloseEvent(event.id);
+        }
+      };
 
-    addButtonEvents(closeButton, () => {
-      console.log('🔥 CALLING onCloseEvent for:', event.id);
-      if (onCloseEvent) {
-        onCloseEvent(event.id);
-      }
-    }, 'close');
-
-    // Append buttons to marker
-    markerElement.appendChild(manageButton);
-    markerElement.appendChild(closeButton);
-    
-    console.log('Buttons created and attached for event:', event.id);
+      console.log('✅ Buttons created and positioned for event:', event.id);
+    }, 100);
+  } else {
+    console.log('❌ Not creating buttons - isCreator:', isCreator, 'isTemporary:', event.isTemporary);
   }
 
   // Enhanced click handler for main event (only handle non-button clicks)
@@ -238,6 +243,16 @@ export const createSimpleEventMarker = ({
   })
   .setLngLat([event.longitude, event.latitude])
   .addTo(map);
+
+  // Store original remove function and override it to cleanup buttons
+  const originalRemove = marker.remove.bind(marker);
+  marker.remove = () => {
+    // Cleanup buttons if they exist
+    if ((markerElement as any)._buttonCleanup) {
+      (markerElement as any)._buttonCleanup();
+    }
+    return originalRemove();
+  };
 
   return marker;
 };

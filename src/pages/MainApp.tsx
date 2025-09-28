@@ -13,14 +13,18 @@ import { CreateEventDialog } from "@/components/CreateEventDialog";
 import { MessagesDialog } from "@/components/MessagesDialog";
 import { useNotifications } from "@/hooks/useNotifications";
 
-// Lazy load heavy components to improve First Contentful Paint
-const RealMapComponent = lazy(() => import("@/components/RealMapComponent").then(module => ({ default: module.RealMapComponent })));
+// Lazy load heavy components to improve First Contentful Paint and LCP
+const RealMapComponent = lazy(() => 
+  import("@/components/RealMapComponent").then(module => ({ 
+    default: module.RealMapComponent 
+  }))
+);
 
-// Loading component for the map
+// Loading component for the map - optimized for LCP
 const MapLoader = () => (
   <div className="w-full h-full bg-gradient-party flex items-center justify-center">
     <div className="text-center text-white">
-      <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-white mx-auto mb-4"></div>
+      <div className="w-16 h-16 border-4 border-white border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
       <div className="text-lg font-semibold">Loading your world...</div>
       <div className="text-sm opacity-80">Preparing the map experience</div>
     </div>

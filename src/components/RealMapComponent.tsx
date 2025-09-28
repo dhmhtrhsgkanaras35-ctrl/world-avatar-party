@@ -128,6 +128,10 @@ export const RealMapComponent = ({ showEmojiPalette = false, onToggleEmojiPalett
         center: [2.3522, 48.8566], // Default to Paris - more interesting than NYC
         zoom: 3, // Wider view initially
         projection: 'globe' as any,
+        // Performance optimizations for faster LCP
+        antialias: false, // Disable for faster initial render
+        renderWorldCopies: false,
+        maxTileCacheSize: 50, // Reduce memory usage
       });
 
       map.current.addControl(new mapboxgl.NavigationControl(), 'top-right');
@@ -135,14 +139,16 @@ export const RealMapComponent = ({ showEmojiPalette = false, onToggleEmojiPalett
       map.current.on('load', () => {
         console.log('Map loaded successfully');
         console.log('Map container dimensions:', mapContainer.current?.offsetWidth, mapContainer.current?.offsetHeight);
-        // Critical: Resize map to fit container properly
+        // Critical: Resize map to fit container properly for LCP
         setTimeout(() => {
           map.current?.resize();
           console.log('Map resized to fit container');
           if (mapContainer.current) {
             console.log('After resize - Container:', mapContainer.current.offsetWidth, mapContainer.current.offsetHeight);
           }
-        }, 100);
+          // Mark LCP candidate as ready
+          performance.mark('map-lcp-ready');
+        }, 50); // Reduced timeout for faster LCP
         setMapLoaded(true);
         getUserLocation();
       });

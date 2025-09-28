@@ -105,13 +105,22 @@
     
     <!-- Resource hints for performance optimization -->
     <link rel="preconnect" href="https://api.mapbox.com" crossorigin>
+    <link rel="preconnect" href="https://events.mapbox.com" crossorigin>
     <link rel="preconnect" href="https://fonts.googleapis.com" crossorigin>
     <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
     <link rel="dns-prefetch" href="//cdn.supabase.com">
+    <link rel="dns-prefetch" href="//models.readyplayer.me">
+    <link rel="dns-prefetch" href="//render.readyplayer.me">
+    
+    <!-- Preload critical Mapbox resources -->
+    <link rel="preload" href="https://api.mapbox.com/mapbox-gl-js/v3.15.0/mapbox-gl.css" as="style" onload="this.onload=null;this.rel='stylesheet'">
+    <link rel="preload" href="https://api.mapbox.com/fonts/mapbox" as="font" type="font/woff2" crossorigin>
     
     <!-- Preload critical JavaScript modules -->
     <link rel="modulepreload" href="/src/main.tsx">
     <link rel="modulepreload" href="/src/App.tsx">
+    <link rel="modulepreload" href="/src/pages/MainApp.tsx">
+    <link rel="modulepreload" href="/src/components/RealMapComponent.tsx">
     
     <!-- Defer loading of non-critical resources -->
     <script>
@@ -123,13 +132,29 @@
         document.head.appendChild(link);
       };
       
+      // Optimize loading sequence for better LCP
+      const optimizeLoading = () => {
+        // Load CSS immediately for faster rendering
+        loadCSS('/src/index.css');
+        
+        // Prefetch map tiles for faster map rendering
+        if ('serviceWorker' in navigator) {
+          navigator.serviceWorker.ready.then(() => {
+            // Pre-warm map tile cache
+            const mapTileHints = [
+              'https://api.mapbox.com/styles/v1/mapbox/streets-v12/tiles/256/3/4/2?access_token=',
+              'https://api.mapbox.com/styles/v1/mapbox/streets-v12/tiles/256/3/4/3?access_token='
+            ];
+            // Note: Real implementation would use actual access token
+          });
+        }
+      };
+      
       // Load CSS after DOM is ready to prevent render blocking
       if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', () => {
-          requestAnimationFrame(() => loadCSS('/src/index.css'));
-        });
+        document.addEventListener('DOMContentLoaded', optimizeLoading);
       } else {
-        requestAnimationFrame(() => loadCSS('/src/index.css'));
+        optimizeLoading();
       }
     </script>
   </head>

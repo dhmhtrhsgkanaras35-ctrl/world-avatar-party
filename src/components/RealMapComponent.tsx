@@ -973,7 +973,7 @@ export const RealMapComponent = ({ showEmojiPalette = false, onToggleEmojiPalett
   }, [mapLoaded, userLocation]);
 
   return (
-    <div className="w-full h-screen relative">
+    <div className="w-full h-[75vh] relative">
       <div ref={mapContainer} className="absolute inset-0" />
       
       {/* Zone sharing note - Mobile optimized */}

@@ -773,14 +773,15 @@ export const RealMapComponent = ({ showEmojiPalette = false, userLocation: propU
     
     const initials = displayName.charAt(0).toUpperCase();
     
-    // Extract avatar ID from ReadyPlayerMe PNG URL and convert to GLB
+    // Extract avatar ID from ReadyPlayerMe PNG URL and convert to GLB with relaxed pose
     const extractAvatarIdFromUrl = (url: string): string | null => {
       const matches = url.match(/avatar\/([a-f0-9]{24})/);
       return matches ? matches[1] : null;
     };
 
     const avatarId = avatarUrl ? extractAvatarIdFromUrl(avatarUrl) : null;
-    const glbUrl = avatarId ? `https://models.readyplayer.me/${avatarId}.glb` : null;
+    // Use relaxed T-pose for better visibility
+    const glbUrl = avatarId ? `https://models.readyplayer.me/${avatarId}.glb?pose=T&morphTargets=ARKit,Oculus Visemes` : null;
 
     avatarContainer.innerHTML = `
       <div class="relative">

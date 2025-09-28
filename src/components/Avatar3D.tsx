@@ -29,7 +29,7 @@ const Avatar3DModel = ({ url, animate = false }: Avatar3DModelProps) => {
 
   return (
     <group ref={meshRef}>
-      <primitive object={scene.clone()} scale={[1.2, 1.2, 1.2]} position={[0, -1.8, 0]} />
+      <primitive object={scene.clone()} scale={[1.0, 1.0, 1.0]} position={[0, -1.2, 0]} />
     </group>
   );
 };
@@ -78,7 +78,7 @@ export const Avatar3D = ({
   return (
     <div className={`overflow-hidden ${className}`} style={{ width, height }}>
       <Canvas
-        camera={{ position: [0, 0.2, 4], fov: 50 }}
+        camera={{ position: [0, 0.5, 3], fov: 45 }}
         gl={{ 
           alpha: true, 
           antialias: true,
@@ -90,9 +90,10 @@ export const Avatar3D = ({
         style={{ background: 'transparent' }}
       >
         <Suspense fallback={null}>
-          <ambientLight intensity={0.6} />
-          <directionalLight position={[10, 10, 5]} intensity={1} />
-          <pointLight position={[-10, -10, -5]} intensity={0.5} />
+          <ambientLight intensity={0.8} />
+          <directionalLight position={[5, 10, 5]} intensity={1.2} />
+          <pointLight position={[-5, 5, -5]} intensity={0.6} />
+          <pointLight position={[5, -5, 5]} intensity={0.4} />
           
           <Avatar3DModel url={avatarUrl} animate={animate} />
           
@@ -103,7 +104,7 @@ export const Avatar3D = ({
               enablePan={false}
               enableZoom={true}
               maxDistance={4}
-              minDistance={1}
+              minDistance={1.5}
               maxPolarAngle={Math.PI / 2}
             />
           )}

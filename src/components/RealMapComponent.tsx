@@ -784,7 +784,7 @@ export const RealMapComponent = ({ showEmojiPalette = false, userLocation: propU
     
     markerElement.appendChild(avatarContainer);
 
-    // Smart avatar loading with URL testing (same logic as profile page)
+    // Smart avatar loading - use GLB directly since PNG URLs are failing
     const loadAvatarWithFallback = async () => {
       if (!avatarUrl) return;
 
@@ -798,47 +798,11 @@ export const RealMapComponent = ({ showEmojiPalette = false, userLocation: propU
       if (!container) return;
 
       if (avatarId) {
-        // Try different URL formats like the profile page does
-        const testUrls = [
-          `https://render.readyplayer.me/avatar/${avatarId}.png?pose=A&quality=medium&transparent=true`,
-          `https://models.readyplayer.me/${avatarId}.png?pose=A&quality=medium`,
-          avatarUrl, // Original URL
-          `https://render.readyplayer.me/avatar/${avatarId}.png?pose=standing&quality=high&transparent=true`
-        ];
-
-        // Test URLs in order until we find one that works
-        for (const testUrl of testUrls) {
-          try {
-            const success = await new Promise<boolean>((resolve) => {
-              const testImg = new Image();
-              testImg.onload = () => resolve(true);
-              testImg.onerror = () => resolve(false);
-              testImg.src = testUrl;
-            });
-
-            if (success) {
-              console.log('✅ Found working avatar URL for', displayName, ':', testUrl);
-              container.innerHTML = `
-                <img 
-                  src="${testUrl}" 
-                  alt="${displayName}"
-                  class="w-20 h-32 object-contain object-bottom filter drop-shadow-lg"
-                  style="image-rendering: -webkit-optimize-contrast;"
-                  onload="console.log('✅ Map avatar loaded successfully for ${displayName}');"
-                />
-              `;
-              return; // Success, exit the function
-            }
-          } catch (error) {
-            console.warn('❌ URL test failed for', testUrl, error);
-          }
-        }
-        
-        // If all PNG URLs fail, try GLB with Avatar3D component
-        console.log('🔄 PNG URLs failed, trying GLB for', displayName);
+        // Skip PNG URLs since they're failing - go straight to GLB
+        console.log('🎯 Using GLB for full-body display:', displayName);
         const glbUrl = `https://models.readyplayer.me/${avatarId}.glb`;
         
-        // Use React to render the 3D avatar component
+        // Use React to render the 3D avatar component for full-body display
         import('react').then(React => {
           import('react-dom/client').then(ReactDOM => {
             import('../components/Avatar3D').then(({ Avatar3D }) => {
@@ -854,7 +818,7 @@ export const RealMapComponent = ({ showEmojiPalette = false, userLocation: propU
                     className: "filter drop-shadow-lg"
                   })
                 );
-                console.log('✅ 3D avatar rendered for', displayName);
+                console.log('✅ 3D full-body avatar rendered for', displayName);
               }
             }).catch(err => {
               console.error('❌ Failed to load Avatar3D component:', err);

@@ -29,7 +29,7 @@ const Avatar3DModel = ({ url, animate = false }: Avatar3DModelProps) => {
 
   return (
     <group ref={meshRef}>
-      <primitive object={scene.clone()} scale={[1.0, 1.0, 1.0]} position={[0, -1.2, 0]} />
+      <primitive object={scene.clone()} scale={[1.0, 1.0, 1.0]} position={[0, -0.9, 0]} />
     </group>
   );
 };
@@ -78,7 +78,7 @@ export const Avatar3D = ({
   return (
     <div className={`overflow-hidden ${className}`} style={{ width, height }}>
       <Canvas
-        camera={{ position: [0, 0.5, 3], fov: 45 }}
+        camera={{ position: [0, 0.2, 3.5], fov: 50 }}
         gl={{ 
           alpha: true, 
           antialias: true,

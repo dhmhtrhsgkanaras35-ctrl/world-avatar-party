@@ -35,7 +35,7 @@ export default defineConfig(({ mode }) => ({
   },
   // Optimize dependencies
   optimizeDeps: {
-    include: ['react', 'react-dom', '@tanstack/react-query'],
-    exclude: ['mapbox-gl'],
+    include: ['react', 'react-dom', '@tanstack/react-query', 'mapbox-gl'],
+    exclude: [],
   },
 }));

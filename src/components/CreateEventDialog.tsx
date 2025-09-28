@@ -9,7 +9,6 @@ import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { User } from '@supabase/supabase-js';
 import { Plus, Calendar, MapPin } from "lucide-react";
-import { StageParty3D } from "./StageParty3D";
 
 interface CreateEventDialogProps {
   user: User | null;
@@ -24,7 +23,7 @@ export const CreateEventDialog = ({ user, userLocation, userZone }: CreateEventD
   const [formData, setFormData] = useState({
     title: '',
     description: '',
-    event_type: 'party',
+    event_type: 'house-party',
     start_time: '',
     end_time: '',
     max_attendees: '',
@@ -66,50 +65,67 @@ export const CreateEventDialog = ({ user, userLocation, userZone }: CreateEventD
     setIsLoading(true);
 
     try {
-      // Create temporary event data for click-and-place
-      const tempEventData = {
-        id: 'temp-' + Date.now(),
+      const eventData = {
         title: formData.title.trim(),
         description: formData.description || null,
         event_type: formData.event_type,
-        start_time: formData.start_time || null,
-        end_time: formData.end_time || null,
+        start_time: formData.start_time ? new Date(formData.start_time).toISOString() : null,
+        end_time: formData.end_time ? new Date(formData.end_time).toISOString() : null,
         max_attendees: formData.max_attendees ? parseInt(formData.max_attendees) : null,
         is_public: formData.is_public,
         latitude: userLocation.lat,
         longitude: userLocation.lng,
         created_by: user.id,
         address: `Zone: ${userZone || 'Unknown'}`,
-        isTemporary: true // Mark as temporary for placement
       };
 
-      console.log('Creating temporary event for placement:', tempEventData);
+      const { data: newEvent, error } = await supabase
+        .from('events')
+        .insert(eventData)
+        .select()
+        .single();
 
-      // Dispatch custom event for temporary event creation
-      const customEvent = new CustomEvent('tempEventCreated', { 
-        detail: tempEventData 
-      });
-      window.dispatchEvent(customEvent);
+      if (error) {
+        console.error('Error creating event:', error);
+        toast({
+          title: "Error",
+          description: "Failed to create event",
+          variant: "destructive"
+        });
+        return;
+      }
 
-      // Show instruction toast
+      if (newEvent) {
+        await supabase
+          .from('event_attendees')
+          .insert({
+            event_id: newEvent.id,
+            user_id: user.id,
+            status: 'going'
+          });
+      }
+
       toast({
-        title: "Click to Place Event!",
-        description: `Click the pulsing ${formData.title} on the map to place it permanently`,
+        title: "Event Created! 🎉",
+        description: `${formData.title} has been created successfully`,
       });
 
       // Reset form and close dialog
       setFormData({
         title: '',
         description: '',
-        event_type: 'party',
+        event_type: 'house-party',
         start_time: '',
         end_time: '',
         max_attendees: '',
         is_public: true
       });
       setIsOpen(false);
+
+      // Reload the page to show the new event
+      window.location.reload();
     } catch (error) {
-      console.error('Error creating temporary event:', error);
+      console.error('Error creating event:', error);
       toast({
         title: "Error",
         description: "Something went wrong",
@@ -181,27 +197,18 @@ export const CreateEventDialog = ({ user, userLocation, userZone }: CreateEventD
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="party">🎉 Party</SelectItem>
-                <SelectItem value="concert">🎵 Concert</SelectItem>
-                <SelectItem value="meetup">🤝 Meetup</SelectItem>
-                <SelectItem value="sports">⚽ Sports</SelectItem>
-                <SelectItem value="food">🍕 Food</SelectItem>
+                <SelectItem value="house-party">🏠🔊 House Party</SelectItem>
+                <SelectItem value="running">🏃‍♂️ Running/Fitness</SelectItem>
+                <SelectItem value="concert">🎵🎤 Concert/Music</SelectItem>
+                <SelectItem value="meetup">🤝🗣️ Meetup/Social</SelectItem>
+                <SelectItem value="sports">⚽🏃‍♀️ Sports</SelectItem>
+                <SelectItem value="food">🍕🍻 Food & Drinks</SelectItem>
+                <SelectItem value="party">🎉🎪 General Party</SelectItem>
+                <SelectItem value="gaming">🎮🕹️ Gaming</SelectItem>
+                <SelectItem value="study">📚✏️ Study Group</SelectItem>
               </SelectContent>
             </Select>
           </div>
-
-          {/* 3D Stage Preview for Party Events */}
-          {formData.event_type === 'party' && (
-            <div className="bg-card border border-border rounded-lg p-4">
-              <div className="text-sm font-medium text-foreground mb-2 flex items-center gap-2">
-                🎪 Your Party Stage Preview
-              </div>
-              <StageParty3D width={280} height={160} animate={true} className="mx-auto" />
-              <p className="text-xs text-muted-foreground mt-2 text-center">
-                This animated 3D stage will appear on the map for your party! 🎉
-              </p>
-            </div>
-          )}
 
           <div>
             <Label htmlFor="description">Description</Label>

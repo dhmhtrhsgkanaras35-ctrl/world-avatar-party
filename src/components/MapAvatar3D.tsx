@@ -1,135 +1,158 @@
-import { Suspense, useRef, useEffect } from 'react';
+import { Suspense, useRef, useEffect, useState } from 'react';
 import { Canvas, useFrame } from '@react-three/fiber';
 import { useGLTF, Environment } from '@react-three/drei';
-import { createRoot } from 'react-dom/client';
 import * as THREE from 'three';
 
-interface MapAvatar3DModelProps {
+interface Avatar3DModelProps {
   url: string;
-  isCurrentUser: boolean;
+  animate?: boolean;
 }
 
-const MapAvatar3DModel = ({ url, isCurrentUser }: MapAvatar3DModelProps) => {
+const Avatar3DModel = ({ url, animate = false }: Avatar3DModelProps) => {
   const { scene } = useGLTF(url);
   const meshRef = useRef<THREE.Group>(null);
 
-  // Debug: Log model bounds for map avatar
-  console.log('MapAvatar3D Model loaded:', url);
-  if (scene) {
-    const box = new THREE.Box3().setFromObject(scene);
-    const size = box.getSize(new THREE.Vector3());
-    const center = box.getCenter(new THREE.Vector3());
-    console.log('Map Model bounds:', { size, center });
-  }
-
   useFrame((state) => {
-    if (meshRef.current) {
-      // Gentle floating animation
-      meshRef.current.position.y = Math.sin(state.clock.elapsedTime * 1.5) * 0.05 - 0.3;
-      // Subtle rotation
-      meshRef.current.rotation.y += 0.005;
+    if (meshRef.current && animate) {
+      meshRef.current.rotation.y = Math.sin(state.clock.elapsedTime * 0.3) * 0.1;
     }
   });
 
   return (
     <group ref={meshRef}>
-      <primitive 
-        object={scene.clone()} 
-        scale={[0.5, 0.5, 0.5]} 
-        position={[0, -0.3, 0]}
-      />
-      {/* Subtle glow for current user */}
-      {isCurrentUser && (
-        <mesh position={[0, -0.8, 0]}>
-          <cylinderGeometry args={[0.25, 0.25, 0.02, 32]} />
-          <meshBasicMaterial color="#3b82f6" transparent opacity={0.4} />
-        </mesh>
-      )}
+      <primitive object={scene.clone()} scale={[0.9, 0.9, 0.9]} position={[0, -0.8, 0]} />
     </group>
   );
 };
 
 interface MapAvatar3DProps {
-  avatarUrl?: string | null;
-  name: string;
-  isCurrentUser: boolean;
-  size?: number;
+  avatarUrl?: string;
+  displayName: string;
+  isCurrentUser?: boolean;
+  isFriend?: boolean;
+  size?: 'small' | 'large';
 }
 
 export const MapAvatar3D = ({ 
   avatarUrl, 
-  name, 
+  displayName, 
   isCurrentUser, 
-  size = 80 
+  isFriend,
+  size = 'large'
 }: MapAvatar3DProps) => {
-  const isValidGlb = avatarUrl && avatarUrl.endsWith('.glb');
+  const [glbUrl, setGlbUrl] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [hasError, setHasError] = useState(false);
 
-  if (!isValidGlb) {
+  const containerSize = size === 'large' ? { width: 80, height: 100 } : { width: 64, height: 80 };
+  
+  const borderColor = isCurrentUser 
+    ? 'border-blue-500 ring-2 ring-blue-200' 
+    : isFriend 
+    ? 'border-green-500 ring-2 ring-green-200' 
+    : 'border-gray-400';
+
+  const initials = displayName.charAt(0).toUpperCase();
+
+  useEffect(() => {
+    if (avatarUrl) {
+      // Extract avatar ID from ReadyPlayerMe PNG URL
+      const matches = avatarUrl.match(/avatar\/([a-f0-9]{24})/);
+      if (matches) {
+        const avatarId = matches[1];
+        const glbUrl = `https://models.readyplayer.me/${avatarId}.glb?pose=T&morphTargets=ARKit,Oculus%20Visemes`;
+        setGlbUrl(glbUrl);
+        setIsLoading(false);
+      } else {
+        setHasError(true);
+        setIsLoading(false);
+      }
+    } else {
+      setIsLoading(false);
+    }
+  }, [avatarUrl]);
+
+  // Fallback avatar
+  const FallbackAvatar = () => (
+    <div className={`w-12 h-12 rounded-full border-2 overflow-hidden bg-white shadow-xl flex items-center justify-center ${borderColor}`}>
+      <div className="text-lg font-bold text-gray-700">{initials}</div>
+    </div>
+  );
+
+  // Loading state
+  if (isLoading) {
     return (
-      <div 
-        className="rounded-full flex items-center justify-center text-white font-bold shadow-lg animate-pulse"
-        style={{ 
-          width: size, 
-          height: size,
-          background: isCurrentUser ? '#3b82f6' : '#10b981',
-          border: '3px solid white'
-        }}
-      >
-        {isCurrentUser ? '📍' : name.charAt(0).toUpperCase()}
+      <div className="relative">
+        <div 
+          className="flex items-center justify-center transition-transform hover:scale-110"
+          style={{ width: containerSize.width, height: containerSize.height }}
+        >
+          <div className="animate-pulse">
+            <FallbackAvatar />
+          </div>
+        </div>
       </div>
     );
   }
 
+  // Error state or no GLB URL
+  if (hasError || !glbUrl) {
+    return (
+      <div className="relative">
+        <div 
+          className="flex items-center justify-center transition-transform hover:scale-110"
+          style={{ width: containerSize.width, height: containerSize.height }}
+        >
+          <FallbackAvatar />
+        </div>
+        {isCurrentUser && (
+          <div className="absolute -top-1 -right-1 w-4 h-4 bg-blue-500 rounded-full border-2 border-white shadow-lg"></div>
+        )}
+        {isFriend && !isCurrentUser && (
+          <div className="absolute -top-1 -right-1 w-4 h-4 bg-green-500 rounded-full border-2 border-white shadow-lg"></div>
+        )}
+      </div>
+    );
+  }
+
+  // 3D Avatar
   return (
-    <div 
-      className="overflow-hidden"
-      style={{ 
-        width: size, 
-        height: size
-      }}
-    >
-      <Canvas
-        camera={{ position: [0, 0.2, 5], fov: 30 }}
-        gl={{ alpha: true, antialias: true }}
-        style={{ background: 'transparent' }}
+    <div className="relative">
+      <div 
+        className="transition-transform hover:scale-110"
+        style={{ width: containerSize.width, height: containerSize.height }}
       >
-        <Suspense fallback={null}>
-          <ambientLight intensity={0.8} />
-          <directionalLight position={[5, 5, 5]} intensity={1.2} />
-          <pointLight position={[-5, -5, -5]} intensity={0.5} />
-          
-          <MapAvatar3DModel url={avatarUrl} isCurrentUser={isCurrentUser} />
-          
-          <Environment preset="sunset" />
-        </Suspense>
-      </Canvas>
+        <Canvas
+          camera={{ position: [0, 1.2, 2.8], fov: 35 }}
+          gl={{ 
+            alpha: true, 
+            antialias: true,
+            powerPreference: "high-performance",
+            precision: "highp"
+          }}
+          dpr={[1.5, 2.5]}
+          style={{ background: 'transparent' }}
+        >
+          <Suspense fallback={null}>
+            <ambientLight intensity={1.2} />
+            <directionalLight position={[2, 10, 2]} intensity={2.0} />
+            <pointLight position={[-2, 5, -2]} intensity={1.0} />
+            <pointLight position={[2, -2, 2]} intensity={0.6} />
+            
+            <Avatar3DModel url={glbUrl} animate={false} />
+            
+            <Environment preset="apartment" />
+          </Suspense>
+        </Canvas>
+      </div>
+      
+      {/* Status indicators */}
+      {isCurrentUser && (
+        <div className="absolute -top-1 -right-1 w-4 h-4 bg-blue-500 rounded-full border-2 border-white shadow-lg"></div>
+      )}
+      {isFriend && !isCurrentUser && (
+        <div className="absolute -top-1 -right-1 w-4 h-4 bg-green-500 rounded-full border-2 border-white shadow-lg"></div>
+      )}
     </div>
   );
-};
-
-// Function to create and mount 3D avatar marker
-export const createMapAvatar3DMarker = (
-  avatarUrl: string | null, 
-  name: string, 
-  isCurrentUser: boolean
-): HTMLElement => {
-  const container = document.createElement('div');
-  container.style.cssText = `
-    width: 80px;
-    height: 80px;
-    cursor: pointer;
-    position: relative;
-  `;
-  
-  const root = createRoot(container);
-  root.render(
-    <MapAvatar3D 
-      avatarUrl={avatarUrl}
-      name={name}
-      isCurrentUser={isCurrentUser}
-      size={80}
-    />
-  );
-  
-  return container;
 };

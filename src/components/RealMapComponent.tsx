@@ -773,58 +773,31 @@ export const RealMapComponent = ({ showEmojiPalette = false, userLocation: propU
     
     const initials = displayName.charAt(0).toUpperCase();
     
-    // Extract avatar ID from ReadyPlayerMe PNG URL and convert to GLB with relaxed pose
-    const extractAvatarIdFromUrl = (url: string): string | null => {
-      const matches = url.match(/avatar\/([a-f0-9]{24})/);
-      return matches ? matches[1] : null;
-    };
-
-    const avatarId = avatarUrl ? extractAvatarIdFromUrl(avatarUrl) : null;
-    // Use relaxed T-pose for better visibility
-    const glbUrl = avatarId ? `https://models.readyplayer.me/${avatarId}.glb?pose=T&morphTargets=ARKit,Oculus Visemes` : null;
-
-    avatarContainer.innerHTML = `
-      <div class="relative">
-        <div class="w-20 h-24 flex items-center justify-center transition-transform hover:scale-110" id="avatar-container-${userId}">
-          ${glbUrl ? 
-            `<div class="w-20 h-24 avatar-3d-container" id="avatar-3d-${userId}"></div>` :
-            `<div class="w-12 h-12 rounded-full border-2 overflow-hidden bg-white shadow-xl flex items-center justify-center ${borderClass}">
-              <div class="text-lg font-bold text-gray-700">${initials}</div>
-             </div>`
-          }
-        </div>
-        ${isCurrentUser ? '<div class="absolute -top-1 -right-1 w-4 h-4 bg-blue-500 rounded-full border-2 border-white shadow-lg"></div>' : ''}
-        ${isFriend && !isCurrentUser ? '<div class="absolute -top-1 -right-1 w-4 h-4 bg-green-500 rounded-full border-2 border-white shadow-lg"></div>' : ''}
-      </div>
-    `;
-
-    // Load 3D avatar if GLB URL is available
-    if (glbUrl) {
-      // Import React and render 3D avatar
-      import('react').then(React => {
-        import('react-dom/client').then(ReactDOM => {
-          import('../components/Avatar3D').then(({ Avatar3D }) => {
-            const container = document.getElementById(`avatar-3d-${userId}`);
-            if (container) {
-              const root = ReactDOM.createRoot(container);
-              root.render(
-                React.createElement(Avatar3D, {
-                  avatarUrl: glbUrl,
-                  width: 80,
-                  height: 100,
-                  animate: false,
-                  showControls: false,
-                  className: "filter drop-shadow-lg"
-                })
-              );
-            }
-          });
-        });
-      });
-    }
+    // Create a container div for the React component
+    avatarContainer.innerHTML = `<div id="map-avatar-${userId}" class="w-20 h-24"></div>`;
     
     markerElement.appendChild(avatarContainer);
 
+    // Use React to render the 3D avatar component
+    import('react').then(React => {
+      import('react-dom/client').then(ReactDOM => {
+        import('./MapAvatar3D').then(({ MapAvatar3D }) => {
+          const container = document.getElementById(`map-avatar-${userId}`);
+          if (container) {
+            const root = ReactDOM.createRoot(container);
+            root.render(
+              React.createElement(MapAvatar3D, {
+                avatarUrl,
+                displayName,
+                isCurrentUser,
+                isFriend,
+                size: 'large'
+              })
+            );
+          }
+        });
+      });
+    });
     const marker = new mapboxgl.Marker({
       element: markerElement,
       anchor: 'bottom'

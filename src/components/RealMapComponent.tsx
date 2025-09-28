@@ -773,35 +773,53 @@ export const RealMapComponent = ({ showEmojiPalette = false, userLocation: propU
     
     const initials = displayName.charAt(0).toUpperCase();
     
+    // Extract avatar ID from ReadyPlayerMe PNG URL and convert to GLB
+    const extractAvatarIdFromUrl = (url: string): string | null => {
+      const matches = url.match(/avatar\/([a-f0-9]{24})/);
+      return matches ? matches[1] : null;
+    };
+
+    const avatarId = avatarUrl ? extractAvatarIdFromUrl(avatarUrl) : null;
+    const glbUrl = avatarId ? `https://models.readyplayer.me/${avatarId}.glb` : null;
+
     avatarContainer.innerHTML = `
       <div class="relative">
         <div class="w-16 h-20 flex items-center justify-center transition-transform hover:scale-110" id="avatar-container-${userId}">
-          <div class="w-12 h-12 rounded-full border-2 overflow-hidden bg-white shadow-xl flex items-center justify-center ${borderClass}">
-            <div class="text-lg font-bold text-gray-700" id="avatar-${userId}">${initials}</div>
-          </div>
+          ${glbUrl ? 
+            `<div class="w-16 h-20 avatar-3d-container" id="avatar-3d-${userId}"></div>` :
+            `<div class="w-12 h-12 rounded-full border-2 overflow-hidden bg-white shadow-xl flex items-center justify-center ${borderClass}">
+              <div class="text-lg font-bold text-gray-700">${initials}</div>
+             </div>`
+          }
         </div>
         ${isCurrentUser ? '<div class="absolute -top-1 -right-1 w-4 h-4 bg-blue-500 rounded-full border-2 border-white shadow-lg"></div>' : ''}
         ${isFriend && !isCurrentUser ? '<div class="absolute -top-1 -right-1 w-4 h-4 bg-green-500 rounded-full border-2 border-white shadow-lg"></div>' : ''}
       </div>
     `;
 
-    // Try to load ReadyPlayerMe avatar image if available
-    if (avatarUrl) {
-      const img = new Image();
-      
-      img.onload = () => {
-        const avatarContainer = document.getElementById(`avatar-container-${userId}`);
-        if (avatarContainer) {
-          // Replace with full ReadyPlayerMe character image
-          avatarContainer.innerHTML = `<img src="${avatarUrl}" class="w-16 h-20 object-contain filter drop-shadow-lg" alt="${displayName}" style="image-rendering: -webkit-optimize-contrast;" />`;
-        }
-      };
-      
-      img.onerror = () => {
-        // Keep the circular fallback with initials
-      };
-      
-      img.src = avatarUrl;
+    // Load 3D avatar if GLB URL is available
+    if (glbUrl) {
+      // Import React and render 3D avatar
+      import('react').then(React => {
+        import('react-dom/client').then(ReactDOM => {
+          import('../components/Avatar3D').then(({ Avatar3D }) => {
+            const container = document.getElementById(`avatar-3d-${userId}`);
+            if (container) {
+              const root = ReactDOM.createRoot(container);
+              root.render(
+                React.createElement(Avatar3D, {
+                  avatarUrl: glbUrl,
+                  width: 64,
+                  height: 80,
+                  animate: false,
+                  showControls: false,
+                  className: "filter drop-shadow-lg"
+                })
+              );
+            }
+          });
+        });
+      });
     }
     
     markerElement.appendChild(avatarContainer);

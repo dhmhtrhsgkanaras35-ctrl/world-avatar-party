@@ -17,6 +17,8 @@ export default defineConfig(({ mode }) => ({
   },
   build: {
     cssCodeSplit: true,
+    // CSS optimization for reducing unused CSS
+    cssMinify: 'esbuild',
     rollupOptions: {
       output: {
         manualChunks: {
@@ -28,10 +30,30 @@ export default defineConfig(({ mode }) => ({
           'vendor-map': ['mapbox-gl'],
           'vendor-supabase': ['@supabase/supabase-js'],
         },
+        // Optimize CSS output
+        assetFileNames: (assetInfo) => {
+          const info = assetInfo.name?.split('.') || [];
+          const extType = info[info.length - 1];
+          if (/\.(css)$/.test(assetInfo.name || '')) {
+            return `assets/styles/[name]-[hash][extname]`;
+          }
+          return `assets/[name]-[hash][extname]`;
+        },
       },
     },
     // Optimize chunks for better loading
     chunkSizeWarningLimit: 600,
+  },
+  // CSS processing optimizations to reduce unused CSS
+  css: {
+    devSourcemap: mode === 'development',
+    // PostCSS optimizations for production
+    postcss: mode === 'production' ? {
+      plugins: [
+        // Additional CSS optimizations would go here
+        // Note: Tree-shaking and unused CSS removal handled by build process
+      ]
+    } : undefined,
   },
   // Optimize dependencies
   optimizeDeps: {

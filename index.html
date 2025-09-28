@@ -29,19 +29,44 @@
         --card-foreground: 0 0% 98%;
         --primary: 270 95% 65%;
         --primary-foreground: 0 0% 98%;
-        --border: 240 3.7% 15.9%;
+        --primary-glow: 280 100% 75%;
+        --secondary: 210 100% 70%;
+        --secondary-foreground: 0 0% 98%;
+        --party-pink: 320 100% 70%;
+        --party-orange: 30 100% 60%;
+        --event-purple: 270 95% 65%;
+        --friend-green: 150 80% 55%;
         --muted: 240 3.7% 15.9%;
         --muted-foreground: 240 5% 64.9%;
+        --accent: 320 100% 70%;
+        --accent-foreground: 0 0% 98%;
+        --destructive: 0 84.2% 60.2%;
+        --destructive-foreground: 0 0% 98%;
+        --border: 240 3.7% 15.9%;
+        --input: 240 3.7% 15.9%;
+        --ring: 270 95% 65%;
+        --radius: 0.5rem;
+        
+        /* Critical gradients */
+        --gradient-party: linear-gradient(135deg, hsl(var(--primary)), hsl(var(--party-pink)), hsl(var(--party-orange)));
+        --gradient-event: linear-gradient(135deg, hsl(var(--event-purple)), hsl(var(--secondary)));
+        --gradient-social: linear-gradient(135deg, hsl(var(--friend-green)), hsl(var(--secondary)));
+        --shadow-party: 0 20px 40px -10px hsl(var(--primary) / 0.4);
       }
       
       /* Critical layout styles */
-      * {
+      *, *::before, *::after {
+        box-sizing: border-box;
         border-color: hsl(var(--border));
       }
       
       body {
         background-color: hsl(var(--background));
         color: hsl(var(--foreground));
+        font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+        line-height: 1.5;
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
         -webkit-touch-callout: none;
         -webkit-user-select: none;
         -webkit-tap-highlight-color: transparent;
@@ -50,6 +75,8 @@
         position: fixed;
         width: 100%;
         height: 100%;
+        margin: 0;
+        padding: 0;
       }
       
       html {
@@ -58,17 +85,107 @@
         height: 100dvh;
       }
       
-      body {
-        height: 100%;
-        height: 100vh;
-        height: 100dvh;
-        overflow: hidden;
-      }
-      
       #root {
         height: 100%;
         height: 100vh;
         height: 100dvh;
+        display: flex;
+        flex-direction: column;
+      }
+      
+      /* Critical button styles */
+      .btn-primary {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        white-space: nowrap;
+        border-radius: calc(var(--radius) - 2px);
+        font-size: 0.875rem;
+        font-weight: 500;
+        transition: all 0.3s ease;
+        background: var(--gradient-party);
+        color: hsl(var(--primary-foreground));
+        border: none;
+        padding: 0.75rem 1.5rem;
+        cursor: pointer;
+        text-decoration: none;
+        box-shadow: var(--shadow-party);
+      }
+      
+      .btn-primary:hover {
+        transform: scale(1.05);
+        box-shadow: 0 25px 50px -10px hsl(var(--primary) / 0.6);
+      }
+      
+      /* Critical text styles */
+      .text-5xl { font-size: 3rem; line-height: 1; }
+      .text-xl { font-size: 1.25rem; line-height: 1.75rem; }
+      .font-black { font-weight: 900; }
+      .text-center { text-align: center; }
+      .leading-tight { line-height: 1.25; }
+      .leading-relaxed { line-height: 1.625; }
+      .mb-6 { margin-bottom: 1.5rem; }
+      .mb-8 { margin-bottom: 2rem; }
+      .max-w-2xl { max-width: 42rem; }
+      .max-w-4xl { max-width: 56rem; }
+      .mx-auto { margin-left: auto; margin-right: auto; }
+      .px-6 { padding-left: 1.5rem; padding-right: 1.5rem; }
+      
+      /* Critical layout utilities */
+      .relative { position: relative; }
+      .absolute { position: absolute; }
+      .inset-0 { top: 0; right: 0; bottom: 0; left: 0; }
+      .z-0 { z-index: 0; }
+      .z-10 { z-index: 10; }
+      .z-20 { z-index: 20; }
+      .flex { display: flex; }
+      .flex-col { flex-direction: column; }
+      .items-center { align-items: center; }
+      .justify-center { justify-content: center; }
+      .min-h-screen { min-height: 100vh; }
+      .w-full { width: 100%; }
+      .h-full { height: 100%; }
+      .object-cover { object-fit: cover; }
+      .overflow-hidden { overflow: hidden; }
+      
+      /* Critical gradient utilities */
+      .gradient-party {
+        background: var(--gradient-party);
+        -webkit-background-clip: text;
+        background-clip: text;
+      }
+      
+      .bg-clip-text {
+        -webkit-background-clip: text;
+        background-clip: text;
+      }
+      
+      .text-transparent {
+        color: transparent;
+      }
+      
+      .text-muted-foreground {
+        color: hsl(var(--muted-foreground));
+      }
+      
+      .text-foreground {
+        color: hsl(var(--foreground));
+      }
+      
+      /* Loading spinner for immediate display */
+      .loading-spinner {
+        width: 4rem;
+        height: 4rem;
+        border: 4px solid hsl(var(--muted));
+        border-top: 4px solid hsl(var(--primary));
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+        margin: 0 auto 1rem;
+      }
+      
+      @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
       }
       
       /* Prevent zoom on input focus */
@@ -101,6 +218,16 @@
         width: 0px;
         background: transparent;
       }
+      
+      /* Media queries for responsive text */
+      @media (min-width: 768px) {
+        .text-5xl { font-size: 4.5rem; }
+        .text-xl { font-size: 1.5rem; line-height: 2rem; }
+      }
+      
+      @media (min-width: 1024px) {
+        .text-5xl { font-size: 4.5rem; }
+      }
     </style>
     
     <!-- Resource hints for performance optimization -->
@@ -126,23 +253,41 @@
     
     <!-- Defer loading of non-critical resources -->
     <script>
-      // Load main CSS asynchronously after critical styles
-      const loadCSS = (href) => {
+      // Optimized CSS loading strategy to reduce unused CSS impact
+      const loadCSS = (href, media = 'all') => {
         const link = document.createElement('link');
         link.rel = 'stylesheet';
         link.href = href;
+        link.media = media;
+        
+        // Use onload to switch media to 'all' for deferred loading
+        if (media !== 'all') {
+          link.onload = function() {
+            this.media = 'all';
+            this.onload = null;
+          };
+        }
+        
         document.head.appendChild(link);
+        return link;
       };
       
-      // Optimize loading sequence for better LCP
+      // Load CSS with progressive enhancement
       const optimizeLoading = () => {
-        // Load CSS immediately for faster rendering
-        loadCSS('/src/index.css');
+        // Defer non-critical CSS to reduce unused CSS impact
+        const cssLink = loadCSS('/src/index.css', 'print');
         
-        // Prefetch map tiles for faster map rendering
+        // Load after a short delay to prioritize critical rendering
+        setTimeout(() => {
+          if (cssLink.media === 'print') {
+            cssLink.media = 'all';
+          }
+        }, 100);
+        
+        // Pre-warm map tile cache for faster map rendering
         if ('serviceWorker' in navigator) {
           navigator.serviceWorker.ready.then(() => {
-            // Pre-warm map tile cache
+            // Pre-cache hints for map tiles (placeholder implementation)
             const mapTileHints = [
               'https://api.mapbox.com/styles/v1/mapbox/streets-v12/tiles/256/3/4/2?access_token=',
               'https://api.mapbox.com/styles/v1/mapbox/streets-v12/tiles/256/3/4/3?access_token='
@@ -156,7 +301,12 @@
       if (document.readyState === 'loading') {
         document.addEventListener('DOMContentLoaded', optimizeLoading);
       } else {
-        optimizeLoading();
+        // Use requestIdleCallback if available for better performance
+        if (window.requestIdleCallback) {
+          requestIdleCallback(optimizeLoading);
+        } else {
+          setTimeout(optimizeLoading, 1);
+        }
       }
     </script>
   </head>

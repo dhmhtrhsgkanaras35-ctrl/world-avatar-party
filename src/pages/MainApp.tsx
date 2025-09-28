@@ -103,6 +103,8 @@ const MainApp = () => {
           .insert([{
             requester_id: user.id,
             recipient_id: recipientUserId,
+            user_id: user.id, // This was missing!
+            friend_id: recipientUserId, // This was missing!
             status: 'pending'
           }] as any);
 

@@ -760,14 +760,15 @@ export const RealMapComponent = ({ showEmojiPalette = false, userLocation: propU
       delete markersRef.current[markerId];
     }
 
-    // Create marker element with avatar (with proper layering)
+    // Create marker element with avatar (with proper layering and positioning)
     const markerElement = document.createElement('div');
-    markerElement.className = 'marker-container relative';
+    markerElement.className = 'marker-container relative flex items-end justify-center';
     
     // Set z-index for proper layering: current user on top, then friends, then others
     const zIndex = isCurrentUser ? 1000 : (isFriend ? 900 : 800);
     markerElement.style.zIndex = zIndex.toString();
     markerElement.style.position = 'relative';
+    markerElement.style.transform = 'translate(-50%, -100%)'; // Center horizontally, position above point
     
     const avatarContainer = document.createElement('div');
     const borderClass = isCurrentUser 
@@ -778,12 +779,13 @@ export const RealMapComponent = ({ showEmojiPalette = false, userLocation: propU
     
     const initials = displayName.charAt(0).toUpperCase();
     
-    // Create container for full-body avatar display (much larger for visibility with proper depth)
+    // Create container for full-body avatar display (properly centered and positioned)
     avatarContainer.innerHTML = `
-      <div class="relative" style="z-index: ${zIndex};">
+      <div class="relative flex flex-col items-center" style="z-index: ${zIndex};">
         <div id="map-avatar-${userId}" class="w-24 h-40 flex items-end justify-center bg-transparent relative" style="z-index: ${zIndex + 1};"></div>
-        ${isCurrentUser ? `<div class="absolute -top-1 -right-1 w-4 h-4 bg-blue-500 rounded-full border-2 border-white shadow-lg" style="z-index: ${zIndex + 2};"></div>` : ''}
-        ${isFriend && !isCurrentUser ? `<div class="absolute -top-1 -right-1 w-4 h-4 bg-green-500 rounded-full border-2 border-white shadow-lg" style="z-index: ${zIndex + 2};"></div>` : ''}
+        ${isCurrentUser ? `<div class="absolute -top-2 -right-2 w-5 h-5 bg-blue-500 rounded-full border-2 border-white shadow-lg flex items-center justify-center" style="z-index: ${zIndex + 2};"><span class="text-xs text-white">●</span></div>` : ''}
+        ${isFriend && !isCurrentUser ? `<div class="absolute -top-2 -right-2 w-5 h-5 bg-green-500 rounded-full border-2 border-white shadow-lg flex items-center justify-center" style="z-index: ${zIndex + 2};"><span class="text-xs text-white">✓</span></div>` : ''}
+        <div class="w-2 h-2 bg-primary rounded-full shadow-lg mt-1" style="z-index: ${zIndex};"></div>
       </div>
     `;
     
@@ -850,7 +852,7 @@ export const RealMapComponent = ({ showEmojiPalette = false, userLocation: propU
         const container = document.getElementById(`map-avatar-${userId}`);
         if (container) {
           container.innerHTML = `
-            <div class="w-16 h-16 rounded-full border-2 overflow-hidden bg-white shadow-xl flex items-center justify-center ${borderClass}" style="z-index: ${zIndex + 10};">
+            <div class="w-16 h-16 rounded-full border-2 overflow-hidden bg-white shadow-xl flex items-center justify-center ${borderClass} mx-auto" style="z-index: ${zIndex + 10};">
               <div class="text-xl font-bold text-gray-700">${initials}</div>
             </div>
           `;
@@ -863,7 +865,8 @@ export const RealMapComponent = ({ showEmojiPalette = false, userLocation: propU
     loadAvatarWithFallback();
     const marker = new mapboxgl.Marker({
       element: markerElement,
-      anchor: 'bottom'
+      anchor: 'bottom', // Anchor at bottom so avatar sits on location point
+      offset: [0, 5] // Small offset to better align with map point
     })
     .setLngLat([lng, lat])
     .addTo(map.current);

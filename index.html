@@ -258,9 +258,18 @@
     <script>
       // Optimized script scheduling to minimize main-thread blocking
       const deferHeavyOperations = () => {
-        // Use scheduler API if available, fallback to setTimeout
-        const schedule = window.scheduler?.postTask || 
-                        ((callback, options) => setTimeout(callback, options?.delay || 0));
+        // Use scheduler API safely with proper context binding
+        const schedule = (callback, options = {}) => {
+          if (window.scheduler && window.scheduler.postTask) {
+            try {
+              return window.scheduler.postTask.call(window.scheduler, callback, options);
+            } catch (e) {
+              // Fallback if scheduler fails
+              return setTimeout(callback, options.delay || 0);
+            }
+          }
+          return setTimeout(callback, options.delay || 0);
+        };
         
         // Load CSS with minimal main-thread impact
         const loadCSS = (href, media = 'all') => {
@@ -278,14 +287,15 @@
             }
             
             document.head.appendChild(link);
-          }, { priority: 'background' });
+          });
         };
         
         // Progressive CSS loading to reduce main-thread work
-        const cssLink = loadCSS('/src/index.css', 'print');
+        loadCSS('/src/index.css', 'print');
         
         // Defer CSS activation to avoid layout thrashing
         schedule(() => {
+          const cssLink = document.querySelector('link[href="/src/index.css"]');
           if (cssLink && cssLink.media === 'print') {
             cssLink.media = 'all';
           }

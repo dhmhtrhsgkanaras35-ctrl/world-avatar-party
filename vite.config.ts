@@ -96,18 +96,16 @@ export default defineConfig(({ mode }) => ({
     include: [
       'react', 
       'react-dom', 
-      '@tanstack/react-query'
+      '@tanstack/react-query',
+      '@supabase/supabase-js'
     ],
     exclude: [
       // Exclude heavy libraries from pre-bundling to allow lazy loading
       'mapbox-gl',
       'three',
       '@react-three/fiber',
-      '@react-three/drei',
-      '@supabase/supabase-js'
+      '@react-three/drei'
     ],
-    // Force optimization of specific modules
-    force: true,
   },
   // Additional performance optimizations
   esbuild: {

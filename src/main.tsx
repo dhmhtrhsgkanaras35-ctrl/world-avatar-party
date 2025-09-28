@@ -2,61 +2,46 @@ import { createRoot } from "react-dom/client";
 import React from "react";
 import "./index.css";
 
-// Type augmentation for scheduler API
-declare global {
-  interface Window {
-    scheduler?: {
-      postTask: (callback: () => void, options?: { priority?: string }) => void;
-    };
-  }
-}
-
-// Dynamically import App to reduce initial bundle size and main-thread work
-const loadApp = async () => {
-  // Use dynamic import to defer heavy component loading
-  const { default: App } = await import("./App.tsx");
-  return App;
-};
-
-// Optimize React rendering with Concurrent Mode features
+// Simple direct import to avoid module resolution issues
 const initializeApp = async () => {
   const root = createRoot(document.getElementById("root")!);
   
-  // Show minimal loading state while app loads
+  // Remove loading state immediately
   const loadingElement = document.querySelector('#root > div') as HTMLElement;
+  if (loadingElement) {
+    loadingElement.style.display = 'none';
+  }
   
   try {
-    // Load app components in background
-    const App = await loadApp();
-    
-    // Use startTransition for non-urgent updates to avoid blocking main thread
-    if ('startTransition' in React) {
-      (React as any).startTransition(() => {
-        root.render(<App />);
-      });
-    } else {
-      // Fallback for older React versions
-      root.render(<App />);
-    }
-    
-    // Remove loading state after app renders
-    if (loadingElement) {
-      loadingElement.style.display = 'none';
-    }
-  } catch (error) {
-    console.error('Failed to load app:', error);
-    // Fallback to direct import if dynamic import fails
+    // Simple direct import
     const { default: App } = await import("./App.tsx");
     root.render(<App />);
+  } catch (error) {
+    console.error('Failed to load app:', error);
+    // Show error state
+    root.render(
+      <div style={{ 
+        position: 'fixed', 
+        inset: '0', 
+        display: 'flex', 
+        alignItems: 'center', 
+        justifyContent: 'center',
+        background: 'hsl(240 10% 3.9%)',
+        color: 'hsl(0 0% 98%)',
+        fontFamily: 'system-ui'
+      }}>
+        <div style={{ textAlign: 'center' }}>
+          <div style={{ fontSize: '1.125rem', fontWeight: '600', marginBottom: '0.5rem' }}>
+            Failed to load WorldMe
+          </div>
+          <div style={{ fontSize: '0.875rem', opacity: '0.8' }}>
+            Please refresh the page
+          </div>
+        </div>
+      </div>
+    );
   }
 };
 
-// Use scheduler API to defer app initialization and reduce main-thread blocking
-if (window.scheduler?.postTask) {
-  window.scheduler.postTask(initializeApp, { priority: 'user-blocking' });
-} else if (window.requestIdleCallback) {
-  requestIdleCallback(() => initializeApp(), { timeout: 100 });
-} else {
-  // Fallback to setTimeout for browsers without modern scheduling
-  setTimeout(initializeApp, 0);
-}
+// Simple initialization without complex scheduling
+initializeApp();

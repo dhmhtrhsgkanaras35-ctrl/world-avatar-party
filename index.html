@@ -294,8 +294,8 @@
         // Pre-warm heavy libraries in idle time
         if (window.requestIdleCallback) {
           requestIdleCallback(() => {
-            // Pre-initialize Mapbox tokens and Three.js modules
-            import('/src/integrations/supabase/client.js').catch(() => {});
+            // Pre-initialize Supabase modules (optional optimization)
+            import('./src/integrations/supabase/client').catch(() => {});
           }, { timeout: 2000 });
         }
       };

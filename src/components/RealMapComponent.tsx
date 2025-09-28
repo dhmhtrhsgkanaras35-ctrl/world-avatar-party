@@ -55,11 +55,12 @@ const EVENT_NAMES = {
 
 interface RealMapComponentProps {
   showEmojiPalette?: boolean;
+  onToggleEmojiPalette?: () => void;
   userLocation?: { lat: number; lng: number } | null;
   userZone?: string | null;
 }
 
-export const RealMapComponent = ({ showEmojiPalette = false, userLocation: propUserLocation, userZone: propUserZone }: RealMapComponentProps = {}) => {
+export const RealMapComponent = ({ showEmojiPalette = false, onToggleEmojiPalette, userLocation: propUserLocation, userZone: propUserZone }: RealMapComponentProps = {}) => {
   const mapContainer = useRef<HTMLDivElement>(null);
   const map = useRef<mapboxgl.Map | null>(null);
   const { user } = useAuth();
@@ -977,11 +978,14 @@ export const RealMapComponent = ({ showEmojiPalette = false, userLocation: propU
 
       {/* Event Emoji Palette */}
       {showEmojiPalette && (
-        <EventEmojiPalette 
-          user={user}
-          userLocation={userLocation}
-          userZone={propUserZone || (userLocation ? getZoneName(`${Math.floor(userLocation.lat * 1000)}_${Math.floor(userLocation.lng * 1000)}`) : null)}
-        />
+        <div className="fixed bottom-20 left-4 z-50">
+          <EventEmojiPalette 
+            user={user}
+            userLocation={userLocation}
+            userZone={propUserZone || (userLocation ? getZoneName(`${Math.floor(userLocation.lat * 1000)}_${Math.floor(userLocation.lng * 1000)}`) : null)}
+            onClose={onToggleEmojiPalette}
+          />
+        </div>
       )}
 
       {/* Instructions */}

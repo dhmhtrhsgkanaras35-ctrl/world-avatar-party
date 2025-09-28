@@ -8,6 +8,7 @@ interface EventEmojiPaletteProps {
   user: User | null;
   userLocation?: { lat: number; lng: number } | null;
   userZone?: string | null;
+  onClose?: () => void;
 }
 
 // Event type emojis mapping
@@ -35,7 +36,7 @@ const EVENT_NAMES = {
   'study': 'Study Group'
 };
 
-export const EventEmojiPalette = ({ user, userLocation, userZone }: EventEmojiPaletteProps) => {
+export const EventEmojiPalette = ({ user, userLocation, userZone, onClose }: EventEmojiPaletteProps) => {
   const { toast } = useToast();
   const [dragging, setDragging] = useState<string | null>(null);
 
@@ -83,8 +84,19 @@ export const EventEmojiPalette = ({ user, userLocation, userZone }: EventEmojiPa
   };
 
   return (
-    <Card className="fixed bottom-20 left-4 z-50 bg-background/95 backdrop-blur-sm border shadow-lg">
+    <Card className="bg-background/95 backdrop-blur-sm border shadow-lg relative">
       <CardContent className="p-3">
+        {/* Close button */}
+        {onClose && (
+          <button 
+            onClick={onClose}
+            className="absolute -top-2 -right-2 w-6 h-6 bg-gray-500 hover:bg-gray-600 text-white rounded-full text-sm font-bold flex items-center justify-center shadow-lg transition-all duration-200 hover:scale-110 z-10"
+            title="Close Event Palette"
+          >
+            ✕
+          </button>
+        )}
+        
         <div className="text-xs font-medium text-muted-foreground mb-2 text-center">
           🎯 Drag emojis to map
         </div>

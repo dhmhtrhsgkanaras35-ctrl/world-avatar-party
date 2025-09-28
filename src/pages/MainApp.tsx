@@ -198,6 +198,7 @@ const MainApp = () => {
         <div className="flex-1 relative min-h-0">
           <RealMapComponent 
             showEmojiPalette={showEmojiPalette} 
+            onToggleEmojiPalette={() => setShowEmojiPalette(!showEmojiPalette)}
             userLocation={userLocation}
             userZone={userProfile?.zone_key}
           />

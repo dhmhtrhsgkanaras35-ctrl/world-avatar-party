@@ -95,40 +95,65 @@ export const createSimpleEventMarker = ({
 
   // Add buttons separately if user is creator
   if (isCreator && !event.isTemporary) {
-    // Create manage button
+    // Create manage button container
+    const manageButtonContainer = document.createElement('div');
+    manageButtonContainer.style.cssText = 'position: absolute; top: -12px; left: -12px; z-index: 10001; pointer-events: auto;';
+    
     const manageButton = document.createElement('button');
-    manageButton.className = 'manage-event-btn absolute w-6 h-6 bg-blue-500 hover:bg-blue-600 text-white rounded-full text-xs font-bold flex items-center justify-center shadow-xl transition-all duration-200 hover:scale-110 cursor-pointer border border-white';
-    manageButton.style.cssText = 'top: -8px; left: -28px; z-index: 10000; pointer-events: auto;';
+    manageButton.className = 'w-6 h-6 bg-blue-500 hover:bg-blue-600 text-white rounded-full text-xs font-bold flex items-center justify-center shadow-xl transition-all duration-200 hover:scale-110 cursor-pointer border-2 border-white';
     manageButton.innerHTML = '⋯';
     manageButton.title = 'Manage Event';
-    markerElement.appendChild(manageButton);
+    manageButton.style.pointerEvents = 'auto';
+    
+    manageButtonContainer.appendChild(manageButton);
+    markerElement.appendChild(manageButtonContainer);
 
-    // Create close button
+    // Create close button container
+    const closeButtonContainer = document.createElement('div');
+    closeButtonContainer.style.cssText = 'position: absolute; top: -12px; right: -12px; z-index: 10001; pointer-events: auto;';
+    
     const closeButton = document.createElement('button');
-    closeButton.className = 'close-event-btn absolute w-6 h-6 bg-red-500 hover:bg-red-600 text-white rounded-full text-xs font-bold flex items-center justify-center shadow-xl transition-all duration-200 hover:scale-110 cursor-pointer border border-white';
-    closeButton.style.cssText = 'top: -8px; right: -8px; z-index: 10000; pointer-events: auto;';
+    closeButton.className = 'w-6 h-6 bg-red-500 hover:bg-red-600 text-white rounded-full text-xs font-bold flex items-center justify-center shadow-xl transition-all duration-200 hover:scale-110 cursor-pointer border-2 border-white';
     closeButton.innerHTML = '✕';
     closeButton.title = 'Close Event';
-    markerElement.appendChild(closeButton);
+    closeButton.style.pointerEvents = 'auto';
+    
+    closeButtonContainer.appendChild(closeButton);
+    markerElement.appendChild(closeButtonContainer);
 
-    // Add direct event listeners to buttons
+    // Add event listeners with better isolation
     manageButton.addEventListener('click', (e) => {
       e.preventDefault();
       e.stopPropagation();
+      e.stopImmediatePropagation();
       console.log('🔧 MANAGE BUTTON CLICKED for event:', event.id);
       if (onManageEvent) {
         onManageEvent(event.id);
       }
-    });
+    }, { capture: true });
 
     closeButton.addEventListener('click', (e) => {
       e.preventDefault();
       e.stopPropagation();
+      e.stopImmediatePropagation();
       console.log('🔥 CLOSE BUTTON CLICKED for event:', event.id);
       if (onCloseEvent) {
         onCloseEvent(event.id);
       }
-    });
+    }, { capture: true });
+
+    // Prevent button containers from triggering parent clicks
+    manageButtonContainer.addEventListener('click', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      e.stopImmediatePropagation();
+    }, { capture: true });
+
+    closeButtonContainer.addEventListener('click', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      e.stopImmediatePropagation();
+    }, { capture: true });
   }
 
   // Enhanced click handler for main event (only handle non-button clicks)

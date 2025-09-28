@@ -204,13 +204,13 @@ const MainApp = () => {
           />
           
           
-          {/* Floating header - very compact to avoid map controls */}
-          <header className="absolute top-2 left-2 right-16 bg-background/90 backdrop-blur-sm rounded-md border px-2 py-1 flex items-center justify-between z-10 max-w-[300px]">
-            <div className="flex items-center gap-2">
-              <h1 className="text-xs font-bold gradient-party bg-clip-text text-transparent">
+          {/* Floating header - Mobile optimized */}
+          <header className="absolute top-2 left-2 right-2 bg-background/90 backdrop-blur-sm rounded-lg border px-3 py-2 flex items-center justify-between z-10 safe-area-inset-top">
+            <div className="flex items-center gap-2 flex-1 min-w-0">
+              <h1 className="text-sm font-bold gradient-party bg-clip-text text-transparent">
                 WorldMe
               </h1>
-              <div className="text-xs text-muted-foreground truncate">
+              <div className="text-xs text-muted-foreground truncate flex-1">
                 {userProfile?.display_name || user?.user_metadata?.display_name || 'User'}
               </div>
             </div>
@@ -225,16 +225,16 @@ const MainApp = () => {
           <LocationToggle user={user} />
         </div>
 
-      {/* Bottom Navigation - Party Theme */}
+      {/* Bottom Navigation - Mobile optimized with safe area */}
       <div className="bg-card/95 backdrop-blur-sm border-t border-border/20 shadow-2xl shrink-0 safe-area-inset-bottom">
-        <div className="flex justify-around items-center px-2 py-3 max-w-full mx-auto min-h-[64px]">
+        <div className="flex justify-around items-center px-4 py-3 max-w-full mx-auto min-h-[68px]">
           <Button
             variant="ghost"
             size="sm"
-            className="flex flex-col items-center gap-1 h-auto py-2 px-2 min-w-0 party-button gradient-party text-primary-foreground hover:scale-105"
+            className="flex flex-col items-center gap-1 h-auto py-2 px-3 min-w-[60px] party-button gradient-party text-primary-foreground hover:scale-105 transition-transform duration-200"
             onClick={() => setShowEmojiPalette(!showEmojiPalette)}
           >
-            <Plus className="h-5 w-5" />
+            <Plus className="h-6 w-6" />
             <span className="text-xs font-semibold">Create</span>
           </Button>
 
@@ -245,10 +245,10 @@ const MainApp = () => {
           <Button
             variant="ghost"
             size="sm"
-            className="flex flex-col items-center gap-1 h-auto py-2 px-2 min-w-0 party-button gradient-social text-primary-foreground hover:scale-105"
+            className="flex flex-col items-center gap-1 h-auto py-2 px-3 min-w-[60px] party-button gradient-social text-primary-foreground hover:scale-105 transition-transform duration-200"
             onClick={() => navigate('/profile')}
           >
-            <User className="h-5 w-5" />
+            <User className="h-6 w-6" />
             <span className="text-xs font-semibold">Profile</span>
           </Button>
         </div>

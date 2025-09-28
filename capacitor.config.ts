@@ -15,6 +15,16 @@ const config: CapacitorConfig = {
     },
     ScreenOrientation: {
       orientation: 'portrait'
+    },
+    Keyboard: {
+      resize: 'ionic'
+    },
+    SplashScreen: {
+      launchShowDuration: 2000,
+      backgroundColor: '#000000',
+      showSpinner: true,
+      androidSpinnerStyle: 'small',
+      iosSpinnerStyle: 'small'
     }
   }
 };

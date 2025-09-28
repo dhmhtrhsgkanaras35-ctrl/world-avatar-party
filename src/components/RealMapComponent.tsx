@@ -976,23 +976,23 @@ export const RealMapComponent = ({ showEmojiPalette = false, onToggleEmojiPalett
     <div className="w-full h-screen relative">
       <div ref={mapContainer} className="absolute inset-0" />
       
-      {/* Zone sharing note */}
+      {/* Zone sharing note - Mobile optimized */}
       {showZoneNote && (
-        <Card className="absolute top-4 left-4 right-4 z-40 bg-gradient-to-r from-blue-50 to-purple-50 border-blue-200">
-          <CardContent className="p-3">
+        <Card className="absolute top-4 left-2 right-2 z-40 bg-gradient-to-r from-blue-50 to-purple-50 border-blue-200">
+          <CardContent className="p-2">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <span className="text-lg">📍</span>
-                <div className="text-sm">
+                <span className="text-base">📍</span>
+                <div className="text-xs">
                   <div className="font-medium text-blue-800">Zone-based social map</div>
-                  <div className="text-blue-600">Find people and events in your area (~100m zones)</div>
+                  <div className="text-blue-600">Find people and events nearby</div>
                 </div>
               </div>
               <Button
                 variant="ghost"
                 size="sm"
                 onClick={() => setShowZoneNote(false)}
-                className="text-blue-600 hover:text-blue-800"
+                className="text-blue-600 hover:text-blue-800 h-8 w-8 p-0"
               >
                 ×
               </Button>
@@ -1001,9 +1001,9 @@ export const RealMapComponent = ({ showEmojiPalette = false, onToggleEmojiPalett
         </Card>
       )}
 
-      {/* Event Emoji Palette */}
+      {/* Event Emoji Palette - Mobile optimized */}
       {showEmojiPalette && (
-        <div className="fixed bottom-20 left-4 z-50">
+        <div className="fixed bottom-20 left-2 z-50">
           <EventEmojiPalette 
             user={user}
             userLocation={userLocation}
@@ -1013,18 +1013,18 @@ export const RealMapComponent = ({ showEmojiPalette = false, onToggleEmojiPalett
         </div>
       )}
 
-      {/* Instructions */}
+      {/* Instructions - Mobile optimized */}
       {showEmojiPalette && (
-        <Card className="fixed bottom-4 right-4 z-50 bg-white/95 backdrop-blur-sm border shadow-lg">
-          <CardContent className="p-3">
-            <div className="text-xs font-medium text-gray-700">
-              🎯 Drag emojis from palette to create events
+        <Card className="fixed bottom-20 right-2 z-50 bg-white/95 backdrop-blur-sm border shadow-lg max-w-[140px]">
+          <CardContent className="p-2">
+            <div className="text-xs font-medium text-gray-700 text-center">
+              🎯 Drag emojis to create events
             </div>
           </CardContent>
         </Card>
       )}
 
-      {/* Event Chat Button */}
+      {/* Event Chat Button - Moved up for mobile */}
       {!showEmojiPalette && (
         <Button
           onClick={() => {
@@ -1039,10 +1039,10 @@ export const RealMapComponent = ({ showEmojiPalette = false, onToggleEmojiPalett
               });
             }
           }}
-          className="fixed bottom-4 right-4 z-50 rounded-full w-12 h-12"
+          className="fixed bottom-20 right-4 z-50 rounded-full w-14 h-14 shadow-lg hover:shadow-xl transition-all duration-200 hover:scale-110"
           size="sm"
         >
-          💬
+          <span className="text-2xl">💬</span>
         </Button>
       )}
 

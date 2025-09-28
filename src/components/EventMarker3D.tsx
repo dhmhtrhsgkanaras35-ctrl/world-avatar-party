@@ -274,25 +274,26 @@ export const createEventMarker3D = ({
     el.appendChild(markerContainer);
   }
 
-  // Add delete and place event buttons for permanent event owners - LARGE, STABLE OVERLAY
+  // Add delete and place event buttons for permanent event owners - ISOLATED FROM DRAG AREA
   if (currentUserId === event.created_by && !event.isTemporary) {
-    // Container for both buttons
+    // Container for both buttons - positioned OUTSIDE the draggable area
     const buttonsContainer = document.createElement('div');
     buttonsContainer.style.cssText = `
       position: absolute;
-      top: -25px;
-      left: -70px;
+      top: -30px;
+      left: -80px;
       display: flex;
       gap: 10px;
       z-index: 1003;
+      pointer-events: none;
     `;
 
     // Place Event Button
     const placeOverlay = document.createElement('div');
     placeOverlay.style.cssText = `
-      width: 60px;
-      height: 60px;
-      background: rgba(34, 197, 94, 0.1);
+      width: 50px;
+      height: 50px;
+      background: rgba(34, 197, 94, 0.9);
       border-radius: 50%;
       cursor: pointer;
       display: flex;
@@ -300,26 +301,17 @@ export const createEventMarker3D = ({
       justify-content: center;
       pointer-events: auto;
       transition: all 0.2s ease;
+      border: 3px solid white;
+      box-shadow: 0 4px 16px rgba(34, 197, 94, 0.6);
     `;
     
     const placeButton = document.createElement('div');
     placeButton.style.cssText = `
-      background: ${event.isEditMode ? '#22c55e' : '#6b7280'};
       color: white;
-      border-radius: 50%;
-      width: 32px;
-      height: 32px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 16px;
+      font-size: 18px;
       font-weight: bold;
-      cursor: pointer;
-      border: 3px solid white;
-      box-shadow: 0 4px 16px rgba(34, 197, 94, 0.6);
-      opacity: 0.9;
-      transition: all 0.2s ease;
-      pointer-events: auto;
+      pointer-events: none;
+      user-select: none;
     `;
     placeButton.innerHTML = event.isEditMode ? '📍' : '✋';
     placeButton.title = event.isEditMode ? 'Lock Event Position' : 'Enable Drag Mode';
@@ -329,35 +321,27 @@ export const createEventMarker3D = ({
     // Delete Button
     const deleteOverlay = document.createElement('div');
     deleteOverlay.style.cssText = `
-      width: 60px;
-      height: 60px;
-      background: rgba(239, 68, 68, 0.1);
+      width: 50px;
+      height: 50px;
+      background: rgba(239, 68, 68, 0.9);
       border-radius: 50%;
       cursor: pointer;
       display: flex;
       align-items: center;
       justify-content: center;
       pointer-events: auto;
+      transition: all 0.2s ease;
+      border: 3px solid white;
+      box-shadow: 0 4px 16px rgba(239, 68, 68, 0.6);
     `;
     
     const deleteButton = document.createElement('div');
     deleteButton.style.cssText = `
-      background: #ef4444;
       color: white;
-      border-radius: 50%;
-      width: 32px;
-      height: 32px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 20px;
+      font-size: 24px;
       font-weight: bold;
-      cursor: pointer;
-      border: 3px solid white;
-      box-shadow: 0 4px 16px rgba(239, 68, 68, 0.6);
-      opacity: 0.9;
-      transition: all 0.2s ease;
-      pointer-events: auto;
+      pointer-events: none;
+      user-select: none;
     `;
     deleteButton.innerHTML = '×';
     deleteButton.title = 'Delete Event';
@@ -368,76 +352,67 @@ export const createEventMarker3D = ({
     buttonsContainer.appendChild(placeOverlay);
     buttonsContainer.appendChild(deleteOverlay);
 
-    // Place button event handlers
+    // Place button event handlers - COMPLETELY ISOLATED
     const handlePlaceClick = (e) => {
-      e.stopPropagation();
-      e.preventDefault();
       e.stopImmediatePropagation();
+      e.preventDefault();
+      e.stopPropagation();
       console.log('Place/Edit button clicked for event:', event.id);
       if (onToggleEditMode) {
         onToggleEditMode(event.id);
       }
     };
 
-    // Delete button event handlers  
+    // Delete button event handlers - COMPLETELY ISOLATED
     const handleDelete = (e) => {
-      e.stopPropagation();
-      e.preventDefault();
       e.stopImmediatePropagation();
+      e.preventDefault();
+      e.stopPropagation();
       console.log('Delete button clicked for permanent event:', event.id);
       if (onEventDelete && confirm('Are you sure you want to delete this event?')) {
         onEventDelete(event.id);
       }
     };
     
-    // Add listeners to both overlay and button for place
-    placeOverlay.addEventListener('click', handlePlaceClick);
-    placeButton.addEventListener('click', handlePlaceClick);
+    // CRITICAL: Prevent ALL mouse events from bubbling up to the marker
+    const preventAllEvents = (e) => {
+      e.stopImmediatePropagation();
+      e.preventDefault();
+      e.stopPropagation();
+    };
     
-    // Add listeners to both overlay and button for delete
-    deleteOverlay.addEventListener('click', handleDelete);
-    deleteButton.addEventListener('click', handleDelete);
-    
-    // Prevent all drag/move behavior for both buttons
-    [placeOverlay, placeButton, deleteOverlay, deleteButton].forEach(element => {
-      element.addEventListener('mousedown', (e) => {
-        e.stopPropagation();
-        e.preventDefault();
-      });
-      element.addEventListener('touchstart', (e) => {
-        e.stopPropagation();
-        e.preventDefault();
-      });
-      element.addEventListener('dragstart', (e) => {
-        e.preventDefault();
-        e.stopPropagation();
+    // Add comprehensive event prevention to both buttons
+    [placeOverlay, deleteOverlay].forEach(element => {
+      // Click handlers
+      element.addEventListener('click', element === placeOverlay ? handlePlaceClick : handleDelete);
+      
+      // Prevent ALL possible drag-related events
+      ['mousedown', 'mouseup', 'mousemove', 'touchstart', 'touchend', 'touchmove', 
+       'dragstart', 'drag', 'dragend', 'dragover', 'dragenter', 'dragleave', 'drop',
+       'pointerdown', 'pointermove', 'pointerup'].forEach(eventType => {
+        element.addEventListener(eventType, preventAllEvents, true);
       });
     });
     
-    // Enhanced hover effects for place button
+    // Enhanced hover effects
     placeOverlay.addEventListener('mouseenter', () => {
-      placeButton.style.opacity = '1';
-      placeButton.style.transform = 'scale(1.1)';
-      placeButton.style.boxShadow = '0 6px 20px rgba(34, 197, 94, 0.8)';
+      placeOverlay.style.transform = 'scale(1.1)';
+      placeOverlay.style.boxShadow = '0 6px 20px rgba(34, 197, 94, 0.8)';
     });
     
     placeOverlay.addEventListener('mouseleave', () => {
-      placeButton.style.opacity = '0.9';
-      placeButton.style.transform = 'scale(1)';
-      placeButton.style.boxShadow = '0 4px 16px rgba(34, 197, 94, 0.6)';
+      placeOverlay.style.transform = 'scale(1)';
+      placeOverlay.style.boxShadow = '0 4px 16px rgba(34, 197, 94, 0.6)';
     });
 
-    // Enhanced hover effects for delete button
     deleteOverlay.addEventListener('mouseenter', () => {
-      deleteButton.style.opacity = '1';
-      deleteButton.style.transform = 'scale(1.1)';
-      deleteButton.style.boxShadow = '0 6px 20px rgba(239, 68, 68, 0.8)';
+      deleteOverlay.style.transform = 'scale(1.1)';
+      deleteOverlay.style.boxShadow = '0 6px 20px rgba(239, 68, 68, 0.8)';
     });
     
     deleteOverlay.addEventListener('mouseleave', () => {
-      deleteButton.style.opacity = '0.9';
-      deleteButton.style.transform = 'scale(1)';
-      deleteButton.style.boxShadow = '0 4px 16px rgba(239, 68, 68, 0.6)';
+      deleteOverlay.style.transform = 'scale(1)';
+      deleteOverlay.style.boxShadow = '0 4px 16px rgba(239, 68, 68, 0.6)';
     });
     
     el.appendChild(buttonsContainer);

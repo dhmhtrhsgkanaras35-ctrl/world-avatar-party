@@ -1353,8 +1353,11 @@ export const RealMapComponent = () => {
             .setLngLat([event.longitude, event.latitude])
             .addTo(map.current!);
 
-          // Handle drag events for position updates
+          console.log(`Marker created for event ${event.id}, draggable: ${editModeEvents.has(event.id)}`);
+
+          // Handle drag events for position updates ONLY when in edit mode
           if (editModeEvents.has(event.id)) {
+            console.log(`Setting up drag handlers for event ${event.id}`);
             marker.on('dragend', () => {
               const lngLat = marker.getLngLat();
               console.log('Event dragged to:', lngLat.lat, lngLat.lng);
@@ -1386,11 +1389,37 @@ export const RealMapComponent = () => {
                   }
                 });
             });
+
+            // Add visual feedback during drag
+            marker.on('dragstart', () => {
+              console.log('Drag started for event:', event.id);
+              eventElement.style.transform = 'scale(1.1)';
+              eventElement.style.zIndex = '2000';
+            });
+
+            marker.on('drag', () => {
+              // Visual feedback during drag
+              eventElement.style.opacity = '0.8';
+            });
+
+            marker.on('dragend', () => {
+              console.log('Drag ended for event:', event.id);
+              eventElement.style.transform = 'scale(1)';
+              eventElement.style.opacity = '1';
+              eventElement.style.zIndex = '100';
+            });
           } else {
-            // Prevent drag events when not in edit mode
-            eventElement.addEventListener('dragstart', (e) => {
+            // COMPLETELY prevent drag when not in edit mode
+            console.log(`Preventing all drag for event ${event.id}`);
+            const preventAllDrag = (e) => {
               e.preventDefault();
               e.stopPropagation();
+              e.stopImmediatePropagation();
+              console.log('Prevented drag attempt on non-edit mode event');
+            };
+            
+            ['dragstart', 'drag', 'dragend', 'mousedown'].forEach(eventType => {
+              eventElement.addEventListener(eventType, preventAllDrag, true);
             });
           }
 

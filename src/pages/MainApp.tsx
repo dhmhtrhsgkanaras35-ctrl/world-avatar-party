@@ -242,14 +242,14 @@ const MainApp = () => {
 
       {/* Bottom Navigation - Mobile optimized with safe area */}
       <div className="bg-card/95 backdrop-blur-sm border-t border-border/20 shadow-2xl shrink-0 safe-area-inset-bottom">
-        <div className="flex justify-around items-center px-4 py-3 max-w-full mx-auto min-h-[68px]">
+        <div className="flex justify-around items-center px-2 py-1 max-w-full mx-auto min-h-[48px]">
           <Button
             variant="ghost"
             size="sm"
-            className="flex flex-col items-center gap-1 h-auto py-2 px-3 min-w-[60px] party-button gradient-party text-primary-foreground hover:scale-105 transition-transform duration-200"
+            className="flex flex-col items-center gap-0.5 h-auto py-1 px-2 min-w-[50px] party-button gradient-party text-primary-foreground hover:scale-105 transition-transform duration-200"
             onClick={() => setShowEmojiPalette(!showEmojiPalette)}
           >
-            <Plus className="h-6 w-6" />
+            <Plus className="h-5 w-5" />
             <span className="text-xs font-semibold">Create</span>
           </Button>
 
@@ -260,10 +260,10 @@ const MainApp = () => {
           <Button
             variant="ghost"
             size="sm"
-            className="flex flex-col items-center gap-1 h-auto py-2 px-3 min-w-[60px] party-button gradient-social text-primary-foreground hover:scale-105 transition-transform duration-200"
+            className="flex flex-col items-center gap-0.5 h-auto py-1 px-2 min-w-[50px] party-button gradient-social text-primary-foreground hover:scale-105 transition-transform duration-200"
             onClick={() => navigate('/profile')}
           >
-            <User className="h-6 w-6" />
+            <User className="h-5 w-5" />
             <span className="text-xs font-semibold">Profile</span>
           </Button>
         </div>

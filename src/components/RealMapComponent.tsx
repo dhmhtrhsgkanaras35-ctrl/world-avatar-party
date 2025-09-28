@@ -773,27 +773,50 @@ export const RealMapComponent = ({ showEmojiPalette = false, userLocation: propU
     
     const initials = displayName.charAt(0).toUpperCase();
     
-    // Create a container div for the React component
-    avatarContainer.innerHTML = `<div id="map-avatar-${userId}" class="w-20 h-[120px]"></div>`;
+    // Create a larger container for full-body avatar display
+    avatarContainer.innerHTML = `
+      <div class="relative">
+        <div id="map-avatar-${userId}" class="w-16 h-20"></div>
+        ${isCurrentUser ? '<div class="absolute -top-1 -right-1 w-4 h-4 bg-blue-500 rounded-full border-2 border-white shadow-lg"></div>' : ''}
+        ${isFriend && !isCurrentUser ? '<div class="absolute -top-1 -right-1 w-4 h-4 bg-green-500 rounded-full border-2 border-white shadow-lg"></div>' : ''}
+      </div>
+    `;
     
     markerElement.appendChild(avatarContainer);
 
-    // Use React to render the 3D avatar component
+    // Use React to render the 3D avatar component (same as profile page)
     import('react').then(React => {
       import('react-dom/client').then(ReactDOM => {
-        import('./MapAvatar3D').then(({ MapAvatar3D }) => {
+        import('../components/Avatar3D').then(({ Avatar3D }) => {
           const container = document.getElementById(`map-avatar-${userId}`);
-          if (container) {
-            const root = ReactDOM.createRoot(container);
-            root.render(
-              React.createElement(MapAvatar3D, {
-                avatarUrl,
-                displayName,
-                isCurrentUser,
-                isFriend,
-                size: 'large'
-              })
-            );
+          if (container && avatarUrl) {
+            // Extract avatar ID and convert to GLB URL
+            const matches = avatarUrl.match(/avatar\/([a-f0-9]{24})/);
+            if (matches) {
+              const avatarId = matches[1];
+              const glbUrl = `https://models.readyplayer.me/${avatarId}.glb?pose=A&morphTargets=ARKit,Oculus%20Visemes`;
+              
+              const root = ReactDOM.createRoot(container);
+              root.render(
+                React.createElement(Avatar3D, {
+                  avatarUrl: glbUrl,
+                  width: 64,
+                  height: 80,
+                  animate: false,
+                  showControls: false,
+                  className: "filter drop-shadow-lg"
+                })
+              );
+            } else {
+              // Fallback for invalid URL
+              container.innerHTML = `
+                <div class="w-12 h-12 rounded-full border-2 overflow-hidden bg-white shadow-xl flex items-center justify-center ${
+                  isCurrentUser ? 'border-blue-500 ring-2 ring-blue-200' : isFriend ? 'border-green-500 ring-2 ring-green-200' : 'border-gray-400'
+                }">
+                  <div class="text-lg font-bold text-gray-700">${displayName.charAt(0).toUpperCase()}</div>
+                </div>
+              `;
+            }
           }
         });
       });

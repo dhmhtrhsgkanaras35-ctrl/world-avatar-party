@@ -784,9 +784,9 @@ export const RealMapComponent = ({ showEmojiPalette = false, userLocation: propU
 
     avatarContainer.innerHTML = `
       <div class="relative">
-        <div class="w-16 h-20 flex items-center justify-center transition-transform hover:scale-110" id="avatar-container-${userId}">
+        <div class="w-20 h-24 flex items-center justify-center transition-transform hover:scale-110" id="avatar-container-${userId}">
           ${glbUrl ? 
-            `<div class="w-16 h-20 avatar-3d-container" id="avatar-3d-${userId}"></div>` :
+            `<div class="w-20 h-24 avatar-3d-container" id="avatar-3d-${userId}"></div>` :
             `<div class="w-12 h-12 rounded-full border-2 overflow-hidden bg-white shadow-xl flex items-center justify-center ${borderClass}">
               <div class="text-lg font-bold text-gray-700">${initials}</div>
              </div>`
@@ -809,8 +809,8 @@ export const RealMapComponent = ({ showEmojiPalette = false, userLocation: propU
               root.render(
                 React.createElement(Avatar3D, {
                   avatarUrl: glbUrl,
-                  width: 64,
-                  height: 80,
+                  width: 80,
+                  height: 100,
                   animate: false,
                   showControls: false,
                   className: "filter drop-shadow-lg"

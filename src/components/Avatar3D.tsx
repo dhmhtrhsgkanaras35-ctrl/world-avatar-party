@@ -86,7 +86,7 @@ export const Avatar3D = ({
           precision: "highp",
           preserveDrawingBuffer: true
         }}
-        dpr={[1, 2]}
+        dpr={[2, 3]}
         style={{ background: 'transparent' }}
       >
         <Suspense fallback={null}>

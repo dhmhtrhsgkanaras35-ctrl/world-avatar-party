@@ -607,9 +607,14 @@ export const RealMapComponent = ({ showEmojiPalette = false, onToggleEmojiPalett
 
   // Handle closing an event
   const handleCloseEvent = async (eventId: string) => {
-    if (!user) return;
+    console.log('🔥 handleCloseEvent called for:', eventId);
+    if (!user) {
+      console.error('❌ No user found for closing event');
+      return;
+    }
 
     try {
+      console.log('🔄 Attempting to close event:', eventId, 'by user:', user.id);
       const { error } = await supabase
         .from('events')
         .update({
@@ -620,7 +625,7 @@ export const RealMapComponent = ({ showEmojiPalette = false, onToggleEmojiPalett
         .eq('created_by', user.id); // Make sure only creator can close
 
       if (error) {
-        console.error('Error closing event:', error);
+        console.error('❌ Error closing event:', error);
         toast({
           title: "Error",
           description: "Failed to close event",
@@ -629,8 +634,11 @@ export const RealMapComponent = ({ showEmojiPalette = false, onToggleEmojiPalett
         return;
       }
 
+      console.log('✅ Event closed successfully in database');
+
       // Remove the event marker from map
       if (eventMarkersRef.current[eventId]) {
+        console.log('🗺️ Removing event marker from map');
         eventMarkersRef.current[eventId].remove();
         delete eventMarkersRef.current[eventId];
       }
@@ -644,7 +652,7 @@ export const RealMapComponent = ({ showEmojiPalette = false, onToggleEmojiPalett
       });
 
     } catch (error) {
-      console.error('Error closing event:', error);
+      console.error('❌ Error closing event:', error);
       toast({
         title: "Error", 
         description: "Failed to close event",

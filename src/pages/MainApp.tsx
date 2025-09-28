@@ -109,10 +109,10 @@ const MainApp = () => {
           .insert([{
             requester_id: user.id,
             recipient_id: recipientUserId,
-            user_id: user.id, // This was missing!
-            friend_id: recipientUserId, // This was missing!
+            user_id: user.id,
+            friend_id: recipientUserId,
             status: 'pending'
-          }] as any);
+          }]);
 
         if (error) {
           console.error('Database error sending friend request:', error);

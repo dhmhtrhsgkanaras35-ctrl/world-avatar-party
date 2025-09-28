@@ -158,4 +158,28 @@
   .safe-area-inset-top {
     padding-top: env(safe-area-inset-top, 0);
   }
+
+  /* Event Marker 3D Hover Effects - Prevent Forced Reflows */
+  .event-marker-3d-container {
+    transition: transform 0.3s ease, z-index 0s;
+  }
+  
+  .event-marker-3d-container.hover-active {
+    transform: scale(1.1) translateY(-5px);
+    z-index: 1000;
+  }
+  
+  .event-marker-button {
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+  }
+  
+  .event-marker-button.place-button-hover {
+    transform: scale(1.1);
+    box-shadow: 0 6px 20px rgba(34, 197, 94, 0.8);
+  }
+  
+  .event-marker-button.delete-button-hover {
+    transform: scale(1.1);
+    box-shadow: 0 6px 20px rgba(239, 68, 68, 0.8);
+  }
 }

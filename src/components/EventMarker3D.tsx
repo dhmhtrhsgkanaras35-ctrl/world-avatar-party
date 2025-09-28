@@ -290,6 +290,7 @@ export const createEventMarker3D = ({
 
     // Place Event Button
     const placeOverlay = document.createElement('div');
+    placeOverlay.className = 'event-marker-button';
     placeOverlay.style.cssText = `
       width: 50px;
       height: 50px;
@@ -300,7 +301,6 @@ export const createEventMarker3D = ({
       align-items: center;
       justify-content: center;
       pointer-events: auto;
-      transition: all 0.2s ease;
       border: 3px solid white;
       box-shadow: 0 4px 16px rgba(34, 197, 94, 0.6);
     `;
@@ -320,6 +320,7 @@ export const createEventMarker3D = ({
 
     // Delete Button
     const deleteOverlay = document.createElement('div');
+    deleteOverlay.className = 'event-marker-button';
     deleteOverlay.style.cssText = `
       width: 50px;
       height: 50px;
@@ -330,7 +331,6 @@ export const createEventMarker3D = ({
       align-items: center;
       justify-content: center;
       pointer-events: auto;
-      transition: all 0.2s ease;
       border: 3px solid white;
       box-shadow: 0 4px 16px rgba(239, 68, 68, 0.6);
     `;
@@ -394,39 +394,33 @@ export const createEventMarker3D = ({
       });
     });
     
-    // Enhanced hover effects
+    // Enhanced hover effects using CSS classes to prevent forced reflows
     placeOverlay.addEventListener('mouseenter', () => {
-      placeOverlay.style.transform = 'scale(1.1)';
-      placeOverlay.style.boxShadow = '0 6px 20px rgba(34, 197, 94, 0.8)';
+      placeOverlay.classList.add('place-button-hover');
     });
     
     placeOverlay.addEventListener('mouseleave', () => {
-      placeOverlay.style.transform = 'scale(1)';
-      placeOverlay.style.boxShadow = '0 4px 16px rgba(34, 197, 94, 0.6)';
+      placeOverlay.classList.remove('place-button-hover');
     });
 
     deleteOverlay.addEventListener('mouseenter', () => {
-      deleteOverlay.style.transform = 'scale(1.1)';
-      deleteOverlay.style.boxShadow = '0 6px 20px rgba(239, 68, 68, 0.8)';
+      deleteOverlay.classList.add('delete-button-hover');
     });
     
     deleteOverlay.addEventListener('mouseleave', () => {
-      deleteOverlay.style.transform = 'scale(1)';
-      deleteOverlay.style.boxShadow = '0 4px 16px rgba(239, 68, 68, 0.6)';
+      deleteOverlay.classList.remove('delete-button-hover');
     });
     
     el.appendChild(buttonsContainer);
   }
 
-  // Add hover effects
+  // Add hover effects using CSS classes to prevent forced reflows
   el.addEventListener('mouseenter', () => {
-    el.style.transform = 'scale(1.1) translateY(-5px)';
-    el.style.zIndex = '1000';
+    el.classList.add('hover-active');
   });
   
   el.addEventListener('mouseleave', () => {
-    el.style.transform = 'scale(1) translateY(0)';
-    el.style.zIndex = '100';
+    el.classList.remove('hover-active');
   });
 
   // Add click handler for temporary events (to place them)

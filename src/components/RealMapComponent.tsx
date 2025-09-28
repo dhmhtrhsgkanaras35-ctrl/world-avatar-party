@@ -773,10 +773,10 @@ export const RealMapComponent = ({ showEmojiPalette = false, userLocation: propU
     
     const initials = displayName.charAt(0).toUpperCase();
     
-    // Create a much larger container for full-body avatar display (similar to profile page)
+    // Create a much larger container for full-body avatar display  
     avatarContainer.innerHTML = `
       <div class="relative">
-        <div id="map-avatar-${userId}" class="w-24 h-32"></div>
+        <div id="map-avatar-${userId}" class="w-16 h-24 flex items-end justify-center"></div>
         ${isCurrentUser ? '<div class="absolute -top-1 -right-1 w-4 h-4 bg-blue-500 rounded-full border-2 border-white shadow-lg"></div>' : ''}
         ${isFriend && !isCurrentUser ? '<div class="absolute -top-1 -right-1 w-4 h-4 bg-green-500 rounded-full border-2 border-white shadow-lg"></div>' : ''}
       </div>
@@ -784,55 +784,25 @@ export const RealMapComponent = ({ showEmojiPalette = false, userLocation: propU
     
     markerElement.appendChild(avatarContainer);
 
-    // Use React to render the 3D avatar component (same as profile page)
-    import('react').then(React => {
-      import('react-dom/client').then(ReactDOM => {
-        import('../components/Avatar3D').then(({ Avatar3D }) => {
-          const container = document.getElementById(`map-avatar-${userId}`);
-          if (container && avatarUrl) {
-            console.log('🎭 Loading avatar for', displayName, 'with URL:', avatarUrl);
-            
-            // Extract avatar ID and convert to GLB URL
-            const matches = avatarUrl.match(/avatar\/([a-f0-9]{24})/);
-            if (matches) {
-              const avatarId = matches[1];
-              const glbUrl = `https://models.readyplayer.me/${avatarId}.glb?pose=A&morphTargets=ARKit,Oculus%20Visemes`;
-              
-              console.log('🎯 Using GLB URL:', glbUrl);
-              console.log('📦 Container size:', container.offsetWidth, 'x', container.offsetHeight);
-              
-              const root = ReactDOM.createRoot(container);
-              root.render(
-                React.createElement(Avatar3D, {
-                  avatarUrl: glbUrl,
-                  width: 96,
-                  height: 128,
-                  animate: false,
-                  showControls: false,
-                  className: "filter drop-shadow-lg"
-                })
-              );
-              
-              console.log('✅ Avatar3D component rendered for', displayName);
-            } else {
-              console.warn('❌ Could not extract avatar ID from URL:', avatarUrl);
-              // Fallback for invalid URL
-              container.innerHTML = `
-                <div class="w-12 h-12 rounded-full border-2 overflow-hidden bg-white shadow-xl flex items-center justify-center ${
-                  isCurrentUser ? 'border-blue-500 ring-2 ring-blue-200' : isFriend ? 'border-green-500 ring-2 ring-green-200' : 'border-gray-400'
-                }">
-                  <div class="text-lg font-bold text-gray-700">${displayName.charAt(0).toUpperCase()}</div>
-                </div>
-              `;
-            }
-          } else {
-            console.warn('⚠️ Container not found or no avatar URL for', displayName);
-          }
-        }).catch(err => {
-          console.error('❌ Failed to load Avatar3D component:', err);
-        });
-      });
-    });
+    // Use the ReadyPlayerMe PNG directly for full-body display
+    if (avatarUrl) {
+      console.log('🎭 Loading full-body avatar for', displayName, 'with URL:', avatarUrl);
+      const container = document.getElementById(`map-avatar-${userId}`);
+      if (container) {
+        container.innerHTML = `
+          <img 
+            src="${avatarUrl}" 
+            alt="${displayName}"
+            class="w-16 h-24 object-contain object-bottom filter drop-shadow-lg"
+            style="image-rendering: -webkit-optimize-contrast;"
+            onload="console.log('✅ Avatar loaded successfully for ${displayName}');"
+            onerror="console.warn('❌ Avatar failed to load for ${displayName}'); this.style.display='none'; this.parentElement.innerHTML='<div class=\\"w-12 h-12 rounded-full border-2 overflow-hidden bg-white shadow-xl flex items-center justify-center ${
+              isCurrentUser ? 'border-blue-500 ring-2 ring-blue-200' : isFriend ? 'border-green-500 ring-2 ring-green-200' : 'border-gray-400'
+            }\\"><div class=\\"text-lg font-bold text-gray-700\\">${initials}</div></div>';"
+          />
+        `;
+      }
+    }
     const marker = new mapboxgl.Marker({
       element: markerElement,
       anchor: 'bottom'

@@ -120,30 +120,8 @@ export const RealMapComponent = () => {
         getUserLocation();
       });
 
-      // Add drag and drop functionality for emojis
-      map.current.on('load', () => {
-        if (map.current) {
-          map.current.getContainer().addEventListener('dragover', (e) => {
-            e.preventDefault();
-            e.dataTransfer!.dropEffect = 'copy';
-          });
-
-          map.current.getContainer().addEventListener('drop', async (e) => {
-            e.preventDefault();
-            const eventType = e.dataTransfer!.getData('text/plain');
-            
-            if (!eventType || !user || !userLocation) return;
-
-            // Get map coordinates from drop position
-            const rect = map.current!.getContainer().getBoundingClientRect();
-            const x = e.clientX - rect.left;
-            const y = e.clientY - rect.top;
-            const lngLat = map.current!.unproject([x, y]);
-
-            // Create event at dropped location
-            await createEventAtLocation(eventType, lngLat.lng, lngLat.lat);
-          });
-        }
+      map.current.on('error', (e) => {
+        console.error('Map error:', e.error);
       });
 
     } catch (error) {
@@ -155,6 +133,130 @@ export const RealMapComponent = () => {
       });
     }
   }, [mapboxToken]);
+
+  // Listen for profile updates (location sharing changes)
+  useEffect(() => {
+    if (!user) return;
+
+    // Listen for custom events from LocationToggle
+    const handleLocationSharingEnabled = (event: CustomEvent) => {
+      console.log('Location sharing enabled event:', event.detail);
+      const { latitude, longitude } = event.detail;
+      
+      // Re-fetch user's avatar from Supabase and add marker
+      if (map.current && user) {
+        console.log('Re-fetching user avatar for location sharing');
+        // Get user's avatar from profile and add marker with cache-busting
+        supabase
+          .from('profiles')
+          .select('avatar_url, display_name')
+          .eq('user_id', user.id)
+          .maybeSingle()
+          .then(({ data: userProfile }) => {
+            console.log('User profile for marker:', userProfile);
+            let avatarUrl = userProfile?.avatar_url;
+            
+            // Add cache-busting to avatar URL
+            if (avatarUrl) {
+              const separator = avatarUrl.includes('?') ? '&' : '?';
+              avatarUrl = `${avatarUrl}${separator}t=${Date.now()}`;
+            }
+            
+            addUserMarker(
+              longitude,
+              latitude,
+              user.id,
+              userProfile?.display_name || user.user_metadata?.display_name || 'You',
+              true,
+              avatarUrl,
+              false,
+              null, // Will be set after blur calculation
+              false,
+              '#3b82f6'
+            );
+          });
+      }
+    };
+
+    const handleLocationSharingDisabled = () => {
+      console.log('Location sharing disabled event - removing user avatar');
+      if (map.current) {
+        // Remove the current user's avatar marker
+        const markerId = 'current-user';
+        if (markersRef.current[markerId]) {
+          console.log('Removing current user marker from map');
+          markersRef.current[markerId].remove();
+          delete markersRef.current[markerId];
+        }
+      }
+    };
+
+    window.addEventListener('locationSharingEnabled', handleLocationSharingEnabled as EventListener);
+    window.addEventListener('locationSharingDisabled', handleLocationSharingDisabled as EventListener);
+
+    const channel = supabase
+      .channel('profile-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'profiles',
+          filter: `user_id=eq.${user.id}`
+        },
+        (payload) => {
+          console.log('Profile updated, payload:', payload);
+          // When user's profile is updated (location sharing toggled), refresh their location
+          setTimeout(() => {
+            console.log('Refreshing location after profile update');
+            getUserLocation();
+          }, 500); // Small delay to ensure database is updated
+        }
+      )
+      .subscribe();
+
+    return () => {
+      window.removeEventListener('locationSharingEnabled', handleLocationSharingEnabled as EventListener);
+      window.removeEventListener('locationSharingDisabled', handleLocationSharingDisabled as EventListener);
+      supabase.removeChannel(channel);
+    };
+  }, [user]);
+
+  // Add drag and drop functionality for emojis
+  useEffect(() => {
+    if (!map.current) return;
+
+    const mapContainer = map.current.getContainer();
+
+    const handleDragOver = (e: DragEvent) => {
+      e.preventDefault();
+      e.dataTransfer!.dropEffect = 'copy';
+    };
+
+    const handleDrop = async (e: DragEvent) => {
+      e.preventDefault();
+      const eventType = e.dataTransfer!.getData('text/plain');
+      
+      if (!eventType || !user || !userLocation) return;
+
+      // Get map coordinates from drop position
+      const rect = mapContainer.getBoundingClientRect();
+      const x = e.clientX - rect.left;
+      const y = e.clientY - rect.top;
+      const lngLat = map.current!.unproject([x, y]);
+
+      // Create event at dropped location
+      await createEventAtLocation(eventType, lngLat.lng, lngLat.lat);
+    };
+
+    mapContainer.addEventListener('dragover', handleDragOver);
+    mapContainer.addEventListener('drop', handleDrop);
+
+    return () => {
+      mapContainer.removeEventListener('dragover', handleDragOver);
+      mapContainer.removeEventListener('drop', handleDrop);
+    };
+  }, [user, userLocation]);
 
   // Get user's current location
   const getUserLocation = () => {
@@ -174,11 +276,100 @@ export const RealMapComponent = () => {
         setUserLocation(location);
 
         if (map.current && user) {
+          console.log('Getting location for user:', user.id);
+          
+          // Check current sharing status from profile
+          const { data: currentProfile } = await supabase
+            .from('profiles')
+            .select('location_sharing_enabled')
+            .eq('user_id', user.id)
+            .maybeSingle();
+
+          const isSharing = currentProfile?.location_sharing_enabled || false;
+          console.log('Current sharing status:', isSharing);
+
+          // Update both user_locations (precise) and profiles (public) with location
+          const { data: blurredData } = await supabase.rpc('blur_coordinates', {
+            lat: latitude,
+            lng: longitude,
+            blur_meters: 100 // Less blur for open sharing
+          });
+
+          const blurred = blurredData?.[0];
+
+          const [locationResult, profileResult] = await Promise.all([
+            // Update precise location in user_locations (preserve sharing status)
+            supabase
+              .from('user_locations')
+              .upsert({
+                user_id: user.id,
+                latitude: latitude,
+                longitude: longitude,
+                is_sharing: isSharing,
+                last_updated: new Date().toISOString()
+              }, { onConflict: 'user_id' }),
+            
+            // Update public location in profiles (preserve sharing status)
+            supabase
+              .from('profiles')
+              .upsert({
+                user_id: user.id,
+                location_blurred_lat: isSharing ? blurred?.blurred_lat : null,
+                location_blurred_lng: isSharing ? blurred?.blurred_lng : null,
+                zone_key: isSharing ? blurred?.zone_key : null,
+                location_sharing_enabled: isSharing,
+                updated_at: new Date().toISOString()
+              }, { onConflict: 'user_id' })
+          ]);
+
+          if (locationResult.error) {
+            console.error('Error updating user location:', locationResult.error);
+          }
+
+          if (profileResult.error) {
+            console.error('Error updating profile location:', profileResult.error);
+          }
+
           map.current.flyTo({
             center: [longitude, latitude],
             zoom: 15,
             duration: 2000
           });
+
+          // Only add user marker if they are sharing location
+          if (isSharing) {
+            console.log('Adding user marker because sharing is enabled');
+            // Get user's avatar from profile and add marker
+            const { data: userProfile } = await supabase
+              .from('profiles')
+              .select('avatar_url, display_name')
+              .eq('user_id', user.id)
+              .maybeSingle();
+
+            console.log('User profile for marker:', userProfile);
+            console.log('Adding marker at coordinates:', longitude, latitude);
+
+            addUserMarker(
+              longitude, 
+              latitude, 
+              user.id, 
+              userProfile?.display_name || 'You', 
+              true, 
+              userProfile?.avatar_url,
+              false, // Current user is not a "friend" to themselves
+              blurred?.zone_key,
+              false, // Current user is not in same zone as themselves
+              '#3b82f6'
+            );
+          } else {
+            console.log('Removing user marker because sharing is disabled');
+            // Remove current user marker if they exist and are not sharing
+            const markerId = 'current-user';
+            if (markersRef.current[markerId]) {
+              markersRef.current[markerId].remove();
+              delete markersRef.current[markerId];
+            }
+          }
 
           loadNearbyEvents();
           loadRealUsers();
@@ -334,16 +525,34 @@ export const RealMapComponent = () => {
         return;
       }
 
-      // Clear existing user markers
-      Object.values(markersRef.current).forEach(marker => marker.remove());
-      markersRef.current = {};
+      // Clear existing user markers (except current user)
+      Object.entries(markersRef.current).forEach(([markerId, marker]) => {
+        if (markerId !== 'current-user') {
+          marker.remove();
+          delete markersRef.current[markerId];
+        }
+      });
 
       // Create a map of profiles by user_id for easy lookup
       const profileMap = new Map(profiles?.map(p => [p.user_id, p]) || []);
 
+      // Check friendships for all users at once
+      const { data: friendships } = await supabase
+        .from('friendships')
+        .select('*')
+        .or(`requester_id.eq.${user.id},recipient_id.eq.${user.id}`)
+        .eq('status', 'accepted');
+
+      const friendUserIds = new Set(
+        friendships?.map(f => 
+          f.requester_id === user.id ? f.recipient_id : f.requester_id
+        ) || []
+      );
+
       locations?.forEach((location) => {
         const profile = profileMap.get(location.user_id);
         if (profile?.location_sharing_enabled) {
+          const isFriend = friendUserIds.has(location.user_id);
           addUserMarker(
             location.longitude,
             location.latitude,
@@ -351,10 +560,10 @@ export const RealMapComponent = () => {
             profile.display_name || 'User',
             false,
             profile.avatar_url,
-            false,
+            isFriend,
             profile.zone_key,
             false,
-            '#10b981'
+            isFriend ? '#10b981' : '#6b7280'
           );
         }
       });
@@ -386,20 +595,27 @@ export const RealMapComponent = () => {
       delete markersRef.current[markerId];
     }
 
+    // Create marker element with avatar
     const markerElement = document.createElement('div');
-    markerElement.innerHTML = `
+    markerElement.className = 'marker-container';
+    
+    const avatarContainer = document.createElement('div');
+    avatarContainer.innerHTML = `
       <div class="relative">
-        <div class="w-10 h-10 rounded-full border-2 overflow-hidden bg-white shadow-lg flex items-center justify-center ${
+        <div class="w-12 h-12 rounded-full border-2 overflow-hidden bg-white shadow-lg flex items-center justify-center ${
           isCurrentUser ? 'border-blue-500' : isFriend ? 'border-green-500' : 'border-gray-300'
         }">
           ${avatarUrl ? 
-            `<img src="${avatarUrl}" class="w-full h-full object-cover" />` : 
-            `<div class="text-lg">${displayName.charAt(0)}</div>`
+            `<img src="${avatarUrl}" class="w-full h-full object-cover" alt="${displayName}" />` : 
+            `<div class="text-lg font-medium">${displayName.charAt(0).toUpperCase()}</div>`
           }
         </div>
-        ${isCurrentUser ? `<div class="absolute -top-1 -right-1 w-3 h-3 bg-blue-500 rounded-full"></div>` : ''}
+        ${isCurrentUser ? `<div class="absolute -top-1 -right-1 w-4 h-4 bg-blue-500 rounded-full border-2 border-white"></div>` : ''}
+        ${isFriend && !isCurrentUser ? `<div class="absolute -top-1 -right-1 w-4 h-4 bg-green-500 rounded-full border-2 border-white"></div>` : ''}
       </div>
     `;
+    
+    markerElement.appendChild(avatarContainer);
 
     const marker = new mapboxgl.Marker({
       element: markerElement,
@@ -408,18 +624,69 @@ export const RealMapComponent = () => {
     .setLngLat([lng, lat])
     .addTo(map.current);
 
-    // Add popup
-    const popup = new mapboxgl.Popup({ offset: 25 }).setHTML(`
-      <div class="p-2">
-        <div class="font-medium">${displayName}</div>
-        ${zoneKey ? `<div class="text-sm text-gray-500">Zone: ${getZoneName(zoneKey)}</div>` : ''}
-        ${isFriend ? `<div class="text-sm text-green-600">✓ Friend</div>` : ''}
-      </div>
-    `);
+    // Create popup content
+    let popupContent = `
+      <div class="p-3 min-w-[200px]">
+        <div class="flex items-center gap-3 mb-2">
+          ${avatarUrl ? 
+            `<img src="${avatarUrl}" class="w-8 h-8 rounded-full object-cover" alt="${displayName}" />` :
+            `<div class="w-8 h-8 rounded-full bg-gray-300 flex items-center justify-center text-sm font-medium">${displayName.charAt(0).toUpperCase()}</div>`
+          }
+          <div>
+            <div class="font-medium text-gray-900">${displayName}</div>
+            ${isCurrentUser ? '<div class="text-xs text-blue-600">This is you</div>' : ''}
+          </div>
+        </div>
+    `;
+
+    if (zoneKey) {
+      popupContent += `
+        <div class="text-sm text-gray-600 mb-2">
+          <span class="font-medium">Zone:</span> ${getZoneName(zoneKey)}
+        </div>`;
+    }
+
+    if (!isCurrentUser && !isFriend) {
+      popupContent += `
+        <div class="mt-2 text-xs text-gray-500 bg-gray-50 p-2 rounded">
+          🚶‍♂️ Only users in the same zone can send friend requests
+        </div>`;
+    }
+
+    if (isFriend) {
+      popupContent += `
+        <div class="mt-2 text-xs text-green-600 font-medium flex items-center gap-1">
+          <span>✓</span> Friend
+        </div>`;
+    } else if (!isCurrentUser) {
+      popupContent += `
+        <div class="mt-2 text-xs text-gray-500 flex items-center gap-1">
+          <span>📍</span> Zone-based location (~100m)
+        </div>`;
+    }
+
+    popupContent += `</div>`;
+
+    const popup = new mapboxgl.Popup({ 
+      offset: 25,
+      closeButton: true,
+      closeOnClick: false 
+    }).setHTML(popupContent);
 
     marker.setPopup(popup);
     markersRef.current[markerId] = marker;
+
+    console.log(`Added marker for ${displayName} at [${lng}, ${lat}]`);
   };
+
+  // Load nearby users and events when map is ready
+  useEffect(() => {
+    if (mapLoaded && userLocation) {
+      console.log('Map loaded, loading real users from Supabase...');
+      loadRealUsers();
+      loadNearbyEvents();
+    }
+  }, [mapLoaded, userLocation]);
 
   return (
     <div className="w-full h-screen relative">

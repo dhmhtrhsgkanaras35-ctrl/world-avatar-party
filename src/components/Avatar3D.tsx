@@ -25,14 +25,14 @@ const Avatar3DModel = ({ url, animate = false }: Avatar3DModelProps) => {
   useFrame((state) => {
     if (meshRef.current) {
       if (animate) {
-        // Gentle swaying motion
-        meshRef.current.rotation.y = Math.sin(state.clock.elapsedTime * 0.5) * 0.1;
-        // Subtle breathing effect
-        const breathe = 1 + Math.sin(state.clock.elapsedTime * 2) * 0.02;
+        // More natural subtle swaying motion
+        meshRef.current.rotation.y = Math.sin(state.clock.elapsedTime * 0.3) * 0.05;
+        // Gentle breathing effect
+        const breathe = 1 + Math.sin(state.clock.elapsedTime * 1.5) * 0.015;
         meshRef.current.scale.setScalar(breathe);
       }
-      // Always add a very subtle floating animation
-      meshRef.current.position.y = -0.5 + Math.sin(state.clock.elapsedTime * 0.8) * 0.05;
+      // Very subtle floating animation - more grounded
+      meshRef.current.position.y = -0.4 + Math.sin(state.clock.elapsedTime * 0.6) * 0.02;
     }
   });
 
@@ -41,7 +41,8 @@ const Avatar3DModel = ({ url, animate = false }: Avatar3DModelProps) => {
       <primitive 
         object={scene.clone()} 
         scale={[1.0, 1.0, 1.0]} 
-        position={[0, -0.5, 0]}
+        position={[0, -0.4, 0]} // Slightly raised for better head visibility
+        rotation={[0, 0, 0]} // Ensure upright stance
         castShadow
         receiveShadow
       />
@@ -93,7 +94,12 @@ export const Avatar3D = ({
   return (
     <div className={`overflow-hidden transition-all duration-300 hover:scale-105 ${className}`} style={{ width, height }}>
       <Canvas
-        camera={{ position: [0, 0.8, 4], fov: 60 }}
+        camera={{ 
+          position: [0, 1.0, 3.8], 
+          fov: 55,
+          near: 0.1,
+          far: 100
+        }}
         gl={{ 
           alpha: true, 
           antialias: true,
@@ -106,28 +112,28 @@ export const Avatar3D = ({
         shadows
       >
         <Suspense fallback={null}>
-          {/* Enhanced lighting setup */}
-          <ambientLight intensity={0.6} />
+          {/* Optimized lighting for better character visibility */}
+          <ambientLight intensity={0.7} />
           <directionalLight 
-            position={[10, 15, 10]} 
-            intensity={1.5} 
+            position={[8, 12, 8]} 
+            intensity={1.3} 
             castShadow
             shadow-mapSize-width={2048}
             shadow-mapSize-height={2048}
             shadow-camera-near={1}
             shadow-camera-far={50}
-            shadow-camera-left={-10}
-            shadow-camera-right={10}
-            shadow-camera-top={10}
-            shadow-camera-bottom={-10}
+            shadow-camera-left={-8}
+            shadow-camera-right={8}
+            shadow-camera-top={8}
+            shadow-camera-bottom={-8}
           />
-          <pointLight position={[-10, 8, -10]} intensity={0.8} color="#ffeaa7" />
-          <pointLight position={[10, -8, 10]} intensity={0.6} color="#74b9ff" />
+          <pointLight position={[-8, 6, -8]} intensity={0.6} color="#ffeaa7" />
+          <pointLight position={[8, -4, 8]} intensity={0.4} color="#74b9ff" />
           <spotLight
-            position={[0, 15, 0]}
-            angle={0.3}
-            penumbra={1}
-            intensity={1}
+            position={[0, 12, 2]}
+            angle={0.25}
+            penumbra={0.8}
+            intensity={0.8}
             castShadow
           />
           
@@ -135,10 +141,10 @@ export const Avatar3D = ({
           
           <Environment preset="city" />
           
-          {/* Add a subtle ground plane for shadows */}
-          <mesh rotation-x={-Math.PI / 2} position={[0, -1.5, 0]} receiveShadow>
-            <planeGeometry args={[10, 10]} />
-            <shadowMaterial opacity={0.2} />
+          {/* Subtle ground plane for better depth perception */}
+          <mesh rotation-x={-Math.PI / 2} position={[0, -1.2, 0]} receiveShadow>
+            <planeGeometry args={[8, 8]} />
+            <shadowMaterial opacity={0.15} />
           </mesh>
           
           {showControls && (

@@ -113,8 +113,8 @@ export const RealMapComponent = ({ showEmojiPalette = false, userLocation: propU
       map.current = new mapboxgl.Map({
         container: mapContainer.current,
         style: 'mapbox://styles/mapbox/streets-v12', // Colorful street style for party vibes
-        center: [-74.5, 40], // Default to New York area
-        zoom: 9,
+        center: [2.3522, 48.8566], // Default to Paris - more interesting than NYC
+        zoom: 3, // Wider view initially
         projection: 'globe' as any,
       });
 
@@ -264,17 +264,44 @@ export const RealMapComponent = ({ showEmojiPalette = false, userLocation: propU
     };
   }, [user, userLocation]);
 
-  // Get user's current location
+  // Get user's current location with better permission handling
   const getUserLocation = () => {
     if (!navigator.geolocation) {
       toast({
-        title: "Location Error",
-        description: "Geolocation is not supported by this browser",
+        title: "Location Not Supported",
+        description: "Your browser doesn't support location services",
         variant: "destructive"
       });
       return;
     }
 
+    // First try to check permission status
+    if (navigator.permissions) {
+      navigator.permissions.query({ name: 'geolocation' }).then(result => {
+        console.log('Geolocation permission:', result.state);
+        
+        if (result.state === 'denied') {
+          toast({
+            title: "Location Permission Denied",
+            description: "Please enable location access in your browser settings to see your position on the map",
+            variant: "destructive"
+          });
+          return;
+        }
+        
+        // Proceed with location request
+        requestLocation();
+      }).catch(() => {
+        // Fallback if permissions API not supported
+        requestLocation();
+      });
+    } else {
+      // Fallback for browsers without permissions API
+      requestLocation();
+    }
+  };
+
+  const requestLocation = () => {
     navigator.geolocation.getCurrentPosition(
       async (position) => {
         const { latitude, longitude } = position.coords;
@@ -283,6 +310,13 @@ export const RealMapComponent = ({ showEmojiPalette = false, userLocation: propU
 
         if (map.current && user) {
           console.log('Getting location for user:', user.id);
+          
+          // Center map on user's actual location
+          map.current.flyTo({
+            center: [longitude, latitude],
+            zoom: 15,
+            duration: 2000
+          });
           
           // Check current sharing status from profile
           const { data: currentProfile } = await supabase
@@ -336,12 +370,6 @@ export const RealMapComponent = ({ showEmojiPalette = false, userLocation: propU
             console.error('Error updating profile location:', profileResult.error);
           }
 
-          map.current.flyTo({
-            center: [longitude, latitude],
-            zoom: 15,
-            duration: 2000
-          });
-
           // Only add user marker if they are sharing location
           if (isSharing) {
             console.log('Adding user marker because sharing is enabled');
@@ -382,12 +410,34 @@ export const RealMapComponent = ({ showEmojiPalette = false, userLocation: propU
         }
       },
       (error) => {
-        console.error('Error getting location:', error);
+        console.error('Geolocation error:', error);
+        
+        let errorMessage = "Could not get your location. ";
+        switch(error.code) {
+          case error.PERMISSION_DENIED:
+            errorMessage += "Location access was denied. Please enable location permissions in your browser.";
+            break;
+          case error.POSITION_UNAVAILABLE:
+            errorMessage += "Location information is unavailable.";
+            break;
+          case error.TIMEOUT:
+            errorMessage += "Location request timed out.";
+            break;
+          default:
+            errorMessage += "An unknown error occurred.";
+            break;
+        }
+        
         toast({
-          title: "Location Error",
-          description: "Unable to get your location",
+          title: "Location Access Needed",
+          description: errorMessage,
           variant: "destructive"
         });
+      },
+      {
+        enableHighAccuracy: true,
+        timeout: 15000,
+        maximumAge: 300000 // 5 minutes
       }
     );
   };

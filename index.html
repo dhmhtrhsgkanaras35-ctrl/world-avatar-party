@@ -244,75 +244,92 @@
     <link rel="preload" href="https://api.mapbox.com/fonts/mapbox" as="font" type="font/woff2" crossorigin>
     <link rel="preload" href="/src/assets/hero-party-optimized.jpg" as="image" fetchpriority="high">
     
-    <!-- Preload critical JavaScript modules -->
+    <!-- Preload critical JavaScript modules with optimized scheduling -->
     <link rel="modulepreload" href="/src/main.tsx">
     <link rel="modulepreload" href="/src/App.tsx">
     <link rel="modulepreload" href="/src/pages/MainApp.tsx">
-    <link rel="modulepreload" href="/src/components/RealMapComponent.tsx">
-    <link rel="modulepreload" href="/src/components/HeroSection.tsx">
+    <!-- Defer heavy 3D and map components to reduce main thread blocking -->
+    <link rel="prefetch" href="/src/components/RealMapComponent.tsx">
+    <link rel="prefetch" href="/src/components/HeroSection.tsx">
+    <link rel="prefetch" href="/src/components/AvatarDisplay.tsx">
+    <link rel="prefetch" href="/src/components/Avatar3D.tsx">
     
-    <!-- Defer loading of non-critical resources -->
+    <!-- Defer loading of non-critical resources with main-thread optimization -->
     <script>
-      // Optimized CSS loading strategy to reduce unused CSS impact
-      const loadCSS = (href, media = 'all') => {
-        const link = document.createElement('link');
-        link.rel = 'stylesheet';
-        link.href = href;
-        link.media = media;
+      // Optimized script scheduling to minimize main-thread blocking
+      const deferHeavyOperations = () => {
+        // Use scheduler API if available, fallback to setTimeout
+        const schedule = window.scheduler?.postTask || 
+                        ((callback, options) => setTimeout(callback, options?.delay || 0));
         
-        // Use onload to switch media to 'all' for deferred loading
-        if (media !== 'all') {
-          link.onload = function() {
-            this.media = 'all';
-            this.onload = null;
-          };
-        }
+        // Load CSS with minimal main-thread impact
+        const loadCSS = (href, media = 'all') => {
+          return schedule(() => {
+            const link = document.createElement('link');
+            link.rel = 'stylesheet';
+            link.href = href;
+            link.media = media;
+            
+            if (media !== 'all') {
+              link.onload = function() {
+                this.media = 'all';
+                this.onload = null;
+              };
+            }
+            
+            document.head.appendChild(link);
+          }, { priority: 'background' });
+        };
         
-        document.head.appendChild(link);
-        return link;
-      };
-      
-      // Load CSS with progressive enhancement
-      const optimizeLoading = () => {
-        // Defer non-critical CSS to reduce unused CSS impact
+        // Progressive CSS loading to reduce main-thread work
         const cssLink = loadCSS('/src/index.css', 'print');
         
-        // Load after a short delay to prioritize critical rendering
-        setTimeout(() => {
-          if (cssLink.media === 'print') {
+        // Defer CSS activation to avoid layout thrashing
+        schedule(() => {
+          if (cssLink && cssLink.media === 'print') {
             cssLink.media = 'all';
           }
-        }, 100);
+        }, { delay: 50 });
         
-        // Pre-warm map tile cache for faster map rendering
-        if ('serviceWorker' in navigator) {
-          navigator.serviceWorker.ready.then(() => {
-            // Pre-cache hints for map tiles (placeholder implementation)
-            const mapTileHints = [
-              'https://api.mapbox.com/styles/v1/mapbox/streets-v12/tiles/256/3/4/2?access_token=',
-              'https://api.mapbox.com/styles/v1/mapbox/streets-v12/tiles/256/3/4/3?access_token='
-            ];
-            // Note: Real implementation would use actual access token
-          });
+        // Pre-warm heavy libraries in idle time
+        if (window.requestIdleCallback) {
+          requestIdleCallback(() => {
+            // Pre-initialize Mapbox tokens and Three.js modules
+            import('/src/integrations/supabase/client.js').catch(() => {});
+          }, { timeout: 2000 });
         }
       };
       
-      // Load CSS after DOM is ready to prevent render blocking
+      // Use optimal timing for script execution
       if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', optimizeLoading);
+        document.addEventListener('DOMContentLoaded', () => {
+          // Use requestAnimationFrame to ensure DOM is ready
+          requestAnimationFrame(deferHeavyOperations);
+        });
       } else {
-        // Use requestIdleCallback if available for better performance
+        // Page already loaded, defer to next tick
         if (window.requestIdleCallback) {
-          requestIdleCallback(optimizeLoading);
+          requestIdleCallback(deferHeavyOperations, { timeout: 100 });
         } else {
-          setTimeout(optimizeLoading, 1);
+          setTimeout(deferHeavyOperations, 1);
         }
       }
     </script>
+    
+    <!-- Main script with defer for non-blocking load -->
+    <script type="module" src="/src/main.tsx" defer></script>
   </head>
 
   <body>
-    <div id="root"></div>
-    <script type="module" src="/src/main.tsx"></script>
+    <div id="root">
+      <!-- Minimal loading state to prevent layout shift -->
+      <div style="position: fixed; inset: 0; display: flex; align-items: center; justify-content: center; background: hsl(240 10% 3.9%); color: hsl(0 0% 98%);">
+        <div style="text-align: center;">
+          <div class="loading-spinner"></div>
+          <div style="font-size: 1.125rem; font-weight: 600;">Loading WorldMe...</div>
+          <div style="font-size: 0.875rem; opacity: 0.8; margin-top: 0.5rem;">Preparing your social world</div>
+        </div>
+      </div>
+    </div>
   </body>
 </html>

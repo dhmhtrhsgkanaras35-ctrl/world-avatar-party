@@ -19,17 +19,46 @@ export default defineConfig(({ mode }) => ({
     cssCodeSplit: true,
     // CSS optimization for reducing unused CSS
     cssMinify: 'esbuild',
+    // Target modern browsers for better performance
+    target: 'esnext',
     rollupOptions: {
       output: {
-        manualChunks: {
-          // Separate heavy libraries into their own chunks
-          'vendor-react': ['react', 'react-dom'],
-          'vendor-ui': ['@radix-ui/react-dialog', '@radix-ui/react-toast', '@radix-ui/react-avatar'],
-          'vendor-query': ['@tanstack/react-query'],
-          'vendor-three': ['three', '@react-three/fiber', '@react-three/drei'],
-          'vendor-map': ['mapbox-gl'],
-          'vendor-supabase': ['@supabase/supabase-js'],
+        // More aggressive code splitting to reduce main-thread work
+        manualChunks: (id) => {
+          // Separate each vendor library into its own chunk
+          if (id.includes('node_modules/react/') || id.includes('node_modules/react-dom/')) {
+            return 'vendor-react';
+          }
+          if (id.includes('node_modules/@radix-ui/')) {
+            return 'vendor-ui';
+          }
+          if (id.includes('node_modules/@tanstack/react-query')) {
+            return 'vendor-query';
+          }
+          if (id.includes('node_modules/three') || id.includes('node_modules/@react-three/')) {
+            return 'vendor-three';
+          }
+          if (id.includes('node_modules/mapbox-gl')) {
+            return 'vendor-mapbox';
+          }
+          if (id.includes('node_modules/@supabase/')) {
+            return 'vendor-supabase';
+          }
+          // Split other node_modules into smaller chunks
+          if (id.includes('node_modules/')) {
+            return 'vendor-other';
+          }
+          // Split large internal modules
+          if (id.includes('src/components/RealMapComponent') || id.includes('src/components/MapComponent')) {
+            return 'chunk-map';
+          }
+          if (id.includes('src/components/Avatar') || id.includes('src/components/AvatarDisplay')) {
+            return 'chunk-avatars';
+          }
         },
+        // Optimize chunk naming for better caching
+        chunkFileNames: 'assets/js/[name]-[hash].js',
+        entryFileNames: 'assets/js/[name]-[hash].js',
         // Optimize CSS output
         assetFileNames: (assetInfo) => {
           const info = assetInfo.name?.split('.') || [];
@@ -40,9 +69,16 @@ export default defineConfig(({ mode }) => ({
           return `assets/[name]-[hash][extname]`;
         },
       },
+      // Optimize external dependencies
+      external: (id) => {
+        // Keep heavy libraries external if they can be loaded separately
+        return false; // Keep all internal for now
+      },
     },
-    // Optimize chunks for better loading
-    chunkSizeWarningLimit: 600,
+    // Optimize chunks for better loading and reduced main-thread work
+    chunkSizeWarningLimit: 500, // Reduced from 600 to encourage smaller chunks
+    // Enable source maps only in development
+    sourcemap: mode === 'development',
   },
   // CSS processing optimizations to reduce unused CSS
   css: {
@@ -55,9 +91,29 @@ export default defineConfig(({ mode }) => ({
       ]
     } : undefined,
   },
-  // Optimize dependencies
+  // Optimize dependencies for reduced main-thread blocking
   optimizeDeps: {
-    include: ['react', 'react-dom', '@tanstack/react-query', 'mapbox-gl'],
-    exclude: [],
+    include: [
+      'react', 
+      'react-dom', 
+      '@tanstack/react-query'
+    ],
+    exclude: [
+      // Exclude heavy libraries from pre-bundling to allow lazy loading
+      'mapbox-gl',
+      'three',
+      '@react-three/fiber',
+      '@react-three/drei',
+      '@supabase/supabase-js'
+    ],
+    // Force optimization of specific modules
+    force: true,
+  },
+  // Additional performance optimizations
+  esbuild: {
+    // Drop console logs and debugger statements in production
+    drop: mode === 'production' ? ['console', 'debugger'] : [],
+    // Use legal comments to reduce bundle size
+    legalComments: 'none',
   },
 }));

@@ -2,15 +2,31 @@ import { Button } from "@/components/ui/button";
 import { useAuth } from "./AuthProvider";
 import { useNavigate } from "react-router-dom";
 import heroPartyImage from "@/assets/hero-party-optimized.jpg";
-import { lazy, Suspense } from "react";
+import { lazy, Suspense, useState, useEffect } from "react";
 
-// Lazy load heavy 3D components to prevent render blocking
+// Lazy load heavy 3D components with simple deferring
 const AvatarDisplay = lazy(() => import("./AvatarDisplay").then(m => ({ default: m.AvatarDisplay })));
 const EventMarker = lazy(() => import("./EventMarker").then(m => ({ default: m.EventMarker })));
 
 export const HeroSection = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
+  const [show3DElements, setShow3DElements] = useState(false);
+
+  // Defer 3D elements until after critical rendering is complete
+  useEffect(() => {
+    // Only show 3D elements after a delay to prioritize text content and reduce main-thread work
+    const timer = setTimeout(() => {
+      // Use requestIdleCallback for optimal timing
+      if (window.requestIdleCallback) {
+        requestIdleCallback(() => setShow3DElements(true), { timeout: 1000 });
+      } else {
+        setShow3DElements(true);
+      }
+    }, 800); // Increased delay to allow main thread to settle
+
+    return () => clearTimeout(timer);
+  }, []);
 
   return (
     <section className="relative min-h-screen flex items-center justify-center overflow-hidden">
@@ -28,54 +44,56 @@ export const HeroSection = () => {
         <div className="absolute inset-0 gradient-party opacity-30" />
       </div>
       
-      {/* Floating elements - defer loading to improve LCP */}
-      <div className="absolute inset-0 z-10 pointer-events-none">
-        <Suspense fallback={null}>
-          {/* Floating avatars */}
-          <div className="absolute top-20 left-10 animate-float">
-            <AvatarDisplay 
-              avatarUrl="https://models.readyplayer.me/67054f9cfd50cc4cc0e4de18.glb"
-              size="medium"
-              showStatus={true}
-              status="online"
-            />
-          </div>
-          <div className="absolute top-40 right-20 animate-float" style={{ animationDelay: "0.5s" }}>
-            <AvatarDisplay 
-              avatarUrl="https://models.readyplayer.me/67054f9cfd50cc4cc0e4de19.glb"
-              size="medium"
-              showStatus={true}
-              status="online"
-            />
-          </div>
-          <div className="absolute bottom-40 left-20 animate-float" style={{ animationDelay: "1s" }}>
-            <AvatarDisplay 
-              avatarUrl={null}
-              size="medium"
-              showStatus={true}
-              status="online"
-            />
-          </div>
-          
-          {/* Floating event markers */}
-          <div className="absolute top-60 left-1/4 animate-float" style={{ animationDelay: "0.3s" }}>
-            <EventMarker 
-              type="house-party" 
-              title="Beach Party" 
-              attendees={12} 
-              distance="0.5km" 
-            />
-          </div>
-          <div className="absolute bottom-60 right-1/4 animate-float" style={{ animationDelay: "0.8s" }}>
-            <EventMarker 
-              type="concert" 
-              title="Summer Festival" 
-              attendees={150} 
-              distance="2.1km" 
-            />
-          </div>
-        </Suspense>
-      </div>
+      {/* Floating elements - defer loading to improve LCP and reduce main-thread work */}
+      {show3DElements && (
+        <div className="absolute inset-0 z-10 pointer-events-none">
+          <Suspense fallback={null}>
+            {/* Floating avatars */}
+            <div className="absolute top-20 left-10 animate-float">
+              <AvatarDisplay 
+                avatarUrl="https://models.readyplayer.me/67054f9cfd50cc4cc0e4de18.glb"
+                size="medium"
+                showStatus={true}
+                status="online"
+              />
+            </div>
+            <div className="absolute top-40 right-20 animate-float" style={{ animationDelay: "0.5s" }}>
+              <AvatarDisplay 
+                avatarUrl="https://models.readyplayer.me/67054f9cfd50cc4cc0e4de19.glb"
+                size="medium"
+                showStatus={true}
+                status="online"
+              />
+            </div>
+            <div className="absolute bottom-40 left-20 animate-float" style={{ animationDelay: "1s" }}>
+              <AvatarDisplay 
+                avatarUrl={null}
+                size="medium"
+                showStatus={true}
+                status="online"
+              />
+            </div>
+            
+            {/* Floating event markers */}
+            <div className="absolute top-60 left-1/4 animate-float" style={{ animationDelay: "0.3s" }}>
+              <EventMarker 
+                type="house-party" 
+                title="Beach Party" 
+                attendees={12} 
+                distance="0.5km" 
+              />
+            </div>
+            <div className="absolute bottom-60 right-1/4 animate-float" style={{ animationDelay: "0.8s" }}>
+              <EventMarker 
+                type="concert" 
+                title="Summer Festival" 
+                attendees={150} 
+                distance="2.1km" 
+              />
+            </div>
+          </Suspense>
+        </div>
+      )}
       
       {/* Main content - prioritize text rendering for LCP */}
       <div className="relative z-20 text-center max-w-4xl mx-auto px-6">

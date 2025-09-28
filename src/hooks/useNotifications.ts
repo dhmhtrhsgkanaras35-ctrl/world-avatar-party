@@ -39,11 +39,6 @@ export const useNotifications = ({ user }: UseNotificationsProps) => {
   useEffect(() => {
     if ('Notification' in window) {
       setNotificationPermission(Notification.permission);
-      
-      // Auto-request permission on first load if not already determined
-      if (Notification.permission === 'default') {
-        requestNotificationPermission();
-      }
     }
   }, []);
 

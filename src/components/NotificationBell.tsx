@@ -28,8 +28,8 @@ export const NotificationBell = ({
     if (notificationPermission === 'denied') {
       toast({
         title: "Notifications Blocked",
-        description: "Please enable notifications in your browser settings",
-        variant: "destructive"
+        description: "To enable: Click the 🔒 icon in your browser's address bar and allow notifications",
+        duration: 8000,
       });
       return;
     }

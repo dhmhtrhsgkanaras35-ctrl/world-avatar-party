@@ -72,15 +72,6 @@ export const createSimpleEventMarker = ({
         ${emoji}
       </div>
       
-      ${isCreator && !event.isTemporary ? `
-        <button class="manage-event-btn absolute -top-1 -left-6 w-5 h-5 bg-blue-500 hover:bg-blue-600 text-white rounded-full text-xs font-bold flex items-center justify-center shadow-xl transition-all duration-200 hover:scale-110 z-[9999] cursor-pointer border border-white" style="pointer-events: auto;" title="Manage Event">
-          ⋯
-        </button>
-        <button class="close-event-btn absolute -top-1 -right-1 w-5 h-5 bg-red-500 hover:bg-red-600 text-white rounded-full text-xs font-bold flex items-center justify-center shadow-xl transition-all duration-200 hover:scale-110 z-[9999] cursor-pointer border border-white" style="pointer-events: auto;" title="Close Event">
-          ✕
-        </button>
-      ` : ''}
-      
       <!-- Enhanced Tooltip -->
       <div class="
         absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2
@@ -102,51 +93,58 @@ export const createSimpleEventMarker = ({
     </div>
   `;
 
-  // Enhanced click handler with better debugging
-  markerElement.addEventListener('click', (e) => {
-    e.preventDefault();
-    e.stopPropagation();
-    
-    const target = e.target as HTMLElement;
-    console.log('🎯 Event marker clicked:', {
-      eventId: event.id,
-      targetClass: target.className,
-      isCreator,
-      eventType: event.event_type,
-      targetTag: target.tagName,
-      textContent: target.textContent
-    });
-    
-    // Check for close button click with multiple detection methods
-    if (target.classList.contains('close-event-btn') || 
-        target.closest('.close-event-btn') ||
-        target.textContent?.includes('✕')) {
-      e.stopPropagation();
-      console.log('🔥 CLOSE BUTTON CLICKED for event:', event.id, 'isCreator:', isCreator);
-      if (isCreator && onCloseEvent) {
-        console.log('✅ Calling onCloseEvent for:', event.id);
-        onCloseEvent(event.id);
-      } else {
-        console.log('❌ Cannot close - isCreator:', isCreator, 'onCloseEvent:', !!onCloseEvent);
-      }
-      return;
-    }
+  // Add buttons separately if user is creator
+  if (isCreator && !event.isTemporary) {
+    // Create manage button
+    const manageButton = document.createElement('button');
+    manageButton.className = 'manage-event-btn absolute w-6 h-6 bg-blue-500 hover:bg-blue-600 text-white rounded-full text-xs font-bold flex items-center justify-center shadow-xl transition-all duration-200 hover:scale-110 cursor-pointer border border-white';
+    manageButton.style.cssText = 'top: -8px; left: -28px; z-index: 10000; pointer-events: auto;';
+    manageButton.innerHTML = '⋯';
+    manageButton.title = 'Manage Event';
+    markerElement.appendChild(manageButton);
 
-    // Check for manage button click with multiple detection methods
-    if (target.classList.contains('manage-event-btn') || 
-        target.closest('.manage-event-btn') ||
-        target.textContent?.includes('⋯')) {
+    // Create close button
+    const closeButton = document.createElement('button');
+    closeButton.className = 'close-event-btn absolute w-6 h-6 bg-red-500 hover:bg-red-600 text-white rounded-full text-xs font-bold flex items-center justify-center shadow-xl transition-all duration-200 hover:scale-110 cursor-pointer border border-white';
+    closeButton.style.cssText = 'top: -8px; right: -8px; z-index: 10000; pointer-events: auto;';
+    closeButton.innerHTML = '✕';
+    closeButton.title = 'Close Event';
+    markerElement.appendChild(closeButton);
+
+    // Add direct event listeners to buttons
+    manageButton.addEventListener('click', (e) => {
+      e.preventDefault();
       e.stopPropagation();
       console.log('🔧 MANAGE BUTTON CLICKED for event:', event.id);
-      if (isCreator && onManageEvent) {
-        console.log('✅ Calling onManageEvent for:', event.id);
+      if (onManageEvent) {
         onManageEvent(event.id);
-      } else {
-        console.log('❌ Cannot manage - isCreator:', isCreator, 'onManageEvent:', !!onManageEvent);
       }
+    });
+
+    closeButton.addEventListener('click', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      console.log('🔥 CLOSE BUTTON CLICKED for event:', event.id);
+      if (onCloseEvent) {
+        onCloseEvent(event.id);
+      }
+    });
+  }
+
+  // Enhanced click handler for main event (only handle non-button clicks)
+  markerElement.addEventListener('click', (e) => {
+    const target = e.target as HTMLElement;
+    
+    // Skip if clicking on buttons
+    if (target.classList.contains('manage-event-btn') || 
+        target.classList.contains('close-event-btn') ||
+        target.closest('.manage-event-btn') ||
+        target.closest('.close-event-btn')) {
       return;
     }
     
+    e.preventDefault();
+    e.stopPropagation();
     console.log('🎪 Main event click for:', event.id);
     
     if (editMode && onToggleEditMode) {
@@ -155,36 +153,6 @@ export const createSimpleEventMarker = ({
       onClick(event.id);
     }
   });
-
-  // Wait a moment then add direct event listeners to buttons
-  setTimeout(() => {
-    const manageBtn = markerElement.querySelector('.manage-event-btn') as HTMLElement;
-    const closeBtn = markerElement.querySelector('.close-event-btn') as HTMLElement;
-    
-    if (manageBtn && isCreator) {
-      console.log('🔧 Adding manage button listener for event:', event.id);
-      manageBtn.addEventListener('click', (e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        console.log('🔧 Direct manage button click:', event.id);
-        if (onManageEvent) {
-          onManageEvent(event.id);
-        }
-      });
-    }
-    
-    if (closeBtn && isCreator) {
-      console.log('🔥 Adding close button listener for event:', event.id);
-      closeBtn.addEventListener('click', (e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        console.log('🔥 Direct close button click:', event.id);
-        if (onCloseEvent) {
-          onCloseEvent(event.id);
-        }
-      });
-    }
-  }, 100);
 
   // Create and return the Mapbox marker
   const marker = new mapboxgl.Marker({

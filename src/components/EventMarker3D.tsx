@@ -14,12 +14,14 @@ interface EventMarker3DProps {
     created_by: string;
     isDragging?: boolean;
     isTemporary?: boolean;
+    isEditMode?: boolean;
   };
   attendeeCount?: number;
   onEventClick?: (eventId: string) => void;
   onEventMove?: (eventId: string, lat: number, lng: number) => void;
   onEventDelete?: (eventId: string) => void;
   onEventPlace?: (eventId: string, lat: number, lng: number) => void;
+  onToggleEditMode?: (eventId: string) => void;
   currentUserId?: string;
 }
 
@@ -30,6 +32,7 @@ export const createEventMarker3D = ({
   onEventMove,
   onEventDelete,
   onEventPlace,
+  onToggleEditMode,
   currentUserId
 }: EventMarker3DProps) => {
   const el = document.createElement('div');
@@ -271,20 +274,66 @@ export const createEventMarker3D = ({
     el.appendChild(markerContainer);
   }
 
-  // Add delete button for permanent event owners - LARGE, STABLE OVERLAY
+  // Add delete and place event buttons for permanent event owners - LARGE, STABLE OVERLAY
   if (currentUserId === event.created_by && !event.isTemporary) {
-    // Create a large overlay area for easier clicking
+    // Container for both buttons
+    const buttonsContainer = document.createElement('div');
+    buttonsContainer.style.cssText = `
+      position: absolute;
+      top: -25px;
+      left: -70px;
+      display: flex;
+      gap: 10px;
+      z-index: 1003;
+    `;
+
+    // Place Event Button
+    const placeOverlay = document.createElement('div');
+    placeOverlay.style.cssText = `
+      width: 60px;
+      height: 60px;
+      background: rgba(34, 197, 94, 0.1);
+      border-radius: 50%;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      pointer-events: auto;
+      transition: all 0.2s ease;
+    `;
+    
+    const placeButton = document.createElement('div');
+    placeButton.style.cssText = `
+      background: ${event.isEditMode ? '#22c55e' : '#6b7280'};
+      color: white;
+      border-radius: 50%;
+      width: 32px;
+      height: 32px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 16px;
+      font-weight: bold;
+      cursor: pointer;
+      border: 3px solid white;
+      box-shadow: 0 4px 16px rgba(34, 197, 94, 0.6);
+      opacity: 0.9;
+      transition: all 0.2s ease;
+      pointer-events: auto;
+    `;
+    placeButton.innerHTML = event.isEditMode ? '📍' : '✋';
+    placeButton.title = event.isEditMode ? 'Lock Event Position' : 'Enable Drag Mode';
+    
+    placeOverlay.appendChild(placeButton);
+
+    // Delete Button
     const deleteOverlay = document.createElement('div');
     deleteOverlay.style.cssText = `
-      position: absolute;
-      top: -20px;
-      left: -20px;
       width: 60px;
       height: 60px;
       background: rgba(239, 68, 68, 0.1);
       border-radius: 50%;
       cursor: pointer;
-      z-index: 1003;
       display: flex;
       align-items: center;
       justify-content: center;
@@ -314,8 +363,23 @@ export const createEventMarker3D = ({
     deleteButton.title = 'Delete Event';
     
     deleteOverlay.appendChild(deleteButton);
-    
-    // Add multiple event listeners to ensure we catch the click
+
+    // Add both buttons to container
+    buttonsContainer.appendChild(placeOverlay);
+    buttonsContainer.appendChild(deleteOverlay);
+
+    // Place button event handlers
+    const handlePlaceClick = (e) => {
+      e.stopPropagation();
+      e.preventDefault();
+      e.stopImmediatePropagation();
+      console.log('Place/Edit button clicked for event:', event.id);
+      if (onToggleEditMode) {
+        onToggleEditMode(event.id);
+      }
+    };
+
+    // Delete button event handlers  
     const handleDelete = (e) => {
       e.stopPropagation();
       e.preventDefault();
@@ -326,12 +390,16 @@ export const createEventMarker3D = ({
       }
     };
     
-    // Add listeners to both overlay and button
+    // Add listeners to both overlay and button for place
+    placeOverlay.addEventListener('click', handlePlaceClick);
+    placeButton.addEventListener('click', handlePlaceClick);
+    
+    // Add listeners to both overlay and button for delete
     deleteOverlay.addEventListener('click', handleDelete);
     deleteButton.addEventListener('click', handleDelete);
     
-    // Prevent all drag/move behavior
-    [deleteOverlay, deleteButton].forEach(element => {
+    // Prevent all drag/move behavior for both buttons
+    [placeOverlay, placeButton, deleteOverlay, deleteButton].forEach(element => {
       element.addEventListener('mousedown', (e) => {
         e.stopPropagation();
         e.preventDefault();
@@ -346,7 +414,20 @@ export const createEventMarker3D = ({
       });
     });
     
-    // Enhanced hover effects
+    // Enhanced hover effects for place button
+    placeOverlay.addEventListener('mouseenter', () => {
+      placeButton.style.opacity = '1';
+      placeButton.style.transform = 'scale(1.1)';
+      placeButton.style.boxShadow = '0 6px 20px rgba(34, 197, 94, 0.8)';
+    });
+    
+    placeOverlay.addEventListener('mouseleave', () => {
+      placeButton.style.opacity = '0.9';
+      placeButton.style.transform = 'scale(1)';
+      placeButton.style.boxShadow = '0 4px 16px rgba(34, 197, 94, 0.6)';
+    });
+
+    // Enhanced hover effects for delete button
     deleteOverlay.addEventListener('mouseenter', () => {
       deleteButton.style.opacity = '1';
       deleteButton.style.transform = 'scale(1.1)';
@@ -359,7 +440,7 @@ export const createEventMarker3D = ({
       deleteButton.style.boxShadow = '0 4px 16px rgba(239, 68, 68, 0.6)';
     });
     
-    el.appendChild(deleteOverlay);
+    el.appendChild(buttonsContainer);
   }
 
   // Add hover effects

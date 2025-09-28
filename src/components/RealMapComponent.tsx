@@ -49,6 +49,7 @@ export const RealMapComponent = () => {
   const [mapboxToken, setMapboxToken] = useState<string | null>(null);
   const [showZoneNote, setShowZoneNote] = useState(true);
   const [tempEvents, setTempEvents] = useState<any[]>([]);
+  const [editModeEvents, setEditModeEvents] = useState<Set<string>>(new Set());
   const markersRef = useRef<{ [key: string]: mapboxgl.Marker }>({});
   const eventMarkersRef = useRef<{ [key: string]: mapboxgl.Marker }>({});
   const zonesRef = useRef<Set<string>>(new Set());
@@ -1200,6 +1201,14 @@ export const RealMapComponent = () => {
       }
     });
   };
+  // Re-render events when edit mode changes
+  useEffect(() => {
+    if (mapLoaded && map.current) {
+      console.log('Edit mode changed, re-rendering events');
+      loadNearbyEvents();
+    }
+  }, [editModeEvents, mapLoaded]);
+
   // Re-render temp events when tempEvents changes
   useEffect(() => {
     if (mapLoaded && map.current) {
@@ -1257,14 +1266,35 @@ export const RealMapComponent = () => {
           console.log('Creating permanent marker for event:', event.title);
           
           const eventElement = createEventMarker3D({
-            event,
+            event: { ...event, isEditMode: editModeEvents.has(event.id) },
             attendeeCount,
             currentUserId: user?.id,
             onEventClick: (eventId) => {
               console.log('Event clicked:', eventId);
-              toast({
-                title: `Event: ${event.title}`,
-                description: `${event.event_type} event - Click to join!`,
+              if (!editModeEvents.has(eventId)) {
+                toast({
+                  title: `Event: ${event.title}`,
+                  description: `${event.event_type} event - Click to join!`,
+                });
+              }
+            },
+            onToggleEditMode: (eventId) => {
+              setEditModeEvents(prev => {
+                const newSet = new Set(prev);
+                if (newSet.has(eventId)) {
+                  newSet.delete(eventId);
+                  toast({
+                    title: "Edit Mode Disabled",
+                    description: "Event position locked"
+                  });
+                } else {
+                  newSet.add(eventId);
+                  toast({
+                    title: "Edit Mode Enabled", 
+                    description: "Click and drag to move event"
+                  });
+                }
+                return newSet;
               });
             },
             onEventDelete: async (eventId) => {
@@ -1291,6 +1321,12 @@ export const RealMapComponent = () => {
                   loadNearbyEvents();
                 } else {
                   console.log('Event deleted successfully:', eventId);
+                  // Remove from edit mode if it was there
+                  setEditModeEvents(prev => {
+                    const newSet = new Set(prev);
+                    newSet.delete(eventId);
+                    return newSet;
+                  });
                   toast({
                     title: "Event Deleted",
                     description: "Event removed successfully"
@@ -1312,16 +1348,51 @@ export const RealMapComponent = () => {
           const marker = new mapboxgl.Marker({
             element: eventElement,
             anchor: 'bottom',
-            draggable: false // Disable dragging to prevent accidental movement when clicking delete
+            draggable: editModeEvents.has(event.id) // Enable dragging only in edit mode
           })
             .setLngLat([event.longitude, event.latitude])
             .addTo(map.current!);
 
-          // Prevent drag events on the marker element
-          eventElement.addEventListener('dragstart', (e) => {
-            e.preventDefault();
-            e.stopPropagation();
-          });
+          // Handle drag events for position updates
+          if (editModeEvents.has(event.id)) {
+            marker.on('dragend', () => {
+              const lngLat = marker.getLngLat();
+              console.log('Event dragged to:', lngLat.lat, lngLat.lng);
+              
+              // Update event position in database
+              supabase
+                .from('events')
+                .update({
+                  latitude: lngLat.lat,
+                  longitude: lngLat.lng,
+                  updated_at: new Date().toISOString()
+                })
+                .eq('id', event.id)
+                .then(({ error }) => {
+                  if (error) {
+                    console.error('Error updating event position:', error);
+                    toast({
+                      title: "Error",
+                      description: "Failed to update event position",
+                      variant: "destructive"
+                    });
+                    // Reset marker position on error
+                    marker.setLngLat([event.longitude, event.latitude]);
+                  } else {
+                    toast({
+                      title: "Position Updated",
+                      description: "Event moved successfully"
+                    });
+                  }
+                });
+            });
+          } else {
+            // Prevent drag events when not in edit mode
+            eventElement.addEventListener('dragstart', (e) => {
+              e.preventDefault();
+              e.stopPropagation();
+            });
+          }
 
           eventMarkersRef.current[event.id] = marker;
         }

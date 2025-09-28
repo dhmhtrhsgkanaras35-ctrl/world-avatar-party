@@ -774,7 +774,7 @@ export const RealMapComponent = ({ showEmojiPalette = false, userLocation: propU
     const initials = displayName.charAt(0).toUpperCase();
     
     // Create a container div for the React component
-    avatarContainer.innerHTML = `<div id="map-avatar-${userId}" class="w-20 h-24"></div>`;
+    avatarContainer.innerHTML = `<div id="map-avatar-${userId}" class="w-20 h-[120px]"></div>`;
     
     markerElement.appendChild(avatarContainer);
 

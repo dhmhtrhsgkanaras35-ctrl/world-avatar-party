@@ -20,7 +20,7 @@ const Avatar3DModel = ({ url, animate = false }: Avatar3DModelProps) => {
 
   return (
     <group ref={meshRef}>
-      <primitive object={scene.clone()} scale={[0.7, 0.7, 0.7]} position={[0, -0.9, 0]} />
+      <primitive object={scene.clone()} scale={[1.0, 1.0, 1.0]} position={[0, -1.5, 0]} />
     </group>
   );
 };
@@ -44,7 +44,7 @@ export const MapAvatar3D = ({
   const [isLoading, setIsLoading] = useState(true);
   const [hasError, setHasError] = useState(false);
 
-  const containerSize = size === 'large' ? { width: 80, height: 100 } : { width: 64, height: 80 };
+  const containerSize = size === 'large' ? { width: 80, height: 120 } : { width: 64, height: 96 };
   
   const borderColor = isCurrentUser 
     ? 'border-blue-500 ring-2 ring-blue-200' 
@@ -124,7 +124,7 @@ export const MapAvatar3D = ({
         style={{ width: containerSize.width, height: containerSize.height }}
       >
         <Canvas
-          camera={{ position: [0, 0.8, 2.2], fov: 55 }}
+          camera={{ position: [0, 0.5, 4], fov: 45 }}
           gl={{ 
             alpha: true, 
             antialias: true,
@@ -135,14 +135,14 @@ export const MapAvatar3D = ({
           style={{ background: 'transparent' }}
         >
           <Suspense fallback={null}>
-            <ambientLight intensity={1.0} />
-            <directionalLight position={[2, 6, 2]} intensity={2.0} />
-            <pointLight position={[-2, 2, -2]} intensity={0.8} />
-            <pointLight position={[2, 4, 2]} intensity={0.6} />
+            <ambientLight intensity={0.8} />
+            <directionalLight position={[3, 8, 3]} intensity={1.5} />
+            <pointLight position={[-3, 5, -3]} intensity={0.8} />
+            <pointLight position={[3, 2, 3]} intensity={0.5} />
             
             <Avatar3DModel url={glbUrl} animate={false} />
             
-            <Environment preset="studio" />
+            <Environment preset="sunset" />
           </Suspense>
         </Canvas>
       </div>

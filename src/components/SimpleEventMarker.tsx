@@ -95,76 +95,128 @@ export const createSimpleEventMarker = ({
 
   // Add buttons separately if user is creator
   if (isCreator && !event.isTemporary) {
-    // Create manage button container
-    const manageButtonContainer = document.createElement('div');
-    manageButtonContainer.style.cssText = 'position: absolute; top: -12px; left: -12px; z-index: 10001; pointer-events: auto;';
+    console.log('Creating buttons for event creator:', event.id);
     
-    const manageButton = document.createElement('button');
-    manageButton.className = 'w-6 h-6 bg-blue-500 hover:bg-blue-600 text-white rounded-full text-xs font-bold flex items-center justify-center shadow-xl transition-all duration-200 hover:scale-110 cursor-pointer border-2 border-white';
+    // Create manage button as a completely separate element
+    const manageButton = document.createElement('div');
+    manageButton.style.cssText = `
+      position: absolute;
+      top: -12px;
+      left: -12px;
+      width: 24px;
+      height: 24px;
+      background-color: rgb(59, 130, 246);
+      color: white;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
+      font-weight: bold;
+      cursor: pointer;
+      z-index: 999999;
+      pointer-events: auto;
+      border: 2px solid white;
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    `;
     manageButton.innerHTML = '⋯';
-    manageButton.title = 'Manage Event';
-    manageButton.style.pointerEvents = 'auto';
+    manageButton.setAttribute('data-event-id', event.id);
+    manageButton.setAttribute('data-button-type', 'manage');
     
-    manageButtonContainer.appendChild(manageButton);
-    markerElement.appendChild(manageButtonContainer);
-
-    // Create close button container
-    const closeButtonContainer = document.createElement('div');
-    closeButtonContainer.style.cssText = 'position: absolute; top: -12px; right: -12px; z-index: 10001; pointer-events: auto;';
-    
-    const closeButton = document.createElement('button');
-    closeButton.className = 'w-6 h-6 bg-red-500 hover:bg-red-600 text-white rounded-full text-xs font-bold flex items-center justify-center shadow-xl transition-all duration-200 hover:scale-110 cursor-pointer border-2 border-white';
+    // Create close button as a completely separate element
+    const closeButton = document.createElement('div');
+    closeButton.style.cssText = `
+      position: absolute;
+      top: -12px;
+      right: -12px;
+      width: 24px;
+      height: 24px;
+      background-color: rgb(239, 68, 68);
+      color: white;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
+      font-weight: bold;
+      cursor: pointer;
+      z-index: 999999;
+      pointer-events: auto;
+      border: 2px solid white;
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    `;
     closeButton.innerHTML = '✕';
-    closeButton.title = 'Close Event';
-    closeButton.style.pointerEvents = 'auto';
-    
-    closeButtonContainer.appendChild(closeButton);
-    markerElement.appendChild(closeButtonContainer);
+    closeButton.setAttribute('data-event-id', event.id);
+    closeButton.setAttribute('data-button-type', 'close');
 
-    // Add event listeners with better isolation
-    manageButton.addEventListener('click', (e) => {
-      e.preventDefault();
-      e.stopPropagation();
-      e.stopImmediatePropagation();
-      console.log('🔧 MANAGE BUTTON CLICKED for event:', event.id);
+    // Add hover effects
+    const addHoverEffects = (button: HTMLElement, hoverColor: string) => {
+      button.addEventListener('mouseenter', () => {
+        button.style.backgroundColor = hoverColor;
+        button.style.transform = 'scale(1.1)';
+      });
+      button.addEventListener('mouseleave', () => {
+        button.style.backgroundColor = button === manageButton ? 'rgb(59, 130, 246)' : 'rgb(239, 68, 68)';
+        button.style.transform = 'scale(1)';
+      });
+    };
+    
+    addHoverEffects(manageButton, 'rgb(37, 99, 235)');
+    addHoverEffects(closeButton, 'rgb(220, 38, 38)');
+
+    // Add multiple event types for better compatibility
+    const addButtonEvents = (button: HTMLElement, callback: () => void, type: string) => {
+      console.log(`Adding event listeners for ${type} button`);
+      
+      ['mousedown', 'touchstart'].forEach(eventType => {
+        button.addEventListener(eventType, (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          e.stopImmediatePropagation();
+          console.log(`🎯 ${type.toUpperCase()} BUTTON ${eventType.toUpperCase()} for event:`, event.id);
+          callback();
+        }, { capture: true, passive: false });
+      });
+
+      // Also add click as fallback
+      button.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        e.stopImmediatePropagation();
+        console.log(`🎯 ${type.toUpperCase()} BUTTON CLICKED for event:`, event.id);
+        callback();
+      }, { capture: true });
+    };
+
+    addButtonEvents(manageButton, () => {
+      console.log('🔧 CALLING onManageEvent for:', event.id);
       if (onManageEvent) {
         onManageEvent(event.id);
       }
-    }, { capture: true });
+    }, 'manage');
 
-    closeButton.addEventListener('click', (e) => {
-      e.preventDefault();
-      e.stopPropagation();
-      e.stopImmediatePropagation();
-      console.log('🔥 CLOSE BUTTON CLICKED for event:', event.id);
+    addButtonEvents(closeButton, () => {
+      console.log('🔥 CALLING onCloseEvent for:', event.id);
       if (onCloseEvent) {
         onCloseEvent(event.id);
       }
-    }, { capture: true });
+    }, 'close');
 
-    // Prevent button containers from triggering parent clicks
-    manageButtonContainer.addEventListener('click', (e) => {
-      e.preventDefault();
-      e.stopPropagation();
-      e.stopImmediatePropagation();
-    }, { capture: true });
-
-    closeButtonContainer.addEventListener('click', (e) => {
-      e.preventDefault();
-      e.stopPropagation();
-      e.stopImmediatePropagation();
-    }, { capture: true });
+    // Append buttons to marker
+    markerElement.appendChild(manageButton);
+    markerElement.appendChild(closeButton);
+    
+    console.log('Buttons created and attached for event:', event.id);
   }
 
   // Enhanced click handler for main event (only handle non-button clicks)
   markerElement.addEventListener('click', (e) => {
     const target = e.target as HTMLElement;
     
-    // Skip if clicking on buttons
-    if (target.classList.contains('manage-event-btn') || 
-        target.classList.contains('close-event-btn') ||
-        target.closest('.manage-event-btn') ||
-        target.closest('.close-event-btn')) {
+    // Skip if clicking on buttons (check by data attributes now)
+    if (target.getAttribute('data-button-type') || 
+        target.closest('[data-button-type]')) {
+      console.log('🚫 Skipping main click - button was clicked');
       return;
     }
     

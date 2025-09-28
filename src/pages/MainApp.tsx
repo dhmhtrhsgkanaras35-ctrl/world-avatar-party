@@ -230,17 +230,17 @@ const MainApp = () => {
           <LocationToggle user={user} />
         </div>
 
-      {/* Bottom Navigation - Mobile optimized */}
-      <div className="bg-card border-t shadow-lg shrink-0 safe-area-inset-bottom">
+      {/* Bottom Navigation - Party Theme */}
+      <div className="bg-card/95 backdrop-blur-sm border-t border-border/20 shadow-2xl shrink-0 safe-area-inset-bottom">
         <div className="flex justify-around items-center px-2 py-3 max-w-full mx-auto min-h-[64px]">
           <Button
             variant="ghost"
             size="sm"
-            className="flex flex-col items-center gap-1 h-auto py-2 px-2 min-w-0"
+            className="flex flex-col items-center gap-1 h-auto py-2 px-2 min-w-0 party-button gradient-party text-primary-foreground hover:scale-105"
             onClick={() => setShowEmojiPalette(!showEmojiPalette)}
           >
             <Plus className="h-5 w-5" />
-            <span className="text-xs">Create</span>
+            <span className="text-xs font-semibold">Create</span>
           </Button>
 
           <MessagesDialog user={user} />
@@ -250,11 +250,11 @@ const MainApp = () => {
           <Button
             variant="ghost"
             size="sm"
-            className="flex flex-col items-center gap-1 h-auto py-2 px-2 min-w-0"
+            className="flex flex-col items-center gap-1 h-auto py-2 px-2 min-w-0 party-button gradient-social text-primary-foreground hover:scale-105"
             onClick={() => navigate('/profile')}
           >
             <User className="h-5 w-5" />
-            <span className="text-xs">Profile</span>
+            <span className="text-xs font-semibold">Profile</span>
           </Button>
         </div>
       </div>

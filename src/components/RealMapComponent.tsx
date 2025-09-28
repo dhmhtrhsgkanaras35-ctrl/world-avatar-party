@@ -874,62 +874,59 @@ export const RealMapComponent = ({ showEmojiPalette = false, onToggleEmojiPalett
     .setLngLat([lng, lat])
     .addTo(map.current);
 
-    // Create popup content with enhanced close functionality
+    // Create popup content with compact design and better close functionality
     let popupContent = `
-      <div class="p-4 min-w-[220px] bg-white rounded-lg shadow-lg relative">
+      <div class="p-2 min-w-[160px] max-w-[200px] bg-white rounded-lg shadow-lg relative">
         <button 
           onclick="this.closest('.mapboxgl-popup').remove()" 
-          class="absolute top-2 right-2 w-6 h-6 bg-gray-100 hover:bg-gray-200 rounded-full flex items-center justify-center text-gray-500 hover:text-gray-700 transition-colors z-10"
+          class="absolute -top-1 -right-1 w-5 h-5 bg-red-500 hover:bg-red-600 rounded-full flex items-center justify-center text-white text-xs font-bold transition-colors z-20 cursor-pointer"
+          style="line-height: 1;"
           aria-label="Close"
         >
           ×
         </button>
-        <div class="flex items-center gap-3 mb-3 pr-6">
+        <div class="flex items-center gap-2 pr-4">
           ${avatarUrl ? 
-            `<img src="${avatarUrl}" class="w-10 h-10 rounded-full object-cover border-2 ${isCurrentUser ? 'border-blue-500' : isFriend ? 'border-green-500' : 'border-gray-300'}" alt="${displayName}" crossorigin="anonymous" referrerpolicy="no-referrer" onerror="console.error('Failed to load popup avatar:', '${avatarUrl}'); this.style.display='none';" />` :
-            `<div class="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center text-lg font-bold text-gray-700 border-2 ${isCurrentUser ? 'border-blue-500' : isFriend ? 'border-green-500' : 'border-gray-300'}">${displayName.charAt(0).toUpperCase()}</div>`
+            `<img src="${avatarUrl}" class="w-8 h-8 rounded-full object-cover border ${isCurrentUser ? 'border-blue-500' : isFriend ? 'border-green-500' : 'border-gray-300'}" alt="${displayName}" crossorigin="anonymous" referrerpolicy="no-referrer" onerror="this.style.display='none';" />` :
+            `<div class="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center text-sm font-bold text-gray-700 border ${isCurrentUser ? 'border-blue-500' : isFriend ? 'border-green-500' : 'border-gray-300'}">${displayName.charAt(0).toUpperCase()}</div>`
           }
-          <div>
-            <div class="font-semibold text-gray-900 text-base">${displayName}</div>
-            ${isCurrentUser ? '<div class="text-xs text-blue-600 font-medium">This is you</div>' : ''}
+          <div class="flex-1 min-w-0">
+            <div class="font-medium text-gray-900 text-sm truncate">${displayName}</div>
+            ${isCurrentUser ? '<div class="text-xs text-blue-600">You</div>' : ''}
           </div>
         </div>
     `;
 
     if (zoneKey) {
       popupContent += `
-        <div class="text-sm text-gray-700 mb-3 bg-gray-50 p-2 rounded">
-          <span class="font-medium">Zone:</span> ${getZoneName(zoneKey)}
+        <div class="text-xs text-gray-600 mt-1 bg-gray-50 px-2 py-1 rounded text-center">
+          Zone: ${getZoneName(zoneKey)}
         </div>`;
     }
 
     if (!isCurrentUser && !isFriend) {
       popupContent += `
-        <div class="mt-2 text-xs text-amber-700 bg-amber-50 p-2 rounded border border-amber-200">
-          🚶‍♂️ Only users in the same zone can send friend requests
+        <div class="mt-1 text-xs text-amber-700 bg-amber-50 px-2 py-1 rounded text-center">
+          Same zone needed for friend requests
         </div>`;
     }
 
     if (isFriend) {
       popupContent += `
-        <div class="mt-2 text-sm text-green-700 font-medium flex items-center gap-2 bg-green-50 p-2 rounded">
+        <div class="mt-1 text-xs text-green-700 font-medium flex items-center justify-center gap-1 bg-green-50 px-2 py-1 rounded">
           <span class="text-green-500">✓</span> Friend
-        </div>`;
-    } else if (!isCurrentUser) {
-      popupContent += `
-        <div class="mt-2 text-xs text-gray-600 flex items-center gap-1 bg-gray-50 p-2 rounded">
-          <span>📍</span> Zone-based location (~100m)
         </div>`;
     }
 
     popupContent += `</div>`;
 
     const popup = new mapboxgl.Popup({ 
-      offset: 25,
-      closeButton: true, // Keep original close button as backup
-      closeOnClick: false, // Don't close when clicking inside popup
+      offset: 15,
+      closeButton: false, // Remove default close button since we have our own
+      closeOnClick: true, // Allow closing by clicking outside
       closeOnMove: false, // Don't close when map moves
-      focusAfterOpen: false // Don't auto-focus
+      focusAfterOpen: false, // Don't auto-focus
+      maxWidth: '200px' // Limit popup width
     }).setHTML(popupContent);
 
     marker.setPopup(popup);

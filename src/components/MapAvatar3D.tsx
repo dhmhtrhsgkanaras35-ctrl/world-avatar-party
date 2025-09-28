@@ -20,7 +20,7 @@ const Avatar3DModel = ({ url, animate = false }: Avatar3DModelProps) => {
 
   return (
     <group ref={meshRef}>
-      <primitive object={scene.clone()} scale={[0.6, 0.6, 0.6]} position={[0, -0.3, 0]} />
+      <primitive object={scene.clone()} scale={[0.8, 0.8, 0.8]} position={[0, -0.6, 0]} />
     </group>
   );
 };
@@ -60,7 +60,8 @@ export const MapAvatar3D = ({
       const matches = avatarUrl.match(/avatar\/([a-f0-9]{24})/);
       if (matches) {
         const avatarId = matches[1];
-        const glbUrl = `https://models.readyplayer.me/${avatarId}.glb?pose=T&morphTargets=ARKit,Oculus%20Visemes`;
+        // Use A-pose (more relaxed) for better visibility and focus on upper body
+        const glbUrl = `https://models.readyplayer.me/${avatarId}.glb?pose=A&morphTargets=ARKit,Oculus%20Visemes`;
         setGlbUrl(glbUrl);
         setIsLoading(false);
       } else {
@@ -123,25 +124,25 @@ export const MapAvatar3D = ({
         style={{ width: containerSize.width, height: containerSize.height }}
       >
         <Canvas
-          camera={{ position: [0, 0.5, 3.5], fov: 45 }}
+          camera={{ position: [0, 0.2, 2.0], fov: 50 }}
           gl={{ 
             alpha: true, 
             antialias: true,
             powerPreference: "high-performance",
             precision: "highp"
           }}
-          dpr={[1.5, 2.5]}
+          dpr={[2, 3]}
           style={{ background: 'transparent' }}
         >
           <Suspense fallback={null}>
-            <ambientLight intensity={1.0} />
-            <directionalLight position={[2, 8, 2]} intensity={1.8} />
-            <pointLight position={[-2, 4, -2]} intensity={0.8} />
-            <pointLight position={[2, -1, 2]} intensity={0.4} />
+            <ambientLight intensity={1.2} />
+            <directionalLight position={[1, 5, 1]} intensity={2.2} />
+            <pointLight position={[-1, 3, -1]} intensity={1.0} />
+            <pointLight position={[1, 1, 1]} intensity={0.6} />
             
             <Avatar3DModel url={glbUrl} animate={false} />
             
-            <Environment preset="apartment" />
+            <Environment preset="studio" />
           </Suspense>
         </Canvas>
       </div>

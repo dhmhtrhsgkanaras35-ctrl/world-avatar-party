@@ -874,62 +874,7 @@ export const RealMapComponent = ({ showEmojiPalette = false, onToggleEmojiPalett
     .setLngLat([lng, lat])
     .addTo(map.current);
 
-    // Create popup content with compact design and better close functionality
-    let popupContent = `
-      <div class="p-2 min-w-[160px] max-w-[200px] bg-white rounded-lg shadow-lg relative">
-        <button 
-          onclick="this.closest('.mapboxgl-popup').remove()" 
-          class="absolute -top-1 -right-1 w-5 h-5 bg-red-500 hover:bg-red-600 rounded-full flex items-center justify-center text-white text-xs font-bold transition-colors z-20 cursor-pointer"
-          style="line-height: 1;"
-          aria-label="Close"
-        >
-          ×
-        </button>
-        <div class="flex items-center gap-2 pr-4">
-          ${avatarUrl ? 
-            `<img src="${avatarUrl}" class="w-8 h-8 rounded-full object-cover border ${isCurrentUser ? 'border-blue-500' : isFriend ? 'border-green-500' : 'border-gray-300'}" alt="${displayName}" crossorigin="anonymous" referrerpolicy="no-referrer" onerror="this.style.display='none';" />` :
-            `<div class="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center text-sm font-bold text-gray-700 border ${isCurrentUser ? 'border-blue-500' : isFriend ? 'border-green-500' : 'border-gray-300'}">${displayName.charAt(0).toUpperCase()}</div>`
-          }
-          <div class="flex-1 min-w-0">
-            <div class="font-medium text-gray-900 text-sm truncate">${displayName}</div>
-            ${isCurrentUser ? '<div class="text-xs text-blue-600">You</div>' : ''}
-          </div>
-        </div>
-    `;
-
-    if (zoneKey) {
-      popupContent += `
-        <div class="text-xs text-gray-600 mt-1 bg-gray-50 px-2 py-1 rounded text-center">
-          Zone: ${getZoneName(zoneKey)}
-        </div>`;
-    }
-
-    if (!isCurrentUser && !isFriend) {
-      popupContent += `
-        <div class="mt-1 text-xs text-amber-700 bg-amber-50 px-2 py-1 rounded text-center">
-          Same zone needed for friend requests
-        </div>`;
-    }
-
-    if (isFriend) {
-      popupContent += `
-        <div class="mt-1 text-xs text-green-700 font-medium flex items-center justify-center gap-1 bg-green-50 px-2 py-1 rounded">
-          <span class="text-green-500">✓</span> Friend
-        </div>`;
-    }
-
-    popupContent += `</div>`;
-
-    const popup = new mapboxgl.Popup({ 
-      offset: 15,
-      closeButton: false, // Remove default close button since we have our own
-      closeOnClick: true, // Allow closing by clicking outside
-      closeOnMove: false, // Don't close when map moves
-      focusAfterOpen: false, // Don't auto-focus
-      maxWidth: '200px' // Limit popup width
-    }).setHTML(popupContent);
-
-    marker.setPopup(popup);
+    // No popup for user markers - user requested removal
     markersRef.current[markerId] = marker;
 
     console.log(`Added marker for ${displayName} at [${lng}, ${lat}]`);

@@ -1,6 +1,6 @@
 import { cn } from "@/lib/utils";
-import housePartyMarker from "@/assets/house-party-marker.jpg";
-import concertStageMarker from "@/assets/concert-stage-marker.jpg";
+import housePartyMarker from "@/assets/house-party-marker-optimized.jpg";
+import concertStageMarker from "@/assets/concert-stage-marker-optimized.jpg";
 
 interface EventMarkerProps {
   type: "house-party" | "concert";
@@ -26,7 +26,7 @@ export const EventMarker = ({
       {/* Main marker */}
       <div
         className={cn(
-          "relative w-16 h-16 rounded-full overflow-hidden border-2 shadow-event",
+          "relative w-16 h-16 rounded-full overflow-hidden border-2 shadow-event event-marker",
           "transform transition-all duration-300 hover:scale-110",
           isHouseParty ? "border-party-pink" : "border-event-purple",
           animated && (isHouseParty ? "party-pulse" : "event-glow")
@@ -36,6 +36,8 @@ export const EventMarker = ({
           src={isHouseParty ? housePartyMarker : concertStageMarker}
           alt={`${type} marker`}
           className="w-full h-full object-cover"
+          loading="lazy"
+          decoding="async"
         />
         
         {/* Glow overlay */}

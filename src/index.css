@@ -159,6 +159,23 @@
     width: 100% !important;
     height: 100% !important;
   }
+
+  /* Image optimization for better delivery */
+  img {
+    image-rendering: auto;
+    image-rendering: optimizeQuality;
+  }
+
+  /* Optimize marker images specifically */
+  .event-marker img {
+    content-visibility: auto;
+    contain: layout style paint;
+  }
+
+  /* Critical images should not lazy load */
+  img[fetchpriority="high"] {
+    content-visibility: visible;
+  }
 }
 
 /* Mobile-specific utilities */

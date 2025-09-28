@@ -1,7 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { useAuth } from "./AuthProvider";
 import { useNavigate } from "react-router-dom";
-import heroPartyImage from "@/assets/hero-party.jpg";
+import heroPartyImage from "@/assets/hero-party-optimized.jpg";
 import { lazy, Suspense } from "react";
 
 // Lazy load heavy 3D components to prevent render blocking
@@ -20,6 +20,9 @@ export const HeroSection = () => {
           src={heroPartyImage}
           alt="WorldMe Party Scene"
           className="w-full h-full object-cover"
+          loading="eager"
+          decoding="async"
+          fetchPriority="high"
         />
         <div className="absolute inset-0 bg-background/80" />
         <div className="absolute inset-0 gradient-party opacity-30" />

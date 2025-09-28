@@ -112,7 +112,7 @@ export const RealMapComponent = ({ showEmojiPalette = false, userLocation: propU
       
       map.current = new mapboxgl.Map({
         container: mapContainer.current,
-        style: 'mapbox://styles/mapbox/light-v11',
+        style: 'mapbox://styles/mapbox/dark-v11', // Changed to dark theme for party vibes
         center: [-74.5, 40], // Default to New York area
         zoom: 9,
         projection: 'globe' as any,

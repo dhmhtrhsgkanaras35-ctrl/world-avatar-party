@@ -51,8 +51,10 @@ export const Avatar3D = ({
   showControls = true,
   className = ""
 }: Avatar3DProps) => {
-  // Check if it's a valid .glb file
-  const isValidGlb = avatarUrl && avatarUrl.endsWith('.glb');
+  // Check if it's a valid Ready Player Me GLB or any .glb file
+  const isValidGlb = avatarUrl && (avatarUrl.includes('readyplayer.me') || avatarUrl.endsWith('.glb'));
+
+  console.log('Avatar3D render:', { avatarUrl, isValidGlb });
 
   if (!isValidGlb) {
     return (
@@ -63,6 +65,11 @@ export const Avatar3D = ({
         <div className="text-center">
           <div className="text-4xl mb-2">👤</div>
           <div className="text-sm">No 3D Avatar</div>
+          {avatarUrl && (
+            <div className="text-xs mt-2 opacity-75">
+              {avatarUrl.includes('.png') ? 'PNG format detected' : 'Unsupported format'}
+            </div>
+          )}
         </div>
       </div>
     );

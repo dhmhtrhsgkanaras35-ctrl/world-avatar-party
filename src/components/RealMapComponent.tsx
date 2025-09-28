@@ -786,7 +786,7 @@ export const RealMapComponent = ({ showEmojiPalette = false, userLocation: propU
     // Try to load avatar image if available
     if (avatarUrl) {
       const img = new Image();
-      img.crossOrigin = 'anonymous';
+      // Don't use crossOrigin for ReadyPlayerMe URLs
       
       img.onload = () => {
         const avatarEl = document.getElementById(`avatar-${userId}`);
@@ -796,7 +796,7 @@ export const RealMapComponent = ({ showEmojiPalette = false, userLocation: propU
       };
       
       img.onerror = () => {
-        console.log(`Using initials for ${displayName} - avatar couldn't load`);
+        // Silently fall back to initials - no console spam
       };
       
       img.src = avatarUrl;

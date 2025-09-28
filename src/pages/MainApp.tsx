@@ -202,12 +202,6 @@ const MainApp = () => {
             userZone={userProfile?.zone_key}
           />
           
-          {/* Debug info - moved to bottom corner */}
-          {process.env.NODE_ENV === 'development' && (
-            <div className="fixed bottom-4 left-4 bg-black/80 text-white p-2 rounded text-xs z-40 max-w-[200px]">
-              Debug: Check console logs for events
-            </div>
-          )}
           
           {/* Floating header - very compact to avoid map controls */}
           <header className="absolute top-2 left-2 right-16 bg-background/90 backdrop-blur-sm rounded-md border px-2 py-1 flex items-center justify-between z-10 max-w-[300px]">

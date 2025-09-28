@@ -767,11 +767,11 @@ export const RealMapComponent = ({ showEmojiPalette = false, userLocation: propU
     const avatarContainer = document.createElement('div');
     avatarContainer.innerHTML = `
       <div class="relative">
-        <div class="w-12 h-12 rounded-full border-3 overflow-hidden bg-white shadow-xl flex items-center justify-center transition-transform hover:scale-110 ${
+        <div class="w-12 h-12 rounded-full border-2 overflow-hidden bg-white shadow-xl flex items-center justify-center transition-transform hover:scale-110 ${
           isCurrentUser ? 'border-blue-500 ring-2 ring-blue-200' : isFriend ? 'border-green-500 ring-2 ring-green-200' : 'border-gray-400'
         }">
           ${avatarUrl ? 
-            `<img src="${avatarUrl}" class="w-full h-full object-cover" alt="${displayName}" onerror="console.error('Failed to load avatar:', '${avatarUrl}'); this.style.display='none'; this.parentElement.innerHTML='<div class=&quot;text-lg font-bold text-gray-700&quot;>${displayName.charAt(0).toUpperCase()}</div>';" onload="console.log('Avatar loaded successfully:', '${avatarUrl}');" />` : 
+            `<img src="${avatarUrl}" class="w-full h-full object-cover" alt="${displayName}" crossorigin="anonymous" onerror="this.style.display='none'; this.parentElement.innerHTML='<div class=\\"text-lg font-bold text-gray-700\\">${displayName.charAt(0).toUpperCase()}</div>';" />` : 
             `<div class="text-lg font-bold text-gray-700">${displayName.charAt(0).toUpperCase()}</div>`
           }
         </div>
@@ -794,7 +794,7 @@ export const RealMapComponent = ({ showEmojiPalette = false, userLocation: propU
       <div class="p-4 min-w-[220px] bg-white rounded-lg shadow-lg">
         <div class="flex items-center gap-3 mb-3">
           ${avatarUrl ? 
-            `<img src="${avatarUrl}" class="w-10 h-10 rounded-full object-cover border-2 ${isCurrentUser ? 'border-blue-500' : isFriend ? 'border-green-500' : 'border-gray-300'}" alt="${displayName}" onerror="console.error('Failed to load popup avatar:', '${avatarUrl}'); this.style.display='none';" />` :
+            `<img src="${avatarUrl}" class="w-10 h-10 rounded-full object-cover border-2 ${isCurrentUser ? 'border-blue-500' : isFriend ? 'border-green-500' : 'border-gray-300'}" alt="${displayName}" crossorigin="anonymous" referrerpolicy="no-referrer" onerror="console.error('Failed to load popup avatar:', '${avatarUrl}'); this.style.display='none';" />` :
             `<div class="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center text-lg font-bold text-gray-700 border-2 ${isCurrentUser ? 'border-blue-500' : isFriend ? 'border-green-500' : 'border-gray-300'}">${displayName.charAt(0).toUpperCase()}</div>`
           }
           <div>

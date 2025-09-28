@@ -712,6 +712,12 @@ export const RealMapComponent = ({ showEmojiPalette = false, userLocation: propU
         const profile = profileMap.get(location.user_id);
         if (profile?.location_sharing_enabled) {
           const isFriend = friendUserIds.has(location.user_id);
+          console.log('Adding user marker:', {
+            userId: location.user_id,
+            displayName: profile.display_name,
+            avatarUrl: profile.avatar_url,
+            isFriend
+          });
           addUserMarker(
             location.longitude,
             location.latitude,
@@ -765,7 +771,7 @@ export const RealMapComponent = ({ showEmojiPalette = false, userLocation: propU
           isCurrentUser ? 'border-blue-500 ring-2 ring-blue-200' : isFriend ? 'border-green-500 ring-2 ring-green-200' : 'border-gray-400'
         }">
           ${avatarUrl ? 
-            `<img src="${avatarUrl}" class="w-full h-full object-cover" alt="${displayName}" />` : 
+            `<img src="${avatarUrl}" class="w-full h-full object-cover" alt="${displayName}" onerror="console.error('Failed to load avatar:', '${avatarUrl}'); this.style.display='none'; this.parentElement.innerHTML='<div class=&quot;text-lg font-bold text-gray-700&quot;>${displayName.charAt(0).toUpperCase()}</div>';" onload="console.log('Avatar loaded successfully:', '${avatarUrl}');" />` : 
             `<div class="text-lg font-bold text-gray-700">${displayName.charAt(0).toUpperCase()}</div>`
           }
         </div>
@@ -788,7 +794,7 @@ export const RealMapComponent = ({ showEmojiPalette = false, userLocation: propU
       <div class="p-4 min-w-[220px] bg-white rounded-lg shadow-lg">
         <div class="flex items-center gap-3 mb-3">
           ${avatarUrl ? 
-            `<img src="${avatarUrl}" class="w-10 h-10 rounded-full object-cover border-2 ${isCurrentUser ? 'border-blue-500' : isFriend ? 'border-green-500' : 'border-gray-300'}" alt="${displayName}" />` :
+            `<img src="${avatarUrl}" class="w-10 h-10 rounded-full object-cover border-2 ${isCurrentUser ? 'border-blue-500' : isFriend ? 'border-green-500' : 'border-gray-300'}" alt="${displayName}" onerror="console.error('Failed to load popup avatar:', '${avatarUrl}'); this.style.display='none';" />` :
             `<div class="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center text-lg font-bold text-gray-700 border-2 ${isCurrentUser ? 'border-blue-500' : isFriend ? 'border-green-500' : 'border-gray-300'}">${displayName.charAt(0).toUpperCase()}</div>`
           }
           <div>

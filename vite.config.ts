@@ -36,6 +36,6 @@ export default defineConfig(({ mode }) => ({
   // Optimize dependencies
   optimizeDeps: {
     include: ['react', 'react-dom', '@tanstack/react-query'],
-    exclude: ['three', '@react-three/fiber', '@react-three/drei', 'mapbox-gl'],
+    exclude: ['mapbox-gl'],
   },
 }));

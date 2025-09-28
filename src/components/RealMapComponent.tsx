@@ -134,6 +134,15 @@ export const RealMapComponent = ({ showEmojiPalette = false, onToggleEmojiPalett
 
       map.current.on('load', () => {
         console.log('Map loaded successfully');
+        console.log('Map container dimensions:', mapContainer.current?.offsetWidth, mapContainer.current?.offsetHeight);
+        // Critical: Resize map to fit container properly
+        setTimeout(() => {
+          map.current?.resize();
+          console.log('Map resized to fit container');
+          if (mapContainer.current) {
+            console.log('After resize - Container:', mapContainer.current.offsetWidth, mapContainer.current.offsetHeight);
+          }
+        }, 100);
         setMapLoaded(true);
         getUserLocation();
       });
@@ -972,9 +981,21 @@ export const RealMapComponent = ({ showEmojiPalette = false, onToggleEmojiPalett
     }
   }, [mapLoaded, userLocation]);
 
+  // Add window resize handler to ensure map resizes properly
+  useEffect(() => {
+    const handleResize = () => {
+      if (map.current) {
+        map.current.resize();
+      }
+    };
+
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
   return (
     <div className="w-full h-full relative">
-      <div ref={mapContainer} className="absolute inset-0" />
+      <div ref={mapContainer} className="w-full h-full" />
       
       {/* Zone sharing note - Mobile optimized */}
       {showZoneNote && (

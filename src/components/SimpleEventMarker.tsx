@@ -1,4 +1,4 @@
-import mapboxgl from 'mapbox-gl';
+import * as mapboxgl from 'mapbox-gl';
 
 interface SimpleEventMarkerProps {
   event: {
@@ -12,7 +12,7 @@ interface SimpleEventMarkerProps {
     created_by: string;
     isTemporary?: boolean;
   };
-  map: mapboxgl.Map;
+  map: any;
   currentUserId?: string;
   onClick?: (eventId: string) => void;
   onToggleEditMode?: (eventId: string) => void;
@@ -146,7 +146,7 @@ export const createSimpleEventMarker = ({
   });
 
   // Create and return the Mapbox marker
-  const marker = new mapboxgl.Marker({
+  const marker = new (mapboxgl as any).Marker({
     element: markerElement,
     anchor: 'bottom'
   })

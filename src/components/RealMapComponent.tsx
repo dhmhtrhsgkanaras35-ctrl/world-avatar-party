@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import mapboxgl from "mapbox-gl";
+import * as mapboxgl from "mapbox-gl";
 import "mapbox-gl/dist/mapbox-gl.css";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -63,7 +63,7 @@ interface RealMapComponentProps {
 
 export const RealMapComponent = ({ showEmojiPalette = false, onToggleEmojiPalette, userLocation: propUserLocation, userZone: propUserZone }: RealMapComponentProps = {}) => {
   const mapContainer = useRef<HTMLDivElement>(null);
-  const map = useRef<mapboxgl.Map | null>(null);
+  const map = useRef<any | null>(null);
   const { user } = useAuth();
   const { toast } = useToast();
   
@@ -120,9 +120,10 @@ export const RealMapComponent = ({ showEmojiPalette = false, onToggleEmojiPalett
     console.log('Initializing map with token:', mapboxToken);
     
     try {
-      mapboxgl.accessToken = mapboxToken;
+      // Set the access token on the global mapboxgl object
+      (mapboxgl as any).accessToken = mapboxToken;
       
-      map.current = new mapboxgl.Map({
+      map.current = new (mapboxgl as any).Map({
         container: mapContainer.current,
         style: 'mapbox://styles/mapbox/streets-v12', // Colorful street style for party vibes
         center: [2.3522, 48.8566], // Default to Paris - more interesting than NYC

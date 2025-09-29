@@ -2,46 +2,35 @@ import { createRoot } from "react-dom/client";
 import React from "react";
 import "./index.css";
 
-// Simple direct import to avoid module resolution issues
-const initializeApp = async () => {
-  const root = createRoot(document.getElementById("root")!);
-  
-  // Remove loading state immediately
-  const loadingElement = document.querySelector('#root > div') as HTMLElement;
-  if (loadingElement) {
-    loadingElement.style.display = 'none';
-  }
-  
+// Initialize the React app
+const initializeApp = () => {
   try {
-    // Simple direct import
-    const { default: App } = await import("./App.tsx");
-    root.render(<App />);
-  } catch (error) {
-    console.error('Failed to load app:', error);
-    // Show error state
-    root.render(
-      <div style={{ 
-        position: 'fixed', 
-        inset: '0', 
-        display: 'flex', 
-        alignItems: 'center', 
-        justifyContent: 'center',
-        background: 'hsl(240 10% 3.9%)',
-        color: 'hsl(0 0% 98%)',
-        fontFamily: 'system-ui'
-      }}>
-        <div style={{ textAlign: 'center' }}>
-          <div style={{ fontSize: '1.125rem', fontWeight: '600', marginBottom: '0.5rem' }}>
-            Failed to load WorldMe
-          </div>
-          <div style={{ fontSize: '0.875rem', opacity: '0.8' }}>
-            Please refresh the page
+    const root = createRoot(document.getElementById("root")!);
+    
+    // Clear loading state immediately
+    const rootElement = document.getElementById("root");
+    if (rootElement) {
+      rootElement.innerHTML = '';
+    }
+    
+    // Import and render the app immediately
+    import("./App.tsx").then(({ default: App }) => {
+      root.render(<App />);
+    }).catch((error) => {
+      console.error('Failed to load app:', error);
+      rootElement.innerHTML = `
+        <div style="position: fixed; inset: 0; display: flex; align-items: center; justify-content: center; background: hsl(240 10% 3.9%); color: hsl(0 0% 98%); font-family: system-ui;">
+          <div style="text-align: center;">
+            <div style="font-size: 1.125rem; font-weight: 600; margin-bottom: 0.5rem;">Failed to load WorldMe</div>
+            <div style="font-size: 0.875rem; opacity: 0.8;">Please refresh the page</div>
           </div>
         </div>
-      </div>
-    );
+      `;
+    });
+  } catch (error) {
+    console.error('Failed to initialize app:', error);
   }
 };
 
-// Simple initialization without complex scheduling
+// Start the app immediately
 initializeApp();

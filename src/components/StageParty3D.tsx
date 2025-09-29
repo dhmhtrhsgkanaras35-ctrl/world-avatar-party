@@ -1,118 +1,4 @@
-import { useRef } from 'react';
-import { Canvas, useFrame } from '@react-three/fiber';
-import * as THREE from 'three';
-
-interface StageParty3DModelProps {
-  animate?: boolean;
-  scale?: number;
-}
-
-const StageParty3DModel = ({ animate = true, scale = 1 }: StageParty3DModelProps) => {
-  const stageRef = useRef<THREE.Group>(null);
-  const leftLightRef = useRef<THREE.Mesh>(null);
-  const rightLightRef = useRef<THREE.Mesh>(null);
-  const leftSpeakerRef = useRef<THREE.Mesh>(null);
-  const rightSpeakerRef = useRef<THREE.Mesh>(null);
-
-  useFrame((state) => {
-    if (!animate) return;
-
-    const time = state.clock.elapsedTime;
-
-    // Animate lights with pulsing colors
-    if (leftLightRef.current && rightLightRef.current) {
-      const redIntensity = Math.sin(time * 2) * 0.5 + 0.5;
-      const blueIntensity = Math.cos(time * 2) * 0.5 + 0.5;
-      
-      (leftLightRef.current.material as THREE.MeshBasicMaterial).color.setRGB(redIntensity, 0, 0.3);
-      (rightLightRef.current.material as THREE.MeshBasicMaterial).color.setRGB(0.3, 0, blueIntensity);
-    }
-
-    // Bounce speakers slightly
-    if (leftSpeakerRef.current && rightSpeakerRef.current) {
-      const bounce = Math.sin(time * 4) * 0.02;
-      leftSpeakerRef.current.position.y = 0.5 + bounce;
-      rightSpeakerRef.current.position.y = 0.5 + bounce;
-    }
-
-    // Rotate the entire stage slowly
-    if (stageRef.current) {
-      stageRef.current.rotation.y = Math.sin(time * 0.5) * 0.1;
-    }
-  });
-
-  return (
-    <group ref={stageRef} scale={[scale, scale, scale]}>
-      {/* Stage Platform */}
-      <mesh position={[0, 0, 0]}>
-        <boxGeometry args={[3, 0.2, 2]} />
-        <meshPhongMaterial color="#2a2a2a" />
-      </mesh>
-      
-      {/* Backdrop */}
-      <mesh position={[0, 1, -1]}>
-        <boxGeometry args={[3, 2, 0.1]} />
-        <meshPhongMaterial color="#1a1a1a" />
-      </mesh>
-      
-      {/* Left Light Stand */}
-      <mesh position={[-1.2, 1, -0.8]}>
-        <cylinderGeometry args={[0.05, 0.05, 2]} />
-        <meshPhongMaterial color="#333" />
-      </mesh>
-      
-      {/* Right Light Stand */}
-      <mesh position={[1.2, 1, -0.8]}>
-        <cylinderGeometry args={[0.05, 0.05, 2]} />
-        <meshPhongMaterial color="#333" />
-      </mesh>
-      
-      {/* Left Light (Red) */}
-      <mesh ref={leftLightRef} position={[-1.2, 1.8, -0.8]}>
-        <sphereGeometry args={[0.15]} />
-        <meshBasicMaterial color="#ff0040" />
-      </mesh>
-      
-      {/* Right Light (Blue) */}
-      <mesh ref={rightLightRef} position={[1.2, 1.8, -0.8]}>
-        <sphereGeometry args={[0.15]} />
-        <meshBasicMaterial color="#0080ff" />
-      </mesh>
-      
-      {/* Left Speaker */}
-      <mesh ref={leftSpeakerRef} position={[-1.3, 0.5, 0.8]}>
-        <boxGeometry args={[0.4, 1, 0.3]} />
-        <meshPhongMaterial color="#222" />
-      </mesh>
-      
-      {/* Right Speaker */}
-      <mesh ref={rightSpeakerRef} position={[1.3, 0.5, 0.8]}>
-        <boxGeometry args={[0.4, 1, 0.3]} />
-        <meshPhongMaterial color="#222" />
-      </mesh>
-      
-      {/* Speaker Cones */}
-      <mesh position={[-1.3, 0.7, 0.95]} rotation={[Math.PI / 2, 0, 0]}>
-        <cylinderGeometry args={[0.12, 0.08, 0.05]} />
-        <meshPhongMaterial color="#444" />
-      </mesh>
-      <mesh position={[1.3, 0.7, 0.95]} rotation={[Math.PI / 2, 0, 0]}>
-        <cylinderGeometry args={[0.12, 0.08, 0.05]} />
-        <meshPhongMaterial color="#444" />
-      </mesh>
-      
-      {/* DJ Booth */}
-      <mesh position={[0, 0.5, 0.2]}>
-        <boxGeometry args={[1, 0.8, 0.5]} />
-        <meshPhongMaterial color="#333" />
-      </mesh>
-      
-      {/* Light beams effect */}
-      <pointLight position={[-1.2, 1.8, -0.8]} color="#ff0040" intensity={2} distance={5} />
-      <pointLight position={[1.2, 1.8, -0.8]} color="#0080ff" intensity={2} distance={5} />
-    </group>
-  );
-};
+import { useEffect, useState } from 'react';
 
 interface StageParty3DProps {
   width?: number;
@@ -131,25 +17,82 @@ export const StageParty3D = ({
   className = "",
   scale = 1
 }: StageParty3DProps) => {
-  return (
-    <div className={`overflow-hidden rounded-lg ${className}`} style={{ width, height }}>
-      <Canvas
-        camera={{ position: [3, 2, 3], fov: 50 }}
-        gl={{ 
-          alpha: true, 
-          antialias: true,
-          powerPreference: "high-performance",
-          precision: "highp"
-        }}
-        dpr={[1, 2]}
-        style={{ background: 'linear-gradient(135deg, #1a1a2e, #16213e)' }}
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  if (!mounted) {
+    return (
+      <div 
+        className={`overflow-hidden rounded-lg bg-gradient-to-br from-slate-800 to-slate-900 ${className}`} 
+        style={{ width, height }}
       >
-        <ambientLight intensity={0.3} />
-        <directionalLight position={[5, 5, 5]} intensity={0.8} />
-        <pointLight position={[0, 3, 0]} intensity={0.5} color="#ffffff" />
+        <div className="flex items-center justify-center h-full">
+          <div className="text-white text-sm">Loading stage...</div>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div 
+      className={`overflow-hidden rounded-lg bg-gradient-to-br from-slate-800 to-slate-900 ${className}`} 
+      style={{ width, height, transform: `scale(${scale})` }}
+    >
+      <div className="relative w-full h-full perspective-1000">
+        {/* Stage Platform */}
+        <div className="absolute bottom-6 left-1/2 transform -translate-x-1/2 w-24 h-3 bg-slate-700 rounded-sm shadow-lg"></div>
         
-        <StageParty3DModel animate={animate} scale={scale} />
-      </Canvas>
+        {/* Backdrop */}
+        <div className="absolute bottom-8 left-1/2 transform -translate-x-1/2 w-24 h-12 bg-slate-800 rounded-t-sm"></div>
+        
+        {/* Light Stands */}
+        <div className="absolute bottom-8 left-8 w-1 h-12 bg-slate-600 rounded-full"></div>
+        <div className="absolute bottom-8 right-8 w-1 h-12 bg-slate-600 rounded-full"></div>
+        
+        {/* Lights with animation */}
+        <div 
+          className={`absolute top-4 left-8 w-3 h-3 rounded-full shadow-lg ${animate ? 'animate-pulse' : ''}`}
+          style={{ 
+            backgroundColor: '#ff0040',
+            boxShadow: animate ? '0 0 10px #ff0040' : 'none'
+          }}
+        ></div>
+        <div 
+          className={`absolute top-4 right-8 w-3 h-3 rounded-full shadow-lg ${animate ? 'animate-pulse' : ''}`}
+          style={{ 
+            backgroundColor: '#0080ff',
+            boxShadow: animate ? '0 0 10px #0080ff' : 'none',
+            animationDelay: '0.5s'
+          }}
+        ></div>
+        
+        {/* Speakers */}
+        <div className="absolute bottom-4 left-4 w-4 h-8 bg-slate-900 rounded border border-slate-600">
+          <div className="w-2 h-2 bg-slate-600 rounded-full mx-auto mt-2"></div>
+          <div className="w-2 h-2 bg-slate-600 rounded-full mx-auto mt-1"></div>
+        </div>
+        <div className="absolute bottom-4 right-4 w-4 h-8 bg-slate-900 rounded border border-slate-600">
+          <div className="w-2 h-2 bg-slate-600 rounded-full mx-auto mt-2"></div>
+          <div className="w-2 h-2 bg-slate-600 rounded-full mx-auto mt-1"></div>
+        </div>
+        
+        {/* DJ Booth */}
+        <div className="absolute bottom-6 left-1/2 transform -translate-x-1/2 w-12 h-6 bg-slate-700 rounded-t border border-slate-600">
+          <div className="w-2 h-1 bg-green-400 rounded mx-auto mt-1"></div>
+          <div className="flex gap-1 justify-center mt-1">
+            <div className="w-1 h-1 bg-red-400 rounded-full"></div>
+            <div className="w-1 h-1 bg-blue-400 rounded-full"></div>
+          </div>
+        </div>
+        
+        {/* Stage title */}
+        <div className="absolute top-2 left-1/2 transform -translate-x-1/2 text-white text-xs font-mono opacity-75">
+          🎪 STAGE
+        </div>
+      </div>
     </div>
   );
 };

@@ -1,29 +1,4 @@
-import { Suspense, useRef, useEffect, useState } from 'react';
-import { Canvas, useFrame } from '@react-three/fiber';
-import { useGLTF, Environment } from '@react-three/drei';
-import * as THREE from 'three';
-
-interface Avatar3DModelProps {
-  url: string;
-  animate?: boolean;
-}
-
-const Avatar3DModel = ({ url, animate = false }: Avatar3DModelProps) => {
-  const { scene } = useGLTF(url);
-  const meshRef = useRef<THREE.Group>(null);
-
-  useFrame((state) => {
-    if (meshRef.current && animate) {
-      meshRef.current.rotation.y = Math.sin(state.clock.elapsedTime * 0.3) * 0.1;
-    }
-  });
-
-  return (
-    <group ref={meshRef}>
-      <primitive object={scene.clone()} scale={[1.0, 1.0, 1.0]} position={[0, -1.5, 0]} />
-    </group>
-  );
-};
+import { useState } from 'react';
 
 interface MapAvatar3DProps {
   avatarUrl?: string;
@@ -40,120 +15,57 @@ export const MapAvatar3D = ({
   isFriend,
   size = 'large'
 }: MapAvatar3DProps) => {
-  const [glbUrl, setGlbUrl] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [hasError, setHasError] = useState(false);
+  const [imageError, setImageError] = useState(false);
 
   const containerSize = size === 'large' ? { width: 80, height: 120 } : { width: 64, height: 96 };
   
   const borderColor = isCurrentUser 
     ? 'border-blue-500 ring-2 ring-blue-200' 
     : isFriend 
-    ? 'border-green-500 ring-2 ring-green-200' 
-    : 'border-gray-400';
+      ? 'border-green-500 ring-2 ring-green-200' 
+      : 'border-gray-300 ring-1 ring-gray-200';
 
-  const initials = displayName.charAt(0).toUpperCase();
-
-  useEffect(() => {
-    if (avatarUrl) {
-      // Extract avatar ID from ReadyPlayerMe PNG URL
-      const matches = avatarUrl.match(/avatar\/([a-f0-9]{24})/);
-      if (matches) {
-        const avatarId = matches[1];
-        // Use A-pose (more relaxed) for better visibility and focus on upper body
-        const glbUrl = `https://models.readyplayer.me/${avatarId}.glb?pose=A&morphTargets=ARKit,Oculus%20Visemes`;
-        setGlbUrl(glbUrl);
-        setIsLoading(false);
-      } else {
-        setHasError(true);
-        setIsLoading(false);
-      }
-    } else {
-      setIsLoading(false);
+  // Try to convert .glb URL to .png URL for display
+  const getImageUrl = (url: string) => {
+    if (!url) return null;
+    if (url.includes('render.readyplayer.me') && url.includes('.glb')) {
+      return url.replace('.glb', '.png') + '?pose=standing&quality=high&transparent=true';
     }
-  }, [avatarUrl]);
+    return url;
+  };
 
-  // Fallback avatar
-  const FallbackAvatar = () => (
-    <div className={`w-12 h-12 rounded-full border-2 overflow-hidden bg-white shadow-xl flex items-center justify-center ${borderColor}`}>
-      <div className="text-lg font-bold text-gray-700">{initials}</div>
-    </div>
-  );
+  const imageUrl = avatarUrl ? getImageUrl(avatarUrl) : null;
 
-  // Loading state
-  if (isLoading) {
-    return (
-      <div className="relative">
-        <div 
-          className="flex items-center justify-center transition-transform hover:scale-110"
-          style={{ width: containerSize.width, height: containerSize.height }}
-        >
-          <div className="animate-pulse">
-            <FallbackAvatar />
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  // Error state or no GLB URL
-  if (hasError || !glbUrl) {
-    return (
-      <div className="relative">
-        <div 
-          className="flex items-center justify-center transition-transform hover:scale-110"
-          style={{ width: containerSize.width, height: containerSize.height }}
-        >
-          <FallbackAvatar />
-        </div>
-        {isCurrentUser && (
-          <div className="absolute -top-1 -right-1 w-4 h-4 bg-blue-500 rounded-full border-2 border-white shadow-lg"></div>
-        )}
-        {isFriend && !isCurrentUser && (
-          <div className="absolute -top-1 -right-1 w-4 h-4 bg-green-500 rounded-full border-2 border-white shadow-lg"></div>
-        )}
-      </div>
-    );
-  }
-
-  // 3D Avatar
   return (
-    <div className="relative">
+    <div className="flex flex-col items-center">
       <div 
-        className="transition-transform hover:scale-110"
-        style={{ width: containerSize.width, height: containerSize.height }}
+        className={`relative bg-white rounded-lg border-2 ${borderColor} overflow-hidden shadow-lg hover:scale-105 transition-transform duration-200`}
+        style={containerSize}
       >
-        <Canvas
-          camera={{ position: [0, 0.5, 4], fov: 45 }}
-          gl={{ 
-            alpha: true, 
-            antialias: true,
-            powerPreference: "high-performance",
-            precision: "highp"
-          }}
-          dpr={[2, 3]}
-          style={{ background: 'transparent' }}
-        >
-          <Suspense fallback={null}>
-            <ambientLight intensity={0.8} />
-            <directionalLight position={[3, 8, 3]} intensity={1.5} />
-            <pointLight position={[-3, 5, -3]} intensity={0.8} />
-            <pointLight position={[3, 2, 3]} intensity={0.5} />
-            
-            <Avatar3DModel url={glbUrl} animate={false} />
-            
-            <Environment preset="sunset" />
-          </Suspense>
-        </Canvas>
+        {imageUrl && !imageError ? (
+          <img
+            src={imageUrl}
+            alt={`${displayName}'s avatar`}
+            className="w-full h-full object-cover"
+            onError={() => setImageError(true)}
+            onLoad={() => setImageError(false)}
+          />
+        ) : (
+          <div className="w-full h-full bg-gradient-to-br from-slate-100 to-slate-200 flex items-center justify-center">
+            <div className="text-4xl">👤</div>
+          </div>
+        )}
+        
+        {/* Status indicator */}
+        <div className={`absolute top-1 right-1 w-3 h-3 rounded-full ${
+          isCurrentUser ? 'bg-blue-500' : isFriend ? 'bg-green-500' : 'bg-gray-400'
+        }`}></div>
       </div>
       
-      {/* Status indicators */}
-      {isCurrentUser && (
-        <div className="absolute -top-1 -right-1 w-4 h-4 bg-blue-500 rounded-full border-2 border-white shadow-lg"></div>
-      )}
-      {isFriend && !isCurrentUser && (
-        <div className="absolute -top-1 -right-1 w-4 h-4 bg-green-500 rounded-full border-2 border-white shadow-lg"></div>
-      )}
+      {/* Name label */}
+      <div className="mt-1 px-2 py-1 bg-black bg-opacity-75 text-white text-xs rounded max-w-20 truncate">
+        {displayName}
+      </div>
     </div>
   );
 };

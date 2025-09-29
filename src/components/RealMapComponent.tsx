@@ -968,7 +968,8 @@ export const RealMapComponent = ({ showEmojiPalette = false, onToggleEmojiPalett
     const marker = new mapboxgl.Marker({
       element: markerElement,
       anchor: 'bottom', // Anchor at bottom for proper positioning
-      offset: [0, 2] // Small offset for perfect alignment
+      offset: [0, 2], // Small offset for perfect alignment
+      scale: 1 // Disable scaling with zoom level
     })
     .setLngLat([lng, lat])
     .addTo(map.current);

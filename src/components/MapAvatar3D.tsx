@@ -28,8 +28,14 @@ export const MapAvatar3D = ({
   // Try to convert .glb URL to .png URL for display
   const getImageUrl = (url: string) => {
     if (!url) return null;
-    if (url.includes('render.readyplayer.me') && url.includes('.glb')) {
-      return url.replace('.glb', '.png') + '?pose=standing&quality=high&transparent=true';
+    if (url.includes('.glb')) {
+      // Extract avatar ID from GLB URL
+      const avatarIdMatch = url.match(/\/([a-f0-9]{24})\.glb/);
+      if (avatarIdMatch) {
+        const avatarId = avatarIdMatch[1];
+        // Use correct ReadyPlayerMe render URL
+        return `https://models.readyplayer.me/${avatarId}.png?pose=A&quality=medium`;
+      }
     }
     return url;
   };

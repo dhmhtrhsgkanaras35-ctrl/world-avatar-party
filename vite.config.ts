@@ -97,11 +97,11 @@ export default defineConfig(({ mode }) => ({
       'react', 
       'react-dom', 
       '@tanstack/react-query',
-      '@supabase/supabase-js'
+      '@supabase/supabase-js',
+      'mapbox-gl' // Include mapbox-gl for proper bundling
     ],
     exclude: [
-      // Exclude heavy libraries from pre-bundling to allow lazy loading
-      'mapbox-gl',
+      // Exclude heavy 3D libraries from pre-bundling to allow lazy loading
       'three',
       '@react-three/fiber',
       '@react-three/drei'

@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import * as mapboxgl from "mapbox-gl";
+import mapboxgl from "mapbox-gl";
 import "mapbox-gl/dist/mapbox-gl.css";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -120,7 +120,7 @@ export const RealMapComponent = ({ showEmojiPalette = false, onToggleEmojiPalett
     console.log('Initializing map with token:', mapboxToken);
     
     try {
-      (mapboxgl as any).accessToken = mapboxToken;
+      mapboxgl.accessToken = mapboxToken;
       
       map.current = new mapboxgl.Map({
         container: mapContainer.current,

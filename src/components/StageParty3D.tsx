@@ -1,6 +1,5 @@
-import { useRef, useMemo } from 'react';
+import { useRef } from 'react';
 import { Canvas, useFrame } from '@react-three/fiber';
-import { Box, Cylinder, Sphere } from '@react-three/drei';
 import * as THREE from 'three';
 
 interface StageParty3DModelProps {
@@ -45,57 +44,68 @@ const StageParty3DModel = ({ animate = true, scale = 1 }: StageParty3DModelProps
   return (
     <group ref={stageRef} scale={[scale, scale, scale]}>
       {/* Stage Platform */}
-      <Box args={[3, 0.2, 2]} position={[0, 0, 0]}>
+      <mesh position={[0, 0, 0]}>
+        <boxGeometry args={[3, 0.2, 2]} />
         <meshPhongMaterial color="#2a2a2a" />
-      </Box>
+      </mesh>
       
       {/* Backdrop */}
-      <Box args={[3, 2, 0.1]} position={[0, 1, -1]}>
+      <mesh position={[0, 1, -1]}>
+        <boxGeometry args={[3, 2, 0.1]} />
         <meshPhongMaterial color="#1a1a1a" />
-      </Box>
+      </mesh>
       
       {/* Left Light Stand */}
-      <Cylinder args={[0.05, 0.05, 2]} position={[-1.2, 1, -0.8]}>
+      <mesh position={[-1.2, 1, -0.8]}>
+        <cylinderGeometry args={[0.05, 0.05, 2]} />
         <meshPhongMaterial color="#333" />
-      </Cylinder>
+      </mesh>
       
       {/* Right Light Stand */}
-      <Cylinder args={[0.05, 0.05, 2]} position={[1.2, 1, -0.8]}>
+      <mesh position={[1.2, 1, -0.8]}>
+        <cylinderGeometry args={[0.05, 0.05, 2]} />
         <meshPhongMaterial color="#333" />
-      </Cylinder>
+      </mesh>
       
       {/* Left Light (Red) */}
-      <Sphere ref={leftLightRef} args={[0.15]} position={[-1.2, 1.8, -0.8]}>
+      <mesh ref={leftLightRef} position={[-1.2, 1.8, -0.8]}>
+        <sphereGeometry args={[0.15]} />
         <meshBasicMaterial color="#ff0040" />
-      </Sphere>
+      </mesh>
       
       {/* Right Light (Blue) */}
-      <Sphere ref={rightLightRef} args={[0.15]} position={[1.2, 1.8, -0.8]}>
+      <mesh ref={rightLightRef} position={[1.2, 1.8, -0.8]}>
+        <sphereGeometry args={[0.15]} />
         <meshBasicMaterial color="#0080ff" />
-      </Sphere>
+      </mesh>
       
       {/* Left Speaker */}
-      <Box ref={leftSpeakerRef} args={[0.4, 1, 0.3]} position={[-1.3, 0.5, 0.8]}>
+      <mesh ref={leftSpeakerRef} position={[-1.3, 0.5, 0.8]}>
+        <boxGeometry args={[0.4, 1, 0.3]} />
         <meshPhongMaterial color="#222" />
-      </Box>
+      </mesh>
       
       {/* Right Speaker */}
-      <Box ref={rightSpeakerRef} args={[0.4, 1, 0.3]} position={[1.3, 0.5, 0.8]}>
+      <mesh ref={rightSpeakerRef} position={[1.3, 0.5, 0.8]}>
+        <boxGeometry args={[0.4, 1, 0.3]} />
         <meshPhongMaterial color="#222" />
-      </Box>
+      </mesh>
       
       {/* Speaker Cones */}
-      <Cylinder args={[0.12, 0.08, 0.05]} position={[-1.3, 0.7, 0.95]} rotation={[Math.PI / 2, 0, 0]}>
+      <mesh position={[-1.3, 0.7, 0.95]} rotation={[Math.PI / 2, 0, 0]}>
+        <cylinderGeometry args={[0.12, 0.08, 0.05]} />
         <meshPhongMaterial color="#444" />
-      </Cylinder>
-      <Cylinder args={[0.12, 0.08, 0.05]} position={[1.3, 0.7, 0.95]} rotation={[Math.PI / 2, 0, 0]}>
+      </mesh>
+      <mesh position={[1.3, 0.7, 0.95]} rotation={[Math.PI / 2, 0, 0]}>
+        <cylinderGeometry args={[0.12, 0.08, 0.05]} />
         <meshPhongMaterial color="#444" />
-      </Cylinder>
+      </mesh>
       
       {/* DJ Booth */}
-      <Box args={[1, 0.8, 0.5]} position={[0, 0.5, 0.2]}>
+      <mesh position={[0, 0.5, 0.2]}>
+        <boxGeometry args={[1, 0.8, 0.5]} />
         <meshPhongMaterial color="#333" />
-      </Box>
+      </mesh>
       
       {/* Light beams effect */}
       <pointLight position={[-1.2, 1.8, -0.8]} color="#ff0040" intensity={2} distance={5} />

@@ -6,7 +6,6 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "./AuthProvider";
-import { AvatarDisplay } from "./AvatarDisplay";
 import { useToast } from "@/hooks/use-toast";
 import { getZoneName } from "@/utils/zoneNames";
 import { createSimpleEventMarker } from "./SimpleEventMarker";
@@ -23,7 +22,8 @@ interface UserLocation {
   profile?: {
     username: string;
     display_name: string;
-    avatar_url: string;
+    emoji: string;
+    emoji_color: string;
   };
 }
 
@@ -251,24 +251,16 @@ export const RealMapComponent = ({ showEmojiPalette = false, onToggleEmojiPalett
       console.log('Location sharing enabled event:', event.detail);
       const { latitude, longitude } = event.detail;
       
-      // Re-fetch user's avatar from Supabase and add marker
+      // Re-fetch user's emoji from Supabase and add marker
       if (map.current && user) {
-        console.log('Re-fetching user avatar for location sharing');
-        // Get user's avatar from profile and add marker with cache-busting
+        console.log('Re-fetching user profile for location sharing');
         supabase
           .from('profiles')
-          .select('avatar_url, display_name')
+          .select('emoji, emoji_color, display_name')
           .eq('user_id', user.id)
           .maybeSingle()
           .then(({ data: userProfile }) => {
             console.log('User profile for marker:', userProfile);
-            let avatarUrl = userProfile?.avatar_url;
-            
-            // Add cache-busting to avatar URL
-            if (avatarUrl) {
-              const separator = avatarUrl.includes('?') ? '&' : '?';
-              avatarUrl = `${avatarUrl}${separator}t=${Date.now()}`;
-            }
             
             addUserMarker(
               longitude,
@@ -276,11 +268,11 @@ export const RealMapComponent = ({ showEmojiPalette = false, onToggleEmojiPalett
               user.id,
               userProfile?.display_name || user.user_metadata?.display_name || 'You',
               true,
-              avatarUrl,
+              userProfile?.emoji || '🙂',
               false,
               null, // Will be set after blur calculation
               false,
-              '#3b82f6'
+              userProfile?.emoji_color || '#3b82f6'
             );
           });
       }
@@ -475,10 +467,10 @@ export const RealMapComponent = ({ showEmojiPalette = false, onToggleEmojiPalett
           // Only add user marker if they are sharing location
           if (isSharing) {
             console.log('Adding user marker because sharing is enabled');
-            // Get user's avatar from profile and add marker
+            // Get user's emoji from profile and add marker
             const { data: userProfile } = await supabase
               .from('profiles')
-              .select('avatar_url, display_name')
+              .select('emoji, emoji_color, display_name')
               .eq('user_id', user.id)
               .maybeSingle();
 
@@ -491,11 +483,11 @@ export const RealMapComponent = ({ showEmojiPalette = false, onToggleEmojiPalett
               user.id, 
               userProfile?.display_name || 'You', 
               true, 
-              userProfile?.avatar_url,
+              userProfile?.emoji || '🙂',
               false, // Current user is not a "friend" to themselves
               blurred?.zone_key,
               false, // Current user is not in same zone as themselves
-              '#3b82f6'
+              userProfile?.emoji_color || '#3b82f6'
             );
           } else {
             console.log('Removing user marker because sharing is disabled');
@@ -775,7 +767,7 @@ export const RealMapComponent = ({ showEmojiPalette = false, onToggleEmojiPalett
       const userIds = locations.map(loc => loc.user_id);
       const { data: profiles, error: profilesError } = await supabase
         .from('profiles')
-        .select('user_id, display_name, avatar_url, location_sharing_enabled, zone_key')
+        .select('user_id, display_name, emoji, emoji_color, location_sharing_enabled, zone_key')
         .in('user_id', userIds)
         .eq('location_sharing_enabled', true);
 
@@ -815,7 +807,8 @@ export const RealMapComponent = ({ showEmojiPalette = false, onToggleEmojiPalett
           console.log('Adding user marker:', {
             userId: location.user_id,
             displayName: profile.display_name,
-            avatarUrl: profile.avatar_url,
+            emoji: profile.emoji,
+            emojiColor: profile.emoji_color,
             isFriend
           });
           addUserMarker(
@@ -824,11 +817,11 @@ export const RealMapComponent = ({ showEmojiPalette = false, onToggleEmojiPalett
             location.user_id,
             profile.display_name || 'User',
             false,
-            profile.avatar_url,
+            profile.emoji || '🙂',
             isFriend,
             profile.zone_key,
             false,
-            isFriend ? '#10b981' : '#6b7280'
+            profile.emoji_color || '#3B82F6'
           );
         }
       });
@@ -844,11 +837,11 @@ export const RealMapComponent = ({ showEmojiPalette = false, onToggleEmojiPalett
     userId: string, 
     displayName: string, 
     isCurrentUser: boolean, 
-    avatarUrl?: string, 
+    emoji?: string, 
     isFriend?: boolean, 
     zoneKey?: string | null, 
     isSameZone?: boolean, 
-    color?: string
+    emojiColor?: string
   ) => {
     if (!map.current) return;
 
@@ -860,7 +853,7 @@ export const RealMapComponent = ({ showEmojiPalette = false, onToggleEmojiPalett
       delete markersRef.current[markerId];
     }
 
-    // Create marker element with avatar (with proper layering and positioning)
+    // Create marker element with emoji avatar
     const markerElement = document.createElement('div');
     markerElement.className = 'marker-container relative flex items-end justify-center';
     
@@ -868,103 +861,27 @@ export const RealMapComponent = ({ showEmojiPalette = false, onToggleEmojiPalett
     const zIndex = isCurrentUser ? 1000 : (isFriend ? 900 : 800);
     markerElement.style.zIndex = zIndex.toString();
     markerElement.style.position = 'relative';
-    markerElement.style.pointerEvents = 'none'; // Disable all interactions with user markers
+    markerElement.style.pointerEvents = 'none';
     
+    const displayEmoji = emoji || '🙂';
+    const backgroundColor = emojiColor || '#3B82F6';
+    
+    // Create emoji avatar container
     const avatarContainer = document.createElement('div');
-    const borderClass = isCurrentUser 
-      ? 'border-blue-500 ring-2 ring-blue-200' 
-      : isFriend 
-      ? 'border-green-500 ring-2 ring-green-200' 
-      : 'border-gray-400';
-    
-    const initials = displayName.charAt(0).toUpperCase();
-    
-    // Create container for full-body avatar display (perfectly centered and grounded)
     avatarContainer.innerHTML = `
-      <div class="relative flex flex-col items-center justify-end" style="z-index: ${zIndex};">
-        <div id="map-avatar-${userId}" class="w-24 h-40 flex items-end justify-center bg-transparent relative" style="z-index: ${zIndex + 1}; margin-bottom: -8px;"></div>
-        ${isCurrentUser ? `<div class="absolute -top-2 -right-2 w-5 h-5 bg-blue-500 rounded-full border-2 border-white shadow-lg flex items-center justify-center animate-pulse" style="z-index: ${zIndex + 2};"><span class="text-xs text-white font-bold">●</span></div>` : ''}
-        ${isFriend && !isCurrentUser ? `<div class="absolute -top-2 -right-2 w-5 h-5 bg-green-500 rounded-full border-2 border-white shadow-lg flex items-center justify-center" style="z-index: ${zIndex + 2};"><span class="text-xs text-white font-bold">✓</span></div>` : ''}
-        <div class="w-3 h-3 bg-gradient-to-br from-primary to-primary-glow rounded-full shadow-lg border-2 border-white" style="z-index: ${zIndex}; margin-top: 2px;"></div>
+      <div class="relative flex flex-col items-center" style="z-index: ${zIndex};">
+        <div class="w-12 h-12 rounded-full flex items-center justify-center shadow-lg border-2 border-white" style="background-color: ${backgroundColor}; z-index: ${zIndex + 1};">
+          <span class="text-2xl select-none">${displayEmoji}</span>
+        </div>
+        ${isCurrentUser ? `<div class="absolute -top-1 -right-1 w-4 h-4 bg-blue-500 rounded-full border-2 border-white shadow-lg animate-pulse" style="z-index: ${zIndex + 2};"></div>` : ''}
+        ${isFriend && !isCurrentUser ? `<div class="absolute -top-1 -right-1 w-4 h-4 bg-green-500 rounded-full border-2 border-white shadow-lg" style="z-index: ${zIndex + 2};"></div>` : ''}
+        <div class="mt-1 px-2 py-0.5 bg-black/75 text-white text-xs rounded max-w-20 truncate">
+          ${displayName}
+        </div>
       </div>
     `;
     
     markerElement.appendChild(avatarContainer);
-
-    // Smart avatar loading - use GLB directly since PNG URLs are failing
-    const loadAvatarWithFallback = async () => {
-      if (!avatarUrl) {
-        console.warn('❌ No avatarUrl provided for', displayName);
-        return;
-      }
-
-      console.log('🎭 Loading full-body avatar for', displayName, 'with URL:', avatarUrl);
-      
-      // Extract avatar ID from any ReadyPlayerMe URL format
-      const avatarIdMatch = avatarUrl.match(/avatar\/([a-f0-9]{24})|\/([a-f0-9]{24})\./);
-      const avatarId = avatarIdMatch ? (avatarIdMatch[1] || avatarIdMatch[2]) : null;
-      
-      if (!avatarId) {
-        console.warn('❌ Could not extract avatar ID from URL:', avatarUrl);
-        showFallbackAvatar();
-        return;
-      }
-
-      console.log('🎯 Extracted avatar ID:', avatarId, 'for', displayName);
-      
-      // Wait a bit to ensure container exists
-      setTimeout(() => {
-        const container = document.getElementById(`map-avatar-${userId}`);
-        if (!container) {
-          console.error('❌ Container not found for', displayName);
-          return;
-        }
-
-        console.log('📦 Container found, loading GLB for', displayName);
-        const glbUrl = `https://models.readyplayer.me/${avatarId}.glb`;
-        
-        // Use React to render the 3D avatar component for full-body display
-        Promise.all([
-          import('react'),
-          import('react-dom/client'),
-          import('../components/Avatar3D')
-        ]).then(([React, ReactDOM, { Avatar3D }]) => {
-          console.log('📥 React modules loaded, creating root for', displayName);
-          const root = ReactDOM.createRoot(container);
-                root.render(
-                  React.createElement(Avatar3D, {
-                    avatarUrl: glbUrl,
-                    width: 96,
-                    height: 160,
-                    animate: true, // Enable animations for map avatars
-                    showControls: false,
-                    className: `filter drop-shadow-2xl hover:drop-shadow-3xl transition-all duration-300 relative`
-                  })
-                );
-          console.log('✅ 3D full-body avatar rendered for', displayName);
-        }).catch(err => {
-          console.error('❌ Failed to load Avatar3D component for', displayName, ':', err);
-          showFallbackAvatar();
-        });
-      }, 100); // Small delay to ensure DOM is ready
-
-      function showFallbackAvatar() {
-        const container = document.getElementById(`map-avatar-${userId}`);
-        if (container) {
-          container.innerHTML = `
-            <div class="flex flex-col items-center justify-end h-full">
-              <div class="w-16 h-16 rounded-full border-2 overflow-hidden bg-white shadow-xl flex items-center justify-center ${borderClass}" style="z-index: ${zIndex + 10}; margin-bottom: -4px;">
-                <div class="text-xl font-bold text-gray-700">${initials}</div>
-              </div>
-            </div>
-          `;
-          console.log('🔄 Fallback avatar shown for', displayName);
-        }
-      }
-    };
-
-    // Load the avatar
-    loadAvatarWithFallback();
     const marker = new mapboxgl.Marker({
       element: markerElement,
       anchor: 'bottom', // Anchor at bottom for proper positioning

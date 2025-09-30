@@ -856,9 +856,9 @@ export const RealMapComponent = ({ showEmojiPalette = false, onToggleEmojiPalett
       delete markersRef.current[markerId];
     }
 
-    // Create marker element with emoji avatar
+    // Create marker element with emoji avatar (no zoom scaling)
     const markerElement = document.createElement('div');
-    markerElement.className = 'marker-container relative flex items-end justify-center';
+    markerElement.className = 'marker-container relative flex flex-col items-center';
     
     // Set z-index for proper layering: current user on top, then friends, then others
     const zIndex = isCurrentUser ? 1000 : (isFriend ? 900 : 800);
@@ -869,27 +869,46 @@ export const RealMapComponent = ({ showEmojiPalette = false, onToggleEmojiPalett
     const displayEmoji = emoji || '🙂';
     const backgroundColor = emojiColor || '#3B82F6';
     
-    // Create emoji avatar container
+    // Create emoji avatar with location zone circle
     const avatarContainer = document.createElement('div');
     avatarContainer.innerHTML = `
       <div class="relative flex flex-col items-center" style="z-index: ${zIndex};">
-        <div class="w-12 h-12 rounded-full flex items-center justify-center shadow-lg border-2 border-white" style="background-color: ${backgroundColor}; z-index: ${zIndex + 1};">
-          <span class="text-2xl select-none">${displayEmoji}</span>
+        <!-- Location zone circle (transparent) -->
+        <div class="absolute w-20 h-20 rounded-full border-2 border-dashed opacity-30 -z-10" 
+             style="border-color: ${backgroundColor}; top: 50%; left: 50%; transform: translate(-50%, -50%);"></div>
+        
+        <!-- Emoji avatar (fixed size, no zoom scaling) -->
+        <div class="w-14 h-14 rounded-full flex items-center justify-center shadow-xl border-2 border-white relative" 
+             style="background-color: ${backgroundColor}; z-index: ${zIndex + 1};">
+          <span class="text-3xl select-none" style="line-height: 1;">${displayEmoji}</span>
         </div>
-        ${isCurrentUser ? `<div class="absolute -top-1 -right-1 w-4 h-4 bg-blue-500 rounded-full border-2 border-white shadow-lg animate-pulse" style="z-index: ${zIndex + 2};"></div>` : ''}
-        ${isFriend && !isCurrentUser ? `<div class="absolute -top-1 -right-1 w-4 h-4 bg-green-500 rounded-full border-2 border-white shadow-lg" style="z-index: ${zIndex + 2};"></div>` : ''}
-        <div class="mt-1 px-2 py-0.5 bg-black/75 text-white text-xs rounded max-w-20 truncate">
+        
+        <!-- Status indicators -->
+        ${isCurrentUser ? `
+          <div class="absolute -top-1 -right-1 w-4 h-4 bg-blue-500 rounded-full border-2 border-white shadow-lg animate-pulse" 
+               style="z-index: ${zIndex + 2};"></div>
+        ` : ''}
+        ${isFriend && !isCurrentUser ? `
+          <div class="absolute -top-1 -right-1 w-4 h-4 bg-green-500 rounded-full border-2 border-white shadow-lg" 
+               style="z-index: ${zIndex + 2};">
+            <span class="text-[10px] text-white font-bold leading-none flex items-center justify-center h-full">✓</span>
+          </div>
+        ` : ''}
+        
+        <!-- Name label -->
+        <div class="mt-2 px-2 py-0.5 bg-black/75 text-white text-xs rounded whitespace-nowrap shadow-lg">
           ${displayName}
         </div>
       </div>
     `;
     
     markerElement.appendChild(avatarContainer);
+    // Create marker with no zoom scaling (scale: 1 keeps size constant)
     const marker = new mapboxgl.Marker({
       element: markerElement,
-      anchor: 'bottom', // Anchor at bottom for proper positioning
-      offset: [0, 2], // Small offset for perfect alignment
-      scale: 1 // Disable scaling with zoom level
+      anchor: 'bottom',
+      offset: [0, 0],
+      scale: 1 // Prevents scaling with zoom - avatar stays same size
     })
     .setLngLat([lng, lat])
     .addTo(map.current);

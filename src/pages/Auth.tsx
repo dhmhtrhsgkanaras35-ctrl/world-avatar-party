@@ -206,17 +206,11 @@ const Auth = () => {
     );
   }
 
+  // Skip avatar creation - just redirect to app
   if (showAvatarCreator && newUserId) {
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center p-6">
-        <ReadyPlayerMeCreator
-          userId={newUserId}
-          onAvatarCreated={handleAvatarCreated}
-          onSkip={handleSkipAvatar}
-          showSkipOption={true}
-        />
-      </div>
-    );
+    // Auto-redirect without avatar creation step
+    navigate('/app');
+    return null;
   }
 
   if (user) {

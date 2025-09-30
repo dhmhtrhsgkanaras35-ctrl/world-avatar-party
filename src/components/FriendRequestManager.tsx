@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { User } from '@supabase/supabase-js';
-import { AvatarDisplay } from "./AvatarDisplay";
+import { EmojiAvatar } from "./EmojiAvatar";
 import { UserPlus, Check, X, Users, Search } from "lucide-react";
 
 interface FriendRequestManagerProps {
@@ -266,8 +266,9 @@ export const FriendRequestManager = ({ user }: FriendRequestManagerProps) => {
                 {pendingRequests.map((request) => (
                   <div key={request.id} className="flex items-center justify-between p-2 bg-muted rounded-lg">
                     <div className="flex items-center gap-2">
-                      <AvatarDisplay 
-                        avatarUrl={request.requester_profile?.avatar_url}
+                      <EmojiAvatar 
+                        emoji={(request.requester_profile as any)?.emoji || '🙂'}
+                        color={(request.requester_profile as any)?.emoji_color || '#3B82F6'}
                         size="small"
                       />
                       <span className="text-sm font-medium">
@@ -326,11 +327,10 @@ export const FriendRequestManager = ({ user }: FriendRequestManagerProps) => {
                     
                     return (
                       <div key={friend.id} className="flex items-center gap-2 p-2 bg-muted rounded-lg">
-                        <AvatarDisplay 
-                          avatarUrl={friendProfile?.avatar_url}
+                        <EmojiAvatar 
+                          emoji={(friendProfile as any)?.emoji || '🙂'}
+                          color={(friendProfile as any)?.emoji_color || '#3B82F6'}
                           size="small"
-                          showStatus={true}
-                          status="online"
                         />
                         <span className="text-sm font-medium">
                           {friendProfile?.display_name || 'Unknown User'}
@@ -365,8 +365,9 @@ export const FriendRequestManager = ({ user }: FriendRequestManagerProps) => {
                 {sentRequests.map((request) => (
                   <div key={request.id} className="flex items-center justify-between p-2 bg-muted rounded-lg">
                     <div className="flex items-center gap-2">
-                      <AvatarDisplay 
-                        avatarUrl={request.recipient_profile?.avatar_url}
+                      <EmojiAvatar 
+                        emoji={(request.recipient_profile as any)?.emoji || '🙂'}
+                        color={(request.recipient_profile as any)?.emoji_color || '#3B82F6'}
                         size="small"
                       />
                       <span className="text-sm font-medium">

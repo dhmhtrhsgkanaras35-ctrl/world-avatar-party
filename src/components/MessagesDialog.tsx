@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { User } from '@supabase/supabase-js';
-import { AvatarDisplay } from "./AvatarDisplay";
+import { EmojiAvatar } from "./EmojiAvatar";
 import { MessageCircle, Send, Users } from "lucide-react";
 
 interface MessagesDialogProps {
@@ -258,11 +258,10 @@ export const MessagesDialog = ({ user }: MessagesDialogProps) => {
                   onClick={() => setSelectedFriend(friend)}
                   className="flex items-center gap-3 p-3 hover:bg-muted rounded-lg cursor-pointer transition-colors"
                 >
-                  <AvatarDisplay 
-                    avatarUrl={friend.avatar_url}
+                  <EmojiAvatar 
+                    emoji={(friend as any).emoji || '🙂'}
+                    color={(friend as any).emoji_color || '#3B82F6'}
                     size="small"
-                    showStatus={true}
-                    status="online"
                   />
                   <div className="flex-1">
                     <p className="font-medium text-sm">{friend.display_name}</p>
@@ -283,8 +282,9 @@ export const MessagesDialog = ({ user }: MessagesDialogProps) => {
               >
                 ← Back
               </Button>
-              <AvatarDisplay 
-                avatarUrl={selectedFriend.avatar_url}
+              <EmojiAvatar 
+                emoji={(selectedFriend as any).emoji || '🙂'}
+                color={(selectedFriend as any).emoji_color || '#3B82F6'}
                 size="small"
               />
               <span className="font-medium">{selectedFriend.display_name}</span>

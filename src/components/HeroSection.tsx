@@ -3,9 +3,9 @@ import { useAuth } from "./AuthProvider";
 import { useNavigate } from "react-router-dom";
 import heroPartyImage from "@/assets/hero-party-optimized.jpg";
 import { lazy, Suspense, useState, useEffect } from "react";
+import { EmojiAvatar } from "./EmojiAvatar";
 
-// Lazy load heavy 3D components with simple deferring
-const AvatarDisplay = lazy(() => import("./AvatarDisplay").then(m => ({ default: m.AvatarDisplay })));
+// Lazy load event marker component
 const EventMarker = lazy(() => import("./EventMarker").then(m => ({ default: m.EventMarker })));
 
 export const HeroSection = () => {
@@ -44,36 +44,21 @@ export const HeroSection = () => {
         <div className="absolute inset-0 gradient-party opacity-30" />
       </div>
       
-      {/* Floating elements - defer loading to improve LCP and reduce main-thread work */}
+      {/* Floating elements with emoji avatars */}
       {show3DElements && (
         <div className="absolute inset-0 z-10 pointer-events-none">
+          {/* Floating avatars */}
+          <div className="absolute top-20 left-10 animate-float">
+            <EmojiAvatar emoji="😎" color="#3B82F6" size="large" />
+          </div>
+          <div className="absolute top-40 right-20 animate-float" style={{ animationDelay: "0.5s" }}>
+            <EmojiAvatar emoji="🥳" color="#10B981" size="large" />
+          </div>
+          <div className="absolute bottom-40 left-20 animate-float" style={{ animationDelay: "1s" }}>
+            <EmojiAvatar emoji="🎉" color="#F59E0B" size="large" />
+          </div>
+          
           <Suspense fallback={null}>
-            {/* Floating avatars */}
-            <div className="absolute top-20 left-10 animate-float">
-              <AvatarDisplay 
-                avatarUrl="https://models.readyplayer.me/67054f9cfd50cc4cc0e4de18.glb"
-                size="medium"
-                showStatus={true}
-                status="online"
-              />
-            </div>
-            <div className="absolute top-40 right-20 animate-float" style={{ animationDelay: "0.5s" }}>
-              <AvatarDisplay 
-                avatarUrl="https://models.readyplayer.me/67054f9cfd50cc4cc0e4de19.glb"
-                size="medium"
-                showStatus={true}
-                status="online"
-              />
-            </div>
-            <div className="absolute bottom-40 left-20 animate-float" style={{ animationDelay: "1s" }}>
-              <AvatarDisplay 
-                avatarUrl={null}
-                size="medium"
-                showStatus={true}
-                status="online"
-              />
-            </div>
-            
             {/* Floating event markers */}
             <div className="absolute top-60 left-1/4 animate-float" style={{ animationDelay: "0.3s" }}>
               <EventMarker 

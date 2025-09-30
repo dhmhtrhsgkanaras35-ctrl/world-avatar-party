@@ -261,18 +261,19 @@ export const RealMapComponent = ({ showEmojiPalette = false, onToggleEmojiPalett
           .maybeSingle()
           .then(({ data: userProfile }) => {
             console.log('User profile for marker:', userProfile);
+            const profile = userProfile as any; // Type workaround until types regenerate
             
             addUserMarker(
               longitude,
               latitude,
               user.id,
-              userProfile?.display_name || user.user_metadata?.display_name || 'You',
+              profile?.display_name || user.user_metadata?.display_name || 'You',
               true,
-              userProfile?.emoji || '🙂',
+              profile?.emoji || '🙂',
               false,
               null, // Will be set after blur calculation
               false,
-              userProfile?.emoji_color || '#3b82f6'
+              profile?.emoji_color || '#3b82f6'
             );
           });
       }
@@ -476,18 +477,20 @@ export const RealMapComponent = ({ showEmojiPalette = false, onToggleEmojiPalett
 
             console.log('User profile for marker:', userProfile);
             console.log('Adding marker at coordinates:', longitude, latitude);
+            
+            const profile = userProfile as any; // Type workaround until types regenerate
 
             addUserMarker(
               longitude, 
               latitude, 
               user.id, 
-              userProfile?.display_name || 'You', 
+              profile?.display_name || 'You', 
               true, 
-              userProfile?.emoji || '🙂',
+              profile?.emoji || '🙂',
               false, // Current user is not a "friend" to themselves
               blurred?.zone_key,
               false, // Current user is not in same zone as themselves
-              userProfile?.emoji_color || '#3b82f6'
+              profile?.emoji_color || '#3b82f6'
             );
           } else {
             console.log('Removing user marker because sharing is disabled');
@@ -784,8 +787,8 @@ export const RealMapComponent = ({ showEmojiPalette = false, onToggleEmojiPalett
         }
       });
 
-      // Create a map of profiles by user_id for easy lookup
-      const profileMap = new Map(profiles?.map(p => [p.user_id, p]) || []);
+      // Create a map of profiles by user_id for easy lookup (with type workaround)
+      const profileMap = new Map((profiles as any[])?.map(p => [p.user_id, p]) || []);
 
       // Check friendships for all users at once
       const { data: friendships } = await supabase
@@ -801,7 +804,7 @@ export const RealMapComponent = ({ showEmojiPalette = false, onToggleEmojiPalett
       );
 
       locations?.forEach((location) => {
-        const profile = profileMap.get(location.user_id);
+        const profile = profileMap.get(location.user_id) as any; // Type workaround
         if (profile?.location_sharing_enabled) {
           const isFriend = friendUserIds.has(location.user_id);
           console.log('Adding user marker:', {

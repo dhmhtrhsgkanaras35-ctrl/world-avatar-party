@@ -193,7 +193,7 @@ const MainApp = () => {
   }
 
   return (
-    <div className="flex flex-col h-screen overflow-hidden">
+    <div className="fixed inset-0 flex flex-col">
       {/* Floating header - Mobile optimized */}
       <header className="absolute top-2 left-2 right-2 bg-background/90 backdrop-blur-sm rounded-lg border px-3 py-2 flex items-center justify-between z-10 safe-area-inset-top">
         <div className="flex items-center gap-2 flex-1 min-w-0">
@@ -214,8 +214,8 @@ const MainApp = () => {
       {/* Location Toggle - Floating */}
       <LocationToggle user={user} />
 
-      {/* Map - takes remaining space after bottom nav */}
-      <div className="flex-1 relative min-h-0">
+      {/* Map - fills entire screen */}
+      <div className="absolute inset-0 w-full h-full">
         <RealMapComponent 
           showEmojiPalette={showEmojiPalette} 
           onToggleEmojiPalette={() => setShowEmojiPalette(!showEmojiPalette)}
@@ -225,7 +225,7 @@ const MainApp = () => {
       </div>
 
       {/* Bottom Navigation - Mobile optimized with safe area */}
-      <div className="bg-card/95 backdrop-blur-sm border-t border-border/20 shadow-2xl safe-area-inset-bottom">
+      <div className="absolute bottom-0 left-0 right-0 bg-card/95 backdrop-blur-sm border-t border-border/20 shadow-2xl safe-area-inset-bottom z-10">
         <div className="flex justify-around items-center px-2 py-1 max-w-full mx-auto min-h-[48px]">
           <Button
             variant="ghost"

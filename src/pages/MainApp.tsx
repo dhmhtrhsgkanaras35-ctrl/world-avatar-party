@@ -193,7 +193,17 @@ const MainApp = () => {
   }
 
   return (
-    <div className="fixed inset-0 flex flex-col">
+    <div style={{ 
+      position: 'fixed', 
+      top: 0, 
+      left: 0, 
+      right: 0, 
+      bottom: 0, 
+      width: '100%', 
+      height: '100%',
+      display: 'flex',
+      flexDirection: 'column'
+    }}>
       {/* Floating header - Mobile optimized */}
       <header className="absolute top-2 left-2 right-2 bg-background/90 backdrop-blur-sm rounded-lg border px-3 py-2 flex items-center justify-between z-10 safe-area-inset-top">
         <div className="flex items-center gap-2 flex-1 min-w-0">
@@ -215,7 +225,15 @@ const MainApp = () => {
       <LocationToggle user={user} />
 
       {/* Map - fills entire screen */}
-      <div className="absolute inset-0 w-full h-full">
+      <div style={{ 
+        position: 'absolute', 
+        top: 0, 
+        left: 0, 
+        right: 0, 
+        bottom: 0, 
+        width: '100%', 
+        height: '100%' 
+      }}>
         <RealMapComponent 
           showEmojiPalette={showEmojiPalette} 
           onToggleEmojiPalette={() => setShowEmojiPalette(!showEmojiPalette)}

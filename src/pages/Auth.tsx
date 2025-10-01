@@ -237,9 +237,9 @@ const Auth = () => {
   }
 
   return (
-    <div className="min-h-screen bg-background flex items-center justify-center p-6">
-      <div className="w-full max-w-md">
-        <div className="text-center mb-8">
+    <div className="min-h-screen bg-background flex items-center justify-center p-4 sm:p-6">
+      <div className="w-full max-w-md h-full max-h-screen overflow-y-auto py-4 sm:py-0">
+        <div className="text-center mb-6 sm:mb-8">
           <h1 className="text-3xl font-bold gradient-party bg-clip-text text-transparent">
             Join WorldMe
           </h1>
@@ -248,7 +248,7 @@ const Auth = () => {
           </p>
         </div>
 
-        <Tabs defaultValue="signin" className="space-y-6">
+        <Tabs defaultValue="signin" className="space-y-4 sm:space-y-6">
           <TabsList className="grid w-full grid-cols-2">
             <TabsTrigger value="signin">Sign In</TabsTrigger>
             <TabsTrigger value="signup">Sign Up</TabsTrigger>
@@ -304,7 +304,7 @@ const Auth = () => {
                 <CardTitle>Create Account</CardTitle>
                 <CardDescription>Join the WorldMe community</CardDescription>
               </CardHeader>
-              <CardContent>
+              <CardContent className="pb-6">
                 <form onSubmit={signUp} className="space-y-4">
                   <div className="space-y-2">
                     <Label htmlFor="signup-email">Email</Label>
@@ -366,20 +366,23 @@ const Auth = () => {
                     </div>
                   )}
                   
-                  <Button 
-                    type="submit" 
-                    className="w-full gradient-party border-0"
-                    disabled={loading}
-                  >
-                    {loading ? "Creating Account..." : "Create Account & Avatar"}
-                  </Button>
+                  {/* Button with extra bottom padding for mobile keyboard */}
+                  <div className="pt-2 pb-safe">
+                    <Button 
+                      type="submit" 
+                      className="w-full gradient-party border-0"
+                      disabled={loading}
+                    >
+                      {loading ? "Creating Account..." : "Create Account & Avatar"}
+                    </Button>
+                  </div>
                 </form>
               </CardContent>
             </Card>
           </TabsContent>
         </Tabs>
 
-        <div className="text-center mt-6">
+        <div className="text-center mt-4 sm:mt-6 pb-safe">
           <Button 
             variant="ghost" 
             onClick={() => navigate('/')}

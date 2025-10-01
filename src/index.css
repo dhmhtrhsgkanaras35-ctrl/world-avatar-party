@@ -188,6 +188,11 @@
     padding-top: env(safe-area-inset-top, 0);
   }
 
+  /* Safe area padding for buttons and interactive elements */
+  .pb-safe {
+    padding-bottom: max(1rem, env(safe-area-inset-bottom, 0));
+  }
+
   /* Event Marker 3D Hover Effects - Prevent Forced Reflows */
   .event-marker-3d-container {
     transition: transform 0.3s ease, z-index 0s;

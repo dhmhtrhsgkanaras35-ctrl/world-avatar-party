@@ -243,7 +243,13 @@ const MainApp = () => {
       </div>
 
       {/* Bottom Navigation - Mobile optimized with safe area */}
-      <div className="absolute bottom-0 left-0 right-0 bg-card/95 backdrop-blur-sm border-t border-border/20 shadow-2xl safe-area-inset-bottom z-10">
+      <div style={{
+        position: 'absolute',
+        bottom: 0,
+        left: 0,
+        right: 0,
+        zIndex: 10
+      }} className="bg-card/95 backdrop-blur-sm border-t border-border/20 shadow-2xl safe-area-inset-bottom">
         <div className="flex justify-around items-center px-2 py-1 max-w-full mx-auto min-h-[48px]">
           <Button
             variant="ghost"

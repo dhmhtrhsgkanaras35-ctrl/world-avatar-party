@@ -231,10 +231,16 @@ export const FriendRequestManager = ({ user }: FriendRequestManagerProps) => {
         <Button
           variant="ghost"
           size="sm"
-          className="flex flex-col items-center gap-1 h-auto py-2 px-2 min-w-0"
+          style={{
+            background: 'linear-gradient(135deg, hsl(320 100% 70%), hsl(270 95% 65%))',
+            color: 'hsl(0 0% 98%)',
+            transition: 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)',
+            position: 'relative'
+          }}
+          className="flex flex-col items-center gap-0.5 h-auto py-1 px-2 min-w-[50px] hover:scale-105 active:scale-95"
         >
           <Users className="h-5 w-5" />
-          <span className="text-xs">Friends</span>
+          <span className="text-xs font-semibold">Friends</span>
           {pendingRequests.length > 0 && (
             <Badge variant="destructive" className="absolute -top-1 -right-1 w-5 h-5 p-0 text-xs">
               {pendingRequests.length}

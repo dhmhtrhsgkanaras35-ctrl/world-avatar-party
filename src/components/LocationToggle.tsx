@@ -306,32 +306,46 @@ export const LocationToggle = ({ user }: LocationToggleProps) => {
   };
 
   return (
-    <div className="fixed top-12 left-2 z-40">
-      <Card className="shadow-lg bg-background/95 backdrop-blur-sm border">
-        <CardContent className="p-1">
-          <div className="flex items-center gap-1">
-            <div className={`w-1.5 h-1.5 rounded-full ${getStatusColor()}`} />
+    <div style={{
+      position: 'fixed',
+      top: '3.5rem',
+      left: '0.5rem',
+      zIndex: 40
+    }}>
+      <Card style={{
+        boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)',
+        backgroundColor: 'hsl(var(--background) / 0.95)',
+        backdropFilter: 'blur(8px)',
+        WebkitBackdropFilter: 'blur(8px)',
+        border: '1px solid hsl(var(--border))'
+      }}>
+        <CardContent style={{ padding: '0.25rem' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+            <div style={{
+              width: '0.375rem',
+              height: '0.375rem',
+              borderRadius: '9999px',
+              backgroundColor: locationStatus === 'active' ? '#22c55e' : 
+                              locationStatus === 'requesting' ? '#eab308' :
+                              locationStatus === 'error' ? '#ef4444' : '#6b7280'
+            }} />
             
             <Button
               onClick={toggleLocationSharing}
               variant={isSharing ? "destructive" : "ghost"}
               size="sm"
-              className={`h-6 px-1.5 text-xs ${isSharing ? "" : "bg-primary/10 hover:bg-primary/20"}`}
+              style={{
+                height: '1.5rem',
+                padding: '0 0.375rem',
+                fontSize: '0.75rem',
+                backgroundColor: isSharing ? undefined : 'hsl(var(--primary) / 0.1)'
+              }}
+              className={isSharing ? "" : "hover:bg-primary/20"}
               disabled={locationStatus === 'requesting' || !user}
             >
-              {isSharing ? (
-                <>📍</>
-              ) : (
-                <>🗺️</>
-              )}
+              {isSharing ? '📍' : '🗺️'}
             </Button>
           </div>
-          
-          {!user && (
-            <div className="mt-1 text-xs text-muted-foreground max-w-[80px]">
-              Sign in to share zone
-            </div>
-          )}
         </CardContent>
       </Card>
     </div>

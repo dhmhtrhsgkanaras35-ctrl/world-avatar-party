@@ -268,7 +268,12 @@ const MainApp = () => {
           <Button
             variant="ghost"
             size="sm"
-            className="flex flex-col items-center gap-0.5 h-auto py-1 px-2 min-w-[50px] party-button gradient-party text-primary-foreground hover:scale-105 transition-transform duration-200"
+            style={{
+              background: 'linear-gradient(135deg, hsl(270 95% 65%), hsl(320 100% 70%), hsl(30 100% 60%))',
+              color: 'hsl(0 0% 98%)',
+              transition: 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)'
+            }}
+            className="flex flex-col items-center gap-0.5 h-auto py-1 px-2 min-w-[50px] hover:scale-105 active:scale-95"
             onClick={() => setShowEmojiPalette(!showEmojiPalette)}
           >
             <Plus className="h-5 w-5" />
@@ -282,7 +287,12 @@ const MainApp = () => {
           <Button
             variant="ghost"
             size="sm"
-            className="flex flex-col items-center gap-0.5 h-auto py-1 px-2 min-w-[50px] party-button gradient-social text-primary-foreground hover:scale-105 transition-transform duration-200"
+            style={{
+              background: 'linear-gradient(135deg, hsl(150 80% 55%), hsl(210 100% 70%))',
+              color: 'hsl(0 0% 98%)',
+              transition: 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)'
+            }}
+            className="flex flex-col items-center gap-0.5 h-auto py-1 px-2 min-w-[50px] hover:scale-105 active:scale-95"
             onClick={() => navigate('/profile')}
           >
             <User className="h-5 w-5" />

@@ -248,9 +248,23 @@ const MainApp = () => {
         bottom: 0,
         left: 0,
         right: 0,
-        zIndex: 10
-      }} className="bg-card/95 backdrop-blur-sm border-t border-border/20 shadow-2xl safe-area-inset-bottom">
-        <div className="flex justify-around items-center px-2 py-1 max-w-full mx-auto min-h-[48px]">
+        zIndex: 10,
+        backgroundColor: 'hsl(var(--card) / 0.95)',
+        backdropFilter: 'blur(8px)',
+        WebkitBackdropFilter: 'blur(8px)',
+        borderTop: '1px solid hsl(var(--border) / 0.2)',
+        boxShadow: '0 -20px 25px -5px rgba(0, 0, 0, 0.1), 0 -10px 10px -5px rgba(0, 0, 0, 0.04)',
+        paddingBottom: 'env(safe-area-inset-bottom, 0)'
+      }}>
+        <div style={{
+          display: 'flex',
+          justifyContent: 'space-around',
+          alignItems: 'center',
+          padding: '0.25rem 0.5rem',
+          maxWidth: '100%',
+          margin: '0 auto',
+          minHeight: '48px'
+        }}>
           <Button
             variant="ghost"
             size="sm"

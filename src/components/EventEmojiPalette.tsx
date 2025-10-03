@@ -84,31 +84,84 @@ export const EventEmojiPalette = ({ user, userLocation, userZone, onClose }: Eve
   };
 
   return (
-    <Card className="bg-background/95 backdrop-blur-sm border shadow-lg relative max-w-[160px]">
-      <CardContent className="p-2">
+    <Card style={{
+      backgroundColor: 'rgba(255, 255, 255, 0.98)',
+      backdropFilter: 'blur(8px)',
+      WebkitBackdropFilter: 'blur(8px)',
+      border: '2px solid hsl(var(--border))',
+      boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)',
+      position: 'relative',
+      maxWidth: '200px'
+    }}>
+      <CardContent style={{ padding: '12px' }}>
         {/* Close button */}
         {onClose && (
           <button 
             onClick={onClose}
-            className="absolute -top-1 -right-1 w-5 h-5 bg-gray-500 hover:bg-gray-600 text-white rounded-full text-xs font-bold flex items-center justify-center shadow-lg transition-all duration-200 hover:scale-110 z-10"
+            style={{
+              position: 'absolute',
+              top: '-8px',
+              right: '-8px',
+              width: '28px',
+              height: '28px',
+              backgroundColor: '#6b7280',
+              color: 'white',
+              borderRadius: '50%',
+              fontSize: '14px',
+              fontWeight: 'bold',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)',
+              transition: 'all 0.2s',
+              zIndex: 10,
+              cursor: 'pointer',
+              border: '2px solid white'
+            }}
+            onMouseOver={(e) => {
+              e.currentTarget.style.backgroundColor = '#4b5563';
+              e.currentTarget.style.transform = 'scale(1.1)';
+            }}
+            onMouseOut={(e) => {
+              e.currentTarget.style.backgroundColor = '#6b7280';
+              e.currentTarget.style.transform = 'scale(1)';
+            }}
             title="Close Event Palette"
           >
             ✕
           </button>
         )}
         
-        <div className="text-xs font-medium text-muted-foreground mb-1 text-center">
+        <div style={{
+          fontSize: '14px',
+          fontWeight: '600',
+          color: 'hsl(var(--muted-foreground))',
+          marginBottom: '8px',
+          textAlign: 'center'
+        }}>
           🎯 Drag to map
         </div>
-        <div className="grid grid-cols-4 gap-1">
+        <div style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(4, 1fr)',
+          gap: '6px'
+        }}>
           {Object.entries(EVENT_EMOJIS).map(([eventType, emoji]) => (
             <Button
               key={eventType}
               variant="ghost"
               size="sm"
-              className={`h-8 w-8 p-0 text-sm cursor-grab active:cursor-grabbing transition-all ${
-                dragging === eventType ? 'scale-110 bg-primary/20' : 'hover:scale-105'
-              }`}
+              style={{
+                height: '48px',
+                width: '48px',
+                padding: 0,
+                fontSize: '24px',
+                cursor: dragging === eventType ? 'grabbing' : 'grab',
+                transition: 'all 0.2s',
+                transform: dragging === eventType ? 'scale(1.1)' : 'scale(1)',
+                backgroundColor: dragging === eventType ? 'hsl(var(--primary) / 0.2)' : 'transparent'
+              }}
+              className="hover:scale-105"
               draggable={!!user && !!userLocation}
               onDragStart={(e) => handleDragStart(e, eventType)}
               onDragEnd={handleDragEnd}
@@ -119,7 +172,12 @@ export const EventEmojiPalette = ({ user, userLocation, userZone, onClose }: Eve
           ))}
         </div>
         {(!user || !userLocation) && (
-          <div className="text-xs text-muted-foreground mt-1 text-center">
+          <div style={{
+            fontSize: '12px',
+            color: 'hsl(var(--muted-foreground))',
+            marginTop: '8px',
+            textAlign: 'center'
+          }}>
             Enable location to create events
           </div>
         )}

@@ -969,9 +969,14 @@ export const RealMapComponent = ({ showEmojiPalette = false, onToggleEmojiPalett
         </Card>
       )}
 
-      {/* Event Emoji Palette - Mobile optimized */}
+      {/* Event Emoji Palette - Mobile optimized with better visibility */}
       {showEmojiPalette && (
-        <div className="fixed bottom-20 left-2 z-50">
+        <div style={{
+          position: 'fixed',
+          bottom: '80px',
+          left: '8px',
+          zIndex: 1000
+        }}>
           <EventEmojiPalette 
             user={user}
             userLocation={userLocation}
@@ -983,9 +988,25 @@ export const RealMapComponent = ({ showEmojiPalette = false, onToggleEmojiPalett
 
       {/* Instructions - Mobile optimized */}
       {showEmojiPalette && (
-        <Card className="fixed bottom-20 right-2 z-50 bg-white/95 backdrop-blur-sm border shadow-lg max-w-[140px]">
-          <CardContent className="p-2">
-            <div className="text-xs font-medium text-gray-700 text-center">
+        <Card style={{
+          position: 'fixed',
+          bottom: '80px',
+          right: '8px',
+          zIndex: 1000,
+          backgroundColor: 'rgba(255, 255, 255, 0.98)',
+          backdropFilter: 'blur(8px)',
+          WebkitBackdropFilter: 'blur(8px)',
+          border: '2px solid hsl(var(--border))',
+          boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1)',
+          maxWidth: '180px'
+        }}>
+          <CardContent style={{ padding: '12px' }}>
+            <div style={{
+              fontSize: '14px',
+              fontWeight: '600',
+              color: '#374151',
+              textAlign: 'center'
+            }}>
               🎯 Drag emojis to create events
             </div>
           </CardContent>

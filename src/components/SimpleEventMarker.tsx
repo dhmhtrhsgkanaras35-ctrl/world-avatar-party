@@ -56,64 +56,147 @@ export const createSimpleEventMarker = ({
   const isCreator = currentUserId === event.created_by;
   console.log('🔍 isCreator check:', { currentUserId, eventCreatedBy: event.created_by, isCreator });
   
-  // Create the main marker with inline buttons for creators
+  // Create the main marker with inline buttons for creators - using inline styles for consistency
   markerElement.innerHTML = `
-    <div class="relative group cursor-pointer">
+    <div style="position: relative; cursor: pointer;" class="group">
       <!-- Event marker -->
-      <div class="
-        ${event.isTemporary ? 'animate-pulse' : ''}
-        ${editMode ? 'animate-bounce' : ''}
-        bg-white rounded-full p-1 shadow-lg border-2 
-        ${event.isTemporary ? 'border-blue-400' : 'border-gray-200'}
-        ${editMode ? 'border-red-400' : ''}
-        hover:shadow-xl transition-all duration-200 hover:scale-110
-        flex items-center justify-center text-sm relative
-        min-w-[28px] min-h-[28px]
-      " data-event-main="true">
+      <div 
+        style="
+          ${event.isTemporary ? 'animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;' : ''}
+          ${editMode ? 'animation: bounce 1s infinite;' : ''}
+          background-color: white;
+          border-radius: 50%;
+          padding: 8px;
+          box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+          border: 3px solid ${event.isTemporary ? '#60a5fa' : editMode ? '#f87171' : '#e5e7eb'};
+          transition: all 0.2s;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-size: 28px;
+          min-width: 56px;
+          min-height: 56px;
+          position: relative;
+        " 
+        data-event-main="true"
+        onmouseover="this.style.transform='scale(1.1)'; this.style.boxShadow='0 20px 25px -5px rgba(0, 0, 0, 0.1)';"
+        onmouseout="this.style.transform='scale(1)'; this.style.boxShadow='0 10px 15px -3px rgba(0, 0, 0, 0.1)';"
+      >
         ${emoji}
       </div>
       
       <!-- Action buttons for creators -->
       ${isCreator && !event.isTemporary ? `
         <button 
-          class="absolute -top-1.5 -left-1.5 w-5 h-5 bg-blue-500 hover:bg-blue-600 text-white rounded-full 
-                 flex items-center justify-center text-xs font-bold transition-all duration-150 
-                 border-2 border-white shadow-lg hover:shadow-xl hover:scale-110 z-10"
           data-action="manage"
           title="Manage Event"
-          style="pointer-events: auto;"
+          style="
+            position: absolute;
+            top: -6px;
+            left: -6px;
+            width: 26px;
+            height: 26px;
+            background-color: #3b82f6;
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            font-weight: bold;
+            transition: all 0.15s;
+            border: 2px solid white;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+            z-index: 10;
+            pointer-events: auto;
+            cursor: pointer;
+          "
+          onmouseover="this.style.backgroundColor='#2563eb'; this.style.transform='scale(1.1)'; this.style.boxShadow='0 20px 25px -5px rgba(0, 0, 0, 0.1)';"
+          onmouseout="this.style.backgroundColor='#3b82f6'; this.style.transform='scale(1)'; this.style.boxShadow='0 10px 15px -3px rgba(0, 0, 0, 0.1)';"
         >⋯</button>
         
         <button 
-          class="absolute -top-1.5 -right-1.5 w-5 h-5 bg-red-500 hover:bg-red-600 text-white rounded-full 
-                 flex items-center justify-center text-xs font-bold transition-all duration-150 
-                 border-2 border-white shadow-lg hover:shadow-xl hover:scale-110 z-10"
           data-action="close"
           title="Close Event"
-          style="pointer-events: auto;"
+          style="
+            position: absolute;
+            top: -6px;
+            right: -6px;
+            width: 26px;
+            height: 26px;
+            background-color: #ef4444;
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            font-weight: bold;
+            transition: all 0.15s;
+            border: 2px solid white;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+            z-index: 10;
+            pointer-events: auto;
+            cursor: pointer;
+          "
+          onmouseover="this.style.backgroundColor='#dc2626'; this.style.transform='scale(1.1)'; this.style.boxShadow='0 20px 25px -5px rgba(0, 0, 0, 0.1)';"
+          onmouseout="this.style.backgroundColor='#ef4444'; this.style.transform='scale(1)'; this.style.boxShadow='0 10px 15px -3px rgba(0, 0, 0, 0.1)';"
         >✕</button>
       ` : ''}
       
       <!-- Tooltip -->
-      <div class="
-        absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2
-        bg-black/90 text-white text-xs rounded-lg py-2 px-3
-        opacity-0 group-hover:opacity-100 transition-opacity duration-300
-        pointer-events-none whitespace-nowrap z-50 backdrop-blur-sm
-      ">
-        <div class="font-medium">${event.title}</div>
-        ${event.isTemporary ? '<div class="text-blue-300">Click to place</div>' : ''}
-        ${editMode ? '<div class="text-red-300">Click to delete</div>' : ''}
-        ${isCreator && !event.isTemporary ? '<div class="text-yellow-300">Manage or close event</div>' : ''}
-        <div class="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-2 border-r-2 border-t-2 border-transparent border-t-black/90"></div>
+      <div 
+        style="
+          position: absolute;
+          bottom: 100%;
+          left: 50%;
+          transform: translateX(-50%);
+          margin-bottom: 12px;
+          background-color: rgba(0, 0, 0, 0.9);
+          color: white;
+          font-size: 13px;
+          border-radius: 8px;
+          padding: 8px 12px;
+          opacity: 0;
+          transition: opacity 0.3s;
+          pointer-events: none;
+          white-space: nowrap;
+          z-index: 50;
+          backdrop-filter: blur(8px);
+        "
+        class="tooltip-hover"
+      >
+        <div style="font-weight: 500; margin-bottom: 2px;">${event.title}</div>
+        ${event.isTemporary ? '<div style="color: #93c5fd;">Click to place</div>' : ''}
+        ${editMode ? '<div style="color: #fca5a5;">Click to delete</div>' : ''}
+        ${isCreator && !event.isTemporary ? '<div style="color: #fde047;">Manage or close event</div>' : ''}
       </div>
 
       <!-- Pulse effect for temporary events -->
       ${event.isTemporary ? `
-        <div class="absolute inset-0 rounded-full bg-blue-400 opacity-25 animate-ping pointer-events-none"></div>
+        <div style="
+          position: absolute;
+          inset: 0;
+          border-radius: 50%;
+          background-color: #60a5fa;
+          opacity: 0.25;
+          animation: ping 1s cubic-bezier(0, 0, 0.2, 1) infinite;
+          pointer-events: none;
+        "></div>
       ` : ''}
     </div>
   `;
+
+  // Add hover handler for tooltip
+  const tooltipEl = markerElement.querySelector('.tooltip-hover') as HTMLElement;
+  if (tooltipEl) {
+    markerElement.addEventListener('mouseenter', () => {
+      tooltipEl.style.opacity = '1';
+    });
+    markerElement.addEventListener('mouseleave', () => {
+      tooltipEl.style.opacity = '0';
+    });
+  }
 
   // Add click handler
   markerElement.addEventListener('click', (e) => {

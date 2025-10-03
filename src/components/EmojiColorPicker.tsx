@@ -52,39 +52,97 @@ export const EmojiColorPicker = ({
   };
 
   return (
-    <div className="space-y-6">
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
       {/* Live Preview */}
-      <Card className="p-6">
-        <h3 className="text-lg font-semibold mb-4">Preview</h3>
-        <div className="flex justify-center">
+      <Card style={{
+        padding: '24px',
+        backgroundColor: 'hsl(var(--card))',
+        border: '1px solid hsl(var(--border))'
+      }}>
+        <h3 style={{
+          fontSize: '18px',
+          fontWeight: '600',
+          marginBottom: '16px'
+        }}>Preview</h3>
+        <div style={{ display: 'flex', justifyContent: 'center' }}>
           <div 
-            className="w-24 h-24 rounded-full flex items-center justify-center shadow-lg transition-all duration-200"
-            style={{ backgroundColor: selectedColor }}
+            style={{
+              width: '96px',
+              height: '96px',
+              borderRadius: '50%',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)',
+              transition: 'all 0.2s',
+              backgroundColor: selectedColor
+            }}
           >
-            <span className="text-5xl select-none">{selectedEmoji}</span>
+            <span style={{
+              fontSize: '48px',
+              userSelect: 'none',
+              WebkitUserSelect: 'none'
+            }}>{selectedEmoji}</span>
           </div>
         </div>
-        <p className="text-center mt-3 text-sm text-muted-foreground">
+        <p style={{
+          textAlign: 'center',
+          marginTop: '12px',
+          fontSize: '14px',
+          color: 'hsl(var(--muted-foreground))'
+        }}>
           This is how you'll appear on the map
         </p>
       </Card>
 
       {/* Emoji Selector */}
-      <Card className="p-6">
-        <h3 className="text-lg font-semibold mb-4">Choose Emoji</h3>
-        <div className="grid grid-cols-8 gap-2 max-h-64 overflow-y-auto">
+      <Card style={{
+        padding: '24px',
+        backgroundColor: 'hsl(var(--card))',
+        border: '1px solid hsl(var(--border))'
+      }}>
+        <h3 style={{
+          fontSize: '18px',
+          fontWeight: '600',
+          marginBottom: '16px'
+        }}>Choose Emoji</h3>
+        <div style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(8, 1fr)',
+          gap: '8px',
+          maxHeight: '256px',
+          overflowY: 'auto'
+        }}>
           {EMOJI_OPTIONS.map((emoji) => (
             <button
               key={emoji}
               onClick={() => setSelectedEmoji(emoji)}
-              className={`
-                w-12 h-12 text-2xl rounded-lg transition-all duration-200
-                hover:scale-110 hover:shadow-md
-                ${selectedEmoji === emoji 
-                  ? 'bg-primary/20 ring-2 ring-primary scale-110' 
-                  : 'bg-muted hover:bg-muted/80'
+              style={{
+                width: '48px',
+                height: '48px',
+                fontSize: '24px',
+                borderRadius: '8px',
+                transition: 'all 0.2s',
+                cursor: 'pointer',
+                border: selectedEmoji === emoji ? '2px solid hsl(var(--primary))' : '1px solid hsl(var(--border))',
+                backgroundColor: selectedEmoji === emoji ? 'hsl(var(--primary) / 0.2)' : 'hsl(var(--muted))',
+                transform: selectedEmoji === emoji ? 'scale(1.1)' : 'scale(1)',
+                boxShadow: selectedEmoji === emoji ? '0 4px 6px -1px rgba(0, 0, 0, 0.1)' : 'none'
+              }}
+              onMouseOver={(e) => {
+                if (selectedEmoji !== emoji) {
+                  e.currentTarget.style.transform = 'scale(1.1)';
+                  e.currentTarget.style.boxShadow = '0 4px 6px -1px rgba(0, 0, 0, 0.1)';
+                  e.currentTarget.style.backgroundColor = 'hsl(var(--muted) / 0.8)';
                 }
-              `}
+              }}
+              onMouseOut={(e) => {
+                if (selectedEmoji !== emoji) {
+                  e.currentTarget.style.transform = 'scale(1)';
+                  e.currentTarget.style.boxShadow = 'none';
+                  e.currentTarget.style.backgroundColor = 'hsl(var(--muted))';
+                }
+              }}
             >
               {emoji}
             </button>
@@ -93,22 +151,50 @@ export const EmojiColorPicker = ({
       </Card>
 
       {/* Color Selector */}
-      <Card className="p-6">
-        <h3 className="text-lg font-semibold mb-4">Choose Background Color</h3>
-        <div className="grid grid-cols-8 gap-3">
+      <Card style={{
+        padding: '24px',
+        backgroundColor: 'hsl(var(--card))',
+        border: '1px solid hsl(var(--border))'
+      }}>
+        <h3 style={{
+          fontSize: '18px',
+          fontWeight: '600',
+          marginBottom: '16px'
+        }}>Choose Background Color</h3>
+        <div style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(8, 1fr)',
+          gap: '12px'
+        }}>
           {COLOR_OPTIONS.map((color) => (
             <button
               key={color}
               onClick={() => setSelectedColor(color)}
-              className={`
-                w-12 h-12 rounded-lg transition-all duration-200
-                hover:scale-110 hover:shadow-md
-                ${selectedColor === color 
-                  ? 'ring-4 ring-primary ring-offset-2 scale-110' 
-                  : 'ring-1 ring-gray-300'
+              style={{
+                width: '48px',
+                height: '48px',
+                borderRadius: '8px',
+                transition: 'all 0.2s',
+                cursor: 'pointer',
+                backgroundColor: color,
+                border: selectedColor === color ? '4px solid hsl(var(--primary))' : '1px solid #d1d5db',
+                transform: selectedColor === color ? 'scale(1.1)' : 'scale(1)',
+                boxShadow: selectedColor === color ? '0 4px 6px -1px rgba(0, 0, 0, 0.1)' : 'none',
+                outline: selectedColor === color ? '2px solid transparent' : 'none',
+                outlineOffset: selectedColor === color ? '2px' : '0'
+              }}
+              onMouseOver={(e) => {
+                if (selectedColor !== color) {
+                  e.currentTarget.style.transform = 'scale(1.1)';
+                  e.currentTarget.style.boxShadow = '0 4px 6px -1px rgba(0, 0, 0, 0.1)';
                 }
-              `}
-              style={{ backgroundColor: color }}
+              }}
+              onMouseOut={(e) => {
+                if (selectedColor !== color) {
+                  e.currentTarget.style.transform = 'scale(1)';
+                  e.currentTarget.style.boxShadow = 'none';
+                }
+              }}
               title={color}
             />
           ))}

@@ -941,39 +941,77 @@ export const RealMapComponent = ({ showEmojiPalette = false, onToggleEmojiPalett
   }, []);
 
   return (
-    <div className="w-full h-full relative">
-      <div ref={mapContainer} className="w-full h-full" />
+    <div style={{
+      width: '100%',
+      height: '100%',
+      position: 'relative'
+    }}>
+      <div ref={mapContainer} style={{
+        width: '100%',
+        height: '100%'
+      }} />
       
       {/* Zone sharing note - Mobile optimized */}
       {showZoneNote && (
-        <Card className="absolute top-4 left-2 right-2 z-40 bg-gradient-to-r from-blue-50 to-purple-50 border-blue-200">
-          <CardContent className="p-2">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <span className="text-base">📍</span>
-                <div className="text-xs">
-                  <div className="font-medium text-blue-800">Zone-based social map</div>
-                  <div className="text-blue-600">Find people and events nearby</div>
+        <div style={{
+          position: 'absolute',
+          top: '1rem',
+          left: '0.5rem',
+          right: '0.5rem',
+          zIndex: 40,
+          background: 'linear-gradient(to right, #eff6ff, #faf5ff)',
+          border: '1px solid #bfdbfe',
+          borderRadius: '0.5rem',
+          boxShadow: '0 1px 3px rgba(0,0,0,0.1)'
+        }}>
+          <div style={{ padding: '0.5rem' }}>
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between'
+            }}>
+              <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.5rem'
+              }}>
+                <span style={{ fontSize: '1rem' }}>📍</span>
+                <div style={{ fontSize: '0.75rem' }}>
+                  <div style={{
+                    fontWeight: '500',
+                    color: '#1e40af'
+                  }}>Zone-based social map</div>
+                  <div style={{ color: '#2563eb' }}>Find people and events nearby</div>
                 </div>
               </div>
-              <Button
-                variant="ghost"
-                size="sm"
+              <button
                 onClick={() => setShowZoneNote(false)}
-                className="text-blue-600 hover:text-blue-800 h-8 w-8 p-0"
+                style={{
+                  color: '#2563eb',
+                  height: '2rem',
+                  width: '2rem',
+                  padding: 0,
+                  background: 'transparent',
+                  border: 'none',
+                  cursor: 'pointer',
+                  fontSize: '1.25rem',
+                  transition: 'color 0.2s'
+                }}
+                onMouseOver={(e) => e.currentTarget.style.color = '#1e40af'}
+                onMouseOut={(e) => e.currentTarget.style.color = '#2563eb'}
               >
                 ×
-              </Button>
+              </button>
             </div>
-          </CardContent>
-        </Card>
+          </div>
+        </div>
       )}
 
       {/* Event Emoji Palette - Mobile optimized with better visibility */}
       {showEmojiPalette && (
         <div style={{
           position: 'fixed',
-          bottom: '80px',
+          bottom: 'calc(60px + env(safe-area-inset-bottom, 0px))',
           left: '8px',
           zIndex: 1000
         }}>
@@ -988,9 +1026,9 @@ export const RealMapComponent = ({ showEmojiPalette = false, onToggleEmojiPalett
 
       {/* Instructions - Mobile optimized */}
       {showEmojiPalette && (
-        <Card style={{
+        <div style={{
           position: 'fixed',
-          bottom: '80px',
+          bottom: 'calc(60px + env(safe-area-inset-bottom, 0px))',
           right: '8px',
           zIndex: 1000,
           backgroundColor: 'rgba(255, 255, 255, 0.98)',
@@ -998,24 +1036,24 @@ export const RealMapComponent = ({ showEmojiPalette = false, onToggleEmojiPalett
           WebkitBackdropFilter: 'blur(8px)',
           border: '2px solid hsl(var(--border))',
           boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1)',
-          maxWidth: '180px'
+          maxWidth: '180px',
+          borderRadius: '0.5rem',
+          padding: '12px'
         }}>
-          <CardContent style={{ padding: '12px' }}>
-            <div style={{
-              fontSize: '14px',
-              fontWeight: '600',
-              color: '#374151',
-              textAlign: 'center'
-            }}>
-              🎯 Drag emojis to create events
-            </div>
-          </CardContent>
-        </Card>
+          <div style={{
+            fontSize: '14px',
+            fontWeight: '600',
+            color: '#374151',
+            textAlign: 'center'
+          }}>
+            🎯 Drag emojis to create events
+          </div>
+        </div>
       )}
 
       {/* Event Chat Button - Moved up for mobile */}
       {!showEmojiPalette && (
-        <Button
+        <button
           onClick={() => {
             const userEvent = events.find(e => e.created_by === user?.id);
             if (userEvent) {
@@ -1028,11 +1066,35 @@ export const RealMapComponent = ({ showEmojiPalette = false, onToggleEmojiPalett
               });
             }
           }}
-          className="fixed bottom-20 right-4 z-50 rounded-full w-14 h-14 shadow-lg hover:shadow-xl transition-all duration-200 hover:scale-110"
-          size="sm"
+          style={{
+            position: 'fixed',
+            bottom: 'calc(80px + env(safe-area-inset-bottom, 0px))',
+            right: '1rem',
+            zIndex: 50,
+            borderRadius: '9999px',
+            width: '3.5rem',
+            height: '3.5rem',
+            boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)',
+            transition: 'all 0.2s',
+            background: 'hsl(var(--primary))',
+            border: 'none',
+            cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            fontSize: '1.5rem'
+          }}
+          onMouseOver={(e) => {
+            e.currentTarget.style.boxShadow = '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)';
+            e.currentTarget.style.transform = 'scale(1.1)';
+          }}
+          onMouseOut={(e) => {
+            e.currentTarget.style.boxShadow = '0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)';
+            e.currentTarget.style.transform = 'scale(1)';
+          }}
         >
-          <span className="text-2xl">💬</span>
-        </Button>
+          💬
+        </button>
       )}
 
       {/* Event Dialogs */}

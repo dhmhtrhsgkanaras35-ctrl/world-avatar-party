@@ -205,12 +205,48 @@ const MainApp = () => {
       flexDirection: 'column'
     }}>
       {/* Floating header - Mobile optimized */}
-      <header className="absolute top-2 left-2 right-2 bg-background/90 backdrop-blur-sm rounded-lg border px-3 py-2 flex items-center justify-between z-10 safe-area-inset-top">
-        <div className="flex items-center gap-2 flex-1 min-w-0">
-          <h1 className="text-sm font-bold gradient-party bg-clip-text text-transparent">
+      <header style={{
+        position: 'absolute',
+        top: '0.5rem',
+        left: '0.5rem',
+        right: '0.5rem',
+        backgroundColor: 'hsl(var(--background) / 0.9)',
+        backdropFilter: 'blur(8px)',
+        WebkitBackdropFilter: 'blur(8px)',
+        borderRadius: '0.5rem',
+        border: '1px solid hsl(var(--border))',
+        padding: '0.5rem 0.75rem',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        zIndex: 10,
+        paddingTop: 'calc(0.5rem + env(safe-area-inset-top, 0))'
+      }}>
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: '0.5rem',
+          flex: '1',
+          minWidth: 0
+        }}>
+          <h1 style={{
+            fontSize: '0.875rem',
+            fontWeight: '700',
+            background: 'linear-gradient(135deg, hsl(270 95% 65%), hsl(320 100% 70%), hsl(30 100% 60%))',
+            WebkitBackgroundClip: 'text',
+            backgroundClip: 'text',
+            color: 'transparent'
+          }}>
             WorldMe
           </h1>
-          <div className="text-xs text-muted-foreground truncate flex-1">
+          <div style={{
+            fontSize: '0.75rem',
+            color: 'hsl(var(--muted-foreground))',
+            overflow: 'hidden',
+            textOverflow: 'ellipsis',
+            whiteSpace: 'nowrap',
+            flex: 1
+          }}>
             {userProfile?.display_name || user?.user_metadata?.display_name || 'User'}
           </div>
         </div>
@@ -265,39 +301,81 @@ const MainApp = () => {
           margin: '0 auto',
           minHeight: '48px'
         }}>
-          <Button
-            variant="ghost"
-            size="sm"
+          <button
+            onClick={() => setShowEmojiPalette(!showEmojiPalette)}
             style={{
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              gap: '0.125rem',
+              height: 'auto',
+              padding: '0.25rem 0.5rem',
+              minWidth: '50px',
               background: 'linear-gradient(135deg, hsl(270 95% 65%), hsl(320 100% 70%), hsl(30 100% 60%))',
               color: 'hsl(0 0% 98%)',
-              transition: 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)'
+              border: 'none',
+              borderRadius: '0.375rem',
+              cursor: 'pointer',
+              transition: 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)',
+              fontSize: '0.75rem',
+              fontWeight: 600
             }}
-            className="flex flex-col items-center gap-0.5 h-auto py-1 px-2 min-w-[50px] hover:scale-105 active:scale-95"
-            onClick={() => setShowEmojiPalette(!showEmojiPalette)}
+            onMouseOver={(e) => {
+              e.currentTarget.style.transform = 'scale(1.05)';
+            }}
+            onMouseOut={(e) => {
+              e.currentTarget.style.transform = 'scale(1)';
+            }}
+            onTouchStart={(e) => {
+              e.currentTarget.style.transform = 'scale(0.95)';
+            }}
+            onTouchEnd={(e) => {
+              e.currentTarget.style.transform = 'scale(1)';
+            }}
           >
-            <Plus className="h-5 w-5" />
-            <span className="text-xs font-semibold">Create</span>
-          </Button>
+            <Plus style={{ width: '1.25rem', height: '1.25rem' }} />
+            <span>Create</span>
+          </button>
 
           <MessagesDialog user={user} />
 
           <FriendRequestManager user={user} />
 
-          <Button
-            variant="ghost"
-            size="sm"
+          <button
+            onClick={() => navigate('/profile')}
             style={{
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              gap: '0.125rem',
+              height: 'auto',
+              padding: '0.25rem 0.5rem',
+              minWidth: '50px',
               background: 'linear-gradient(135deg, hsl(150 80% 55%), hsl(210 100% 70%))',
               color: 'hsl(0 0% 98%)',
-              transition: 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)'
+              border: 'none',
+              borderRadius: '0.375rem',
+              cursor: 'pointer',
+              transition: 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)',
+              fontSize: '0.75rem',
+              fontWeight: 600
             }}
-            className="flex flex-col items-center gap-0.5 h-auto py-1 px-2 min-w-[50px] hover:scale-105 active:scale-95"
-            onClick={() => navigate('/profile')}
+            onMouseOver={(e) => {
+              e.currentTarget.style.transform = 'scale(1.05)';
+            }}
+            onMouseOut={(e) => {
+              e.currentTarget.style.transform = 'scale(1)';
+            }}
+            onTouchStart={(e) => {
+              e.currentTarget.style.transform = 'scale(0.95)';
+            }}
+            onTouchEnd={(e) => {
+              e.currentTarget.style.transform = 'scale(1)';
+            }}
           >
-            <User className="h-5 w-5" />
-            <span className="text-xs font-semibold">Profile</span>
-          </Button>
+            <User style={{ width: '1.25rem', height: '1.25rem' }} />
+            <span>Profile</span>
+          </button>
         </div>
       </div>
     </div>

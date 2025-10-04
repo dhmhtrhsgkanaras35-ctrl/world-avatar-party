@@ -108,8 +108,19 @@ const Profile = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin" />
+      <div style={{
+        minHeight: '100vh',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        backgroundColor: 'hsl(var(--background))'
+      }}>
+        <Loader2 style={{
+          width: '2rem',
+          height: '2rem',
+          animation: 'spin 1s linear infinite',
+          color: 'hsl(var(--primary))'
+        }} />
       </div>
     );
   }
@@ -119,60 +130,163 @@ const Profile = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background to-muted p-4 md:p-8 pb-safe">
-      <div className="max-w-4xl mx-auto space-y-6 mb-24">
+    <div style={{
+      minHeight: '100vh',
+      background: 'linear-gradient(135deg, hsl(var(--background)), hsl(var(--muted)))',
+      padding: '1rem',
+      paddingBottom: 'calc(6rem + env(safe-area-inset-bottom, 0))'
+    }}>
+      <div style={{
+        maxWidth: '56rem',
+        margin: '0 auto',
+        display: 'flex',
+        flexDirection: 'column',
+        gap: '1.5rem',
+        marginBottom: '6rem'
+      }}>
         {/* Header */}
-        <div className="flex items-center justify-between">
-          <Button
-            variant="ghost"
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between'
+        }}>
+          <button
             onClick={() => navigate('/app')}
-            className="gap-2"
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.5rem',
+              padding: '0.5rem 1rem',
+              backgroundColor: 'transparent',
+              border: '1px solid hsl(var(--border))',
+              borderRadius: '0.5rem',
+              color: 'hsl(var(--foreground))',
+              cursor: 'pointer',
+              transition: 'all 0.2s',
+              fontSize: '0.875rem',
+              fontWeight: '500'
+            }}
+            onMouseOver={(e) => {
+              e.currentTarget.style.backgroundColor = 'hsl(var(--muted))';
+            }}
+            onMouseOut={(e) => {
+              e.currentTarget.style.backgroundColor = 'transparent';
+            }}
           >
-            <ArrowLeft className="h-4 w-4" />
+            <ArrowLeft style={{ width: '1rem', height: '1rem' }} />
             Back to Map
-          </Button>
-          <Button
-            variant="destructive"
+          </button>
+          <button
             onClick={handleSignOut}
-            className="gap-2"
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.5rem',
+              padding: '0.5rem 1rem',
+              backgroundColor: 'hsl(var(--destructive))',
+              border: 'none',
+              borderRadius: '0.5rem',
+              color: 'hsl(var(--destructive-foreground))',
+              cursor: 'pointer',
+              transition: 'all 0.2s',
+              fontSize: '0.875rem',
+              fontWeight: '500'
+            }}
+            onMouseOver={(e) => {
+              e.currentTarget.style.opacity = '0.9';
+            }}
+            onMouseOut={(e) => {
+              e.currentTarget.style.opacity = '1';
+            }}
           >
-            <LogOut className="h-4 w-4" />
+            <LogOut style={{ width: '1rem', height: '1rem' }} />
             Sign Out
-          </Button>
+          </button>
         </div>
 
         {/* Profile Card */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Your Profile</CardTitle>
-            <CardDescription>
+        <div style={{
+          backgroundColor: 'hsl(var(--card))',
+          border: '1px solid hsl(var(--border))',
+          borderRadius: '0.5rem',
+          boxShadow: '0 1px 3px rgba(0,0,0,0.1)'
+        }}>
+          <div style={{ padding: '1.5rem' }}>
+            <h2 style={{
+              fontSize: '1.5rem',
+              fontWeight: '600',
+              marginBottom: '0.5rem',
+              color: 'hsl(var(--card-foreground))'
+            }}>Your Profile</h2>
+            <p style={{
+              fontSize: '0.875rem',
+              color: 'hsl(var(--muted-foreground))'
+            }}>
               Customize how you appear on the map to other users
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
+            </p>
+          </div>
+          <div style={{ padding: '0 1.5rem 1.5rem 1.5rem' }}>
+            <div style={{
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '1rem'
+            }}>
               <div>
-                <label className="text-sm font-medium">Display Name</label>
-                <p className="text-lg">{user.user_metadata?.display_name || 'User'}</p>
+                <label style={{
+                  fontSize: '0.875rem',
+                  fontWeight: '500',
+                  color: 'hsl(var(--foreground))'
+                }}>Display Name</label>
+                <p style={{
+                  fontSize: '1.125rem',
+                  marginTop: '0.25rem',
+                  color: 'hsl(var(--card-foreground))'
+                }}>{user.user_metadata?.display_name || 'User'}</p>
               </div>
               <div>
-                <label className="text-sm font-medium">Email</label>
-                <p className="text-lg">{user.email}</p>
+                <label style={{
+                  fontSize: '0.875rem',
+                  fontWeight: '500',
+                  color: 'hsl(var(--foreground))'
+                }}>Email</label>
+                <p style={{
+                  fontSize: '1.125rem',
+                  marginTop: '0.25rem',
+                  color: 'hsl(var(--card-foreground))'
+                }}>{user.email}</p>
               </div>
             </div>
-          </CardContent>
-        </Card>
+          </div>
+        </div>
 
         {/* Avatar Customization */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Your Current Avatar</CardTitle>
-            <CardDescription>
+        <div style={{
+          backgroundColor: 'hsl(var(--card))',
+          border: '1px solid hsl(var(--border))',
+          borderRadius: '0.5rem',
+          boxShadow: '0 1px 3px rgba(0,0,0,0.1)'
+        }}>
+          <div style={{ padding: '1.5rem' }}>
+            <h2 style={{
+              fontSize: '1.5rem',
+              fontWeight: '600',
+              marginBottom: '0.5rem',
+              color: 'hsl(var(--card-foreground))'
+            }}>Your Current Avatar</h2>
+            <p style={{
+              fontSize: '0.875rem',
+              color: 'hsl(var(--muted-foreground))'
+            }}>
               This is how you appear on the map to other users
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="flex flex-col items-center gap-4">
+            </p>
+          </div>
+          <div style={{ padding: '0 1.5rem 1.5rem 1.5rem' }}>
+            <div style={{
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              gap: '1rem'
+            }}>
               <div 
                 style={{
                   width: '96px',
@@ -190,10 +304,31 @@ const Profile = () => {
               
               <Dialog open={showAvatarDialog} onOpenChange={setShowAvatarDialog}>
                 <DialogTrigger asChild>
-                  <Button className="gap-2">
-                    <Palette className="h-4 w-4" />
+                  <button
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '0.5rem',
+                      padding: '0.5rem 1rem',
+                      backgroundColor: 'hsl(var(--primary))',
+                      border: 'none',
+                      borderRadius: '0.5rem',
+                      color: 'hsl(var(--primary-foreground))',
+                      cursor: 'pointer',
+                      transition: 'all 0.2s',
+                      fontSize: '0.875rem',
+                      fontWeight: '500'
+                    }}
+                    onMouseOver={(e) => {
+                      e.currentTarget.style.opacity = '0.9';
+                    }}
+                    onMouseOut={(e) => {
+                      e.currentTarget.style.opacity = '1';
+                    }}
+                  >
+                    <Palette style={{ width: '1rem', height: '1rem' }} />
                     Customize Avatar
-                  </Button>
+                  </button>
                 </DialogTrigger>
                 <DialogContent className="max-w-[95vw] w-full max-h-[85vh] p-0 gap-0">
                   <DialogHeader className="p-4 pb-2">
@@ -209,8 +344,8 @@ const Profile = () => {
                 </DialogContent>
               </Dialog>
             </div>
-          </CardContent>
-        </Card>
+          </div>
+        </div>
       </div>
     </div>
   );
